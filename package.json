@@ -1,0 +1,13 @@
+{
+  "name": "nexus-premium-ecommerce",
+  "version": "1.0.0",
+  "description": "Automated Premium E-Commerce Platform with bKash/Nagad/Rocket TrxID, Admin Control Panel, and Live Chat",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "cd client && npm run dev",
+    "build:client": "cd client && npm run build"
+  },
+  "keywords": ["ecommerce", "bangladesh", "bkash", "nagad", "automation", "admin-panel", "react", "nodejs"],
+  "author": "Nexus Team",
+  "license": "ISC"
+}

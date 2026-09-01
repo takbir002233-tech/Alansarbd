@@ -1,0 +1,524 @@
+{
+  "users": [
+    {
+      "id": "usr_admin",
+      "name": "Al Ansar Admin",
+      "email": "admin@alansar.com",
+      "phone": "01711000000",
+      "password_hash": "$2b$10$yNz43dTaVFtQs21aUN6nF.4cHCv6MB2GvF9tJVXQUVGnRJo9KHnB.",
+      "address": "House #14, Road #7, Sector 3, Uttara",
+      "city": "Dhaka",
+      "postal_code": "1230",
+      "role": "admin",
+      "is_blocked": false,
+      "created_at": "2026-09-01T07:21:32.950Z"
+    },
+    {
+      "id": "usr_demo_customer",
+      "name": "Tanvir Ahmed",
+      "email": "tanvir.ahmed@gmail.com",
+      "phone": "01712345678",
+      "password_hash": "$2b$10$Joy9TofeIdK6aMrGIPozM./GIbXNCXOlVHCi9Tw9ViC/eRNQX.QDa",
+      "address": "Flat 4B, Green View Tower, Mirpur-10",
+      "city": "Dhaka",
+      "postal_code": "1216",
+      "role": "user",
+      "is_blocked": false,
+      "created_at": "2026-09-01T07:21:32.953Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat_perfumes",
+      "name": "French & Western Perfumes",
+      "slug": "french-perfumes",
+      "icon": "Sparkles",
+      "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80",
+      "priority_order": 1,
+      "item_count": 15,
+      "subcategories": [
+        {
+          "id": "sub_men_edp",
+          "name": "Men's Luxury EDP",
+          "slug": "mens-luxury-edp"
+        },
+        {
+          "id": "sub_women_edp",
+          "name": "Women's Floral Perfumes",
+          "slug": "womens-floral-perfumes"
+        },
+        {
+          "id": "sub_unisex_edp",
+          "name": "Unisex Oriental Scents",
+          "slug": "unisex-oriental-scents"
+        }
+      ]
+    },
+    {
+      "id": "cat_attar",
+      "name": "Non-Alcoholic Attar & Pure Oud",
+      "slug": "pure-attar-oud",
+      "icon": "Flame",
+      "image": "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=600&q=80",
+      "priority_order": 2,
+      "item_count": 18,
+      "subcategories": [
+        {
+          "id": "sub_cambodian_oud",
+          "name": "Pure Cambodian Dehn Al Oud",
+          "slug": "pure-cambodian-oud"
+        },
+        {
+          "id": "sub_white_musk",
+          "name": "Imperial White Musk",
+          "slug": "imperial-white-musk"
+        },
+        {
+          "id": "sub_royal_amber",
+          "name": "Royal Ambergris & Rose",
+          "slug": "royal-ambergris-rose"
+        }
+      ]
+    },
+    {
+      "id": "cat_gift_boxes",
+      "name": "Luxury Perfume Gift Boxes",
+      "slug": "luxury-gift-boxes",
+      "icon": "Gift",
+      "image": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
+      "priority_order": 3,
+      "item_count": 10,
+      "subcategories": [
+        {
+          "id": "sub_wooden_boxes",
+          "name": "Handcrafted Wooden Boxes",
+          "slug": "handcrafted-wooden-boxes"
+        },
+        {
+          "id": "sub_eid_sets",
+          "name": "Eid Mubarak Gift Boxes",
+          "slug": "eid-mubarak-gift-boxes"
+        },
+        {
+          "id": "sub_wedding_sets",
+          "name": "Wedding VIP Collection",
+          "slug": "wedding-vip-collection"
+        }
+      ]
+    },
+    {
+      "id": "cat_combos",
+      "name": "Exclusive Gift Hampers & Combos",
+      "slug": "gift-combos",
+      "icon": "Heart",
+      "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80",
+      "priority_order": 4,
+      "item_count": 12,
+      "subcategories": [
+        {
+          "id": "sub_gentleman_combo",
+          "name": "Men's Watch & Fragrance Combos",
+          "slug": "mens-watch-fragrance-combos"
+        },
+        {
+          "id": "sub_women_combo",
+          "name": "Women's Romance Hampers",
+          "slug": "womens-romance-hampers"
+        }
+      ]
+    },
+    {
+      "id": "cat_bakhoor",
+      "name": "Bakhoor & Scented Candles",
+      "slug": "bakhoor-fragrance",
+      "icon": "Flame",
+      "image": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80",
+      "priority_order": 5,
+      "item_count": 8,
+      "subcategories": [
+        {
+          "id": "sub_burners",
+          "name": "Antique Brass Burners",
+          "slug": "antique-brass-burners"
+        },
+        {
+          "id": "sub_oudh_chips",
+          "name": "Natural Oudh Wood Chips",
+          "slug": "natural-oudh-wood-chips"
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "prd_1",
+      "title": "AL ANSAR Royal Crown Oud Eau de Parfum (100ml)",
+      "slug": "al-ansar-royal-crown-oud-100ml",
+      "category_id": "cat_perfumes",
+      "subcategory_id": "sub_men_edp",
+      "price": 4500,
+      "discount_price": 3600,
+      "stock": 24,
+      "rating": 5,
+      "review_count": 48,
+      "is_featured": true,
+      "is_free_delivery": true,
+      "priority_order": 1,
+      "thumbnail": "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "An opulent royal fragrance opening with spicy bergamot and Cambodian agarwood, settling into smoky amber and creamy Madagascar vanilla.",
+      "specs": {
+        "Brand": "AL ANSAR Luxury Collection",
+        "Type": "Eau de Parfum (EDP)",
+        "Volume": "100ml / 3.4 fl oz",
+        "Longevity": "14 - 18 Hours"
+      },
+      "tags": [
+        "Perfume",
+        "Oud",
+        "Royal",
+        "Luxury",
+        "AL ANSAR",
+        "Men",
+        "Free Delivery"
+      ],
+      "created_at": "2026-09-01T07:21:32.953Z"
+    },
+    {
+      "id": "prd_2",
+      "title": "Velvet Rose & White Amber French Fragrance (80ml)",
+      "slug": "velvet-rose-white-amber-80ml",
+      "category_id": "cat_perfumes",
+      "subcategory_id": "sub_women_edp",
+      "price": 3800,
+      "discount_price": 2950,
+      "stock": 18,
+      "rating": 4.9,
+      "review_count": 36,
+      "is_featured": true,
+      "is_free_delivery": false,
+      "priority_order": 2,
+      "thumbnail": "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "A mesmerizing romantic blend of Damascus rose, blooming jasmine, and sparkling white amber crystals.",
+      "specs": {
+        "Brand": "AL ANSAR Signature",
+        "Type": "Eau de Parfum",
+        "Volume": "80ml"
+      },
+      "tags": [
+        "Perfume",
+        "Floral",
+        "Rose",
+        "Amber",
+        "Women"
+      ],
+      "created_at": "2026-09-01T07:21:32.953Z"
+    },
+    {
+      "id": "prd_3",
+      "title": "Pure Dehn Al Oud Cambodi Concentrated Premium Attar (12ml)",
+      "slug": "pure-dehn-al-oud-cambodi-12ml",
+      "category_id": "cat_attar",
+      "subcategory_id": "sub_cambodian_oud",
+      "price": 2500,
+      "discount_price": 1950,
+      "stock": 30,
+      "rating": 5,
+      "review_count": 62,
+      "is_featured": true,
+      "is_free_delivery": false,
+      "priority_order": 3,
+      "thumbnail": "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "100% pure, alcohol-free artisanal Dehn Al Oud distilled from aged Cambodian agarwood trees.",
+      "specs": {
+        "Form": "100% Non-Alcoholic Concentrated Oil",
+        "Volume": "12ml (1 Tola)",
+        "Origin": "Cambodia"
+      },
+      "tags": [
+        "Attar",
+        "Oud",
+        "Alcohol Free"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    },
+    {
+      "id": "prd_4",
+      "title": "Imperial Musk & White Ambergris Premium Attar (6ml)",
+      "slug": "imperial-musk-white-ambergris-6ml",
+      "category_id": "cat_attar",
+      "subcategory_id": "sub_white_musk",
+      "price": 1200,
+      "discount_price": 950,
+      "stock": 45,
+      "rating": 4.8,
+      "review_count": 41,
+      "is_featured": false,
+      "is_free_delivery": false,
+      "priority_order": 4,
+      "thumbnail": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "Silky, clean white musk enriched with powdery amber and subtle floral accords.",
+      "specs": {
+        "Form": "Pure Concentrated Attar Oil",
+        "Volume": "6ml (1/2 Tola)"
+      },
+      "tags": [
+        "Attar",
+        "White Musk"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    },
+    {
+      "id": "prd_5",
+      "title": "AL ANSAR Royal Wooden Gift Box (3x 12ml Attar + Tasbih + Velvet Box)",
+      "slug": "al-ansar-royal-wooden-gift-box-trio",
+      "category_id": "cat_gift_boxes",
+      "subcategory_id": "sub_wooden_boxes",
+      "price": 4200,
+      "discount_price": 3450,
+      "stock": 15,
+      "rating": 5,
+      "review_count": 29,
+      "is_featured": true,
+      "is_free_delivery": true,
+      "priority_order": 5,
+      "thumbnail": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "An elite bespoke wooden gift box lined with royal velvet. Includes 3 signature 12ml luxury attars.",
+      "specs": {
+        "Box Material": "Polished Mahogany Wood with Brass Latch",
+        "Includes": "3x 12ml Crystal Attar Bottles + Premium Tasbih + Gift Box"
+      },
+      "tags": [
+        "Gift Box",
+        "Hamper",
+        "Eid",
+        "Free Delivery"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    },
+    {
+      "id": "prd_6",
+      "title": "Gentleman's Signature Gift Hamper (Perfume + Watch + Leather Wallet)",
+      "slug": "gentlemans-signature-gift-hamper-set",
+      "category_id": "cat_combos",
+      "subcategory_id": "sub_gentleman_combo",
+      "price": 5800,
+      "discount_price": 4800,
+      "stock": 10,
+      "rating": 4.9,
+      "review_count": 34,
+      "is_featured": true,
+      "is_free_delivery": true,
+      "priority_order": 6,
+      "thumbnail": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "The ultimate luxury combo gift for men. Features 1x AL ANSAR Royal Oud 50ml EDP + Formal Quartz Wristwatch + 100% Genuine Leather Bi-fold Wallet.",
+      "specs": {
+        "Hamper Contents": "50ml Perfume + Quartz Watch + Cowhide Leather Wallet + Gift Card"
+      },
+      "tags": [
+        "Hamper",
+        "Men",
+        "Combo",
+        "Free Delivery"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    },
+    {
+      "id": "prd_7",
+      "title": "Golden Antique Bakhoor Burner & 100g Royal Oudh Incense Set",
+      "slug": "golden-antique-bakhoor-burner-oudh-set",
+      "category_id": "cat_bakhoor",
+      "subcategory_id": "sub_burners",
+      "price": 2800,
+      "discount_price": 2250,
+      "stock": 20,
+      "rating": 4.9,
+      "review_count": 27,
+      "is_featured": false,
+      "is_free_delivery": false,
+      "priority_order": 7,
+      "thumbnail": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "Transform your home, office, or prayer space with an enchanting Arabic aroma.",
+      "specs": {
+        "Burner Material": "High-Heat Resistant Antique Brass / Gold Plating"
+      },
+      "tags": [
+        "Bakhoor",
+        "Oud",
+        "Home Fragrance"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    },
+    {
+      "id": "prd_8",
+      "title": "Rose Gold Elegance Women's Gift Hamper (Perfume + Mist + Scented Candle)",
+      "slug": "rose-gold-elegance-womens-gift-hamper",
+      "category_id": "cat_combos",
+      "subcategory_id": "sub_women_combo",
+      "price": 4600,
+      "discount_price": 3750,
+      "stock": 14,
+      "rating": 5,
+      "review_count": 22,
+      "is_featured": false,
+      "is_free_delivery": true,
+      "priority_order": 8,
+      "thumbnail": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
+      ],
+      "description": "A charming gift hamper designed to delight. Contains Velvet Rose 50ml EDP, matching shimmering Body Mist, and hand-poured Soy Scented Candle.",
+      "specs": {
+        "Contents": "50ml Perfume + 150ml Body Mist + 200g Soy Scented Candle"
+      },
+      "tags": [
+        "Women",
+        "Gift Box",
+        "Rose",
+        "Free Delivery"
+      ],
+      "created_at": "2026-09-01T07:21:32.954Z"
+    }
+  ],
+  "vouchers": [
+    {
+      "id": "vch_1",
+      "code": "ANSAR10",
+      "discount_type": "percent",
+      "discount_value": 10,
+      "min_spend": 1000,
+      "is_active": true,
+      "description": "10% instant discount on all orders over ৳1,000"
+    },
+    {
+      "id": "vch_2",
+      "code": "EIDGIFT",
+      "discount_type": "fixed",
+      "discount_value": 300,
+      "min_spend": 2500,
+      "is_active": true,
+      "description": "৳300 flat discount on luxury gift hampers above ৳2,500"
+    }
+  ],
+  "orders": [],
+  "chat_conversations": [
+    {
+      "id": "conv_guest_hjfjnzb",
+      "user_id": null,
+      "user_name": "Guest User",
+      "user_phone": "",
+      "user_email": "",
+      "messages": [
+        {
+          "id": "msg_1788247338769",
+          "sender": "bot",
+          "text": "Assalamu Alaikum! 👋 Welcome to AL ANSAR Luxury Fragrance & Gifts. How can we help you today? Ask about perfume notes, bKash payments, courier tracking, or request live support!",
+          "timestamp": "2026-09-01T07:22:18.769Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-01T07:22:18.769Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_yd9pyse",
+      "user_id": null,
+      "user_name": "Guest User",
+      "user_phone": "",
+      "user_email": "",
+      "messages": [
+        {
+          "id": "msg_1788248420307",
+          "sender": "bot",
+          "text": "Assalamu Alaikum! 👋 Welcome to AL ANSAR Luxury Fragrance & Gifts. How can we help you today? Ask about perfume notes, bKash payments, courier tracking, or request live support!",
+          "timestamp": "2026-09-01T07:40:20.307Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-01T07:40:20.307Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    }
+  ],
+  "qard_applications": [],
+  "account_appeals": [],
+  "site_settings": {
+    "store_name": "AL ANSAR",
+    "store_name_bn": "আল আনসার",
+    "store_tagline": "বিলাসবহুল পারফিউম, ১০০% খাঁটি আতর ও এক্সক্লুসিভ উপহার সামগ্রী বাংলাদেশ",
+    "store_phone": "+880 1711-223344",
+    "store_email": "info@alansarfragrance.com",
+    "store_address": "আল আনসার প্লাজা, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০",
+    "showroom_address": "আল আনসার ফ্ল্যাগশিপ শোরুম, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০",
+    "whatsapp_number": "+880 1711-223344",
+    "logo_url": "/logo.jpg",
+    "bkash_number": "01711-223344 (ব্যক্তিগত / Send Money)",
+    "nagad_number": "01811-223344 (ব্যক্তিগত / Send Money)",
+    "rocket_number": "01911-223344 (ব্যক্তিগত / Send Money)",
+    "dhaka_delivery_fee": 60,
+    "outside_dhaka_delivery_fee": 120,
+    "free_delivery_threshold": 2000,
+    "marquee_text": "✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨",
+    "marquee_enabled": true,
+    "invoice_hadith_slogans": [
+      "“সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে।” — (তিরমিযী)",
+      "“হে মুমিনগণ! তোমরা পারস্পরিক সন্তুষ্টির ভিত্তিতে ব্যবসা-বাণিজ্য করো।” — (সূরা আন-নিসা: ২৯)",
+      "আল আনসার — বিশুদ্ধ সুবাস ও বিশ্বস্ততার মেলবন্ধন।"
+    ],
+    "qard_hasana_enabled": true,
+    "qard_hasana_percentage": 10,
+    "qard_hasana_terms": "১. করযে হাসানা হলো সম্পূর্ণ সুদমুক্ত এবং কোনো প্রকার প্রসেসিং বা হিডেন চার্জ বিহীন ইসলামী ঋণ সুবিধা।\n২. ক্রেতা অর্ডারের সময় ৯০% পেমেন্ট করবেন এবং বাকি ১০% টাকা নির্ধারিত মেয়াদের মধ্যে কোনো সুদ ছাড়াই পরিশোধ করবেন।\n৩. এই সুবিধা গ্রহণের জন্য জাতীয় পরিচয়পত্র (NID) নম্বর ও বিস্তারিত তথ্য প্রদান করতে হবে।\n৪. অঙ্গীকার অনুযায়ী যথাসময়ে ঋণ পরিশোধ করা ঈমানী দায়িত্ব ও ইসলামী আমানতদারিতার অন্তর্ভুক্ত।",
+    "terms_and_conditions": "১. আল আনসার ১০০% খাঁটি ও অ্যালকোহলমুক্ত আতর এবং প্রিমিয়াম পারফিউম সরবরাহে অঙ্গীকারবদ্ধ।\n২. ডেলিভারি গ্রহণের সময় পণ্য যাচাই করে গ্রহণ করুন। কোনো ত্রুটি থাকলে ৭ দিনের মধ্যে পরিবর্তন বা রিপ্লেসমেন্ট করা হবে।\n৩. ঢাকা সিটির ভেতরে ডেলিভারি চার্জ ৬০ টাকা এবং ঢাকার বাইরে ১২০ টাকা। ২০০০ টাকার উপরে অর্ডারে ডেলিভারি ফ্রি।\n৪. করযে হাসানা সুবিধা গ্রহণের ক্ষেত্রে সঠিক তথ্য ও এনআইডি প্রদান বাধ্যতামূলক।",
+    "hero_badge": "আল আনসার • প্রিমিয়াম পারফিউম ও রাজকীয় উপহার কালেকশন",
+    "hero_title": "প্রতিটি ফোঁটায় আভিজাত্য, প্রতিটি উপহারে চিরস্মরণীয় স্মৃতি।",
+    "hero_subtitle": "ফ্রান্স ও ওরিয়েন্টাল পারফিউম, অ্যালকোহলমুক্ত খাঁটি কম্বোডিয়ান উদ এবং প্রিয়জনের জন্য আকর্ষণীয় গিফট বক্স। সারাদেশে লাইভ কুরিয়ার ট্র্যাকিং সহ দ্রুততম হোম ডেলিভারি।",
+    "hero_metric_1_val": "১০০% খাঁটি",
+    "hero_metric_1_label": "অ্যালকোহলমুক্ত আতর",
+    "hero_metric_2_val": "১৬+ ঘণ্টা",
+    "hero_metric_2_label": "স্থায়িত্ব ও লংজিভিটি",
+    "hero_metric_3_val": "স্টিভফাস্ট/রেডএক্স",
+    "hero_metric_3_label": "লাইভ কুরিয়ার ট্র্যাক",
+    "deals_badge": "সীমিত সময়ের সুগন্ধি অফার",
+    "deals_title": "⚡ বিশেষ ডিসকাউন্ট ডিল",
+    "deals_subtitle": "ভাউচার কোড ব্যবহার করে পান ২৫% পর্যন্ত বিশেষ ছাড়",
+    "guarantee_badge": "আল আনসার নিশ্চয়তা",
+    "guarantee_title": "কেন ১৫,০০০+ সুগন্ধিপ্রেমী আল আনসার পছন্দ করেন?",
+    "guarantee_subtitle": "আমরা বিশুদ্ধতার সাথে কখনো আপস করি না। খাঁটি উদ তেল থেকে শুরু করে রাজকীয় কাঠের গিফট বক্স প্যাকেজিং, বিকাশ/নগদ পেমেন্ট এবং বিনা সুদে করযে হাসানা সুবিধা।",
+    "guarantee_point_1": "১০০% অ্যালকোহলমুক্ত খাঁটি আতর ও উদ",
+    "guarantee_point_2": "স্টিভফাস্ট ও রেডএক্স লাইভ কুরিয়ার ট্র্যাকিং লিংক",
+    "guarantee_point_3": "ভাউচার কোডে ইনস্ট্যান্ট ডিসকাউন্ট ও পয়েন্ট রিওয়ার্ড",
+    "guarantee_point_4": "আকর্ষণীয় রাজকীয় গিফট বক্স ও কার্ড প্যাকেজিং",
+    "trust_1_title": "১০০% খাঁটি সুগন্ধি",
+    "trust_1_desc": "ফ্রেঞ্চ ও ওরিয়েন্টাল খাঁটি এসেন্সিয়াল অয়েল",
+    "trust_2_title": "অ্যালকোহলমুক্ত আতর",
+    "trust_2_desc": "১০০% খাঁটি প্রাকৃতিক আতর ও উদ তেল",
+    "trust_3_title": "দ্রুত কুরিয়ার ডেলিভারি",
+    "trust_3_desc": "স্টিভফাস্ট / রেডএক্স লাইভ ট্র্যাকিং",
+    "trust_4_title": "২৪/৭ গ্রাহক সেবা",
+    "trust_4_desc": "লাইভ এআই ও কাস্টমার সাপোর্ট",
+    "footer_about": "বাংলাদেশে ফ্রেঞ্চ পারফিউম, অ্যালকোহলমুক্ত খাঁটি আতর, আসল কম্বোডিয়ান উদ এবং রাজকীয় গিফট বক্সের বিশ্বস্ত প্রিমিয়াম প্রতিষ্ঠান।",
+    "footer_copyright": "© ২০২৬ AL ANSAR (আল আনসার) সুগন্ধি ও লাক্সারি গিফট বাংলাদেশ। সর্বস্বত্ব সংরক্ষিত।",
+    "footer_tagline": "বিশুদ্ধ সুবাস • রাজকীয় কারুকার্য • সুদমুক্ত সেবা"
+  }
+}

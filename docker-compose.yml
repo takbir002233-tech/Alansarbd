@@ -1,0 +1,12 @@
+services:
+  alansar-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alansar-ecommerce
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
