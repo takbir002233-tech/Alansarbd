@@ -12,7 +12,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-export default function TermsAndConditions({ onNavigate }) {
+export default function TermsAndConditions({ onNavigate, onBack }) {
   const { siteSettings } = useCart();
 
   return (
@@ -21,11 +21,11 @@ export default function TermsAndConditions({ onNavigate }) {
       {/* Universal Back Navigation */}
       <div className="flex items-center justify-between pb-2">
         <button
-          onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          onClick={onBack || (() => onNavigate('home'))}
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
         <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">

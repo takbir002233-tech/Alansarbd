@@ -15,7 +15,7 @@ import {
   HeartHandshake
 } from 'lucide-react';
 
-export default function QardHasana({ onNavigate }) {
+export default function QardHasana({ onNavigate, onBack }) {
   const { user } = useAuth();
   const { siteSettings } = useCart();
 
@@ -68,10 +68,10 @@ export default function QardHasana({ onNavigate }) {
 
       const data = await res.json();
       if (!data.success) {
-        throw new Error(data.message || 'আবেদন জমা দিতে সমস্যা হয়েছে।');
+        throw new Error(data.message || 'আবেদন জমা দেওয়া যায়নি।');
       }
 
-      setSuccessMsg(data.message);
+      setSuccessMsg('আপনার করযে হাসানা আবেদনটি সফলভাবে গৃহীত হয়েছে! আমাদের টিম জাতীয় পরিচয়পত্র যাচাই করে ২৪ ঘণ্টার মধ্যে আপনার ক্রেডিট লিমিট অনুমোদন করবে।');
       setFormData({
         name: user?.name || '',
         phone: user?.phone || '',
@@ -90,16 +90,16 @@ export default function QardHasana({ onNavigate }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in font-sans">
       
       {/* Top Universal Back Button */}
       <div className="flex items-center justify-between pb-2">
         <button
-          onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          onClick={onBack || (() => onNavigate('home'))}
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
         <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">

@@ -44,10 +44,16 @@ router.get('/', (req, res) => {
 
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
+      const allCats = db.getCategories();
+      const matchingCategoryIds = allCats
+        .filter(c => (c.name && c.name.toLowerCase().includes(q)) || (c.slug && c.slug.toLowerCase().includes(q)))
+        .map(c => c.id);
+
       products = products.filter(p => 
-        p.title.toLowerCase().includes(q) || 
-        p.description.toLowerCase().includes(q) ||
-        (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
+        (p.title && p.title.toLowerCase().includes(q)) || 
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.tags && p.tags.some(t => t.toLowerCase().includes(q))) ||
+        (p.category_id && matchingCategoryIds.includes(p.category_id))
       );
     }
 

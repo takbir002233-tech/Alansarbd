@@ -44,6 +44,7 @@ const voucherRoutes = require('./routes/vouchers');
 const adminRoutes = require('./routes/admin');
 const chatRoutes = require('./routes/chat');
 const uploadRoutes = require('./routes/upload');
+const reviewRoutes = require('./routes/reviews');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -54,6 +55,7 @@ app.use('/api/vouchers', voucherRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -81,7 +83,7 @@ const fs = require('fs');
 const clientDistPath = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDistPath));
 
-app.get('*', (req, res, next) => {
+app.use((req, res, next) => {
   if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {
     return next();
   }

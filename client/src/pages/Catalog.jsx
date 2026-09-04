@@ -17,8 +17,10 @@ export default function Catalog({
   initialCategory = null, 
   initialSubcategory = null, 
   initialSearch = '', 
+  searchQuery = '',
   initialFreeDelivery = false, 
-  onNavigate 
+  onNavigate,
+  onBack 
 }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -33,7 +35,7 @@ export default function Catalog({
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [selectedSubcategory, setSelectedSubcategory] = useState(initialSubcategory || 'all');
-  const [searchTerm, setSearchTerm] = useState(initialSearch || '');
+  const [searchTerm, setSearchTerm] = useState(initialSearch || searchQuery || '');
   const [sortBy, setSortBy] = useState('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
   const [freeDeliveryOnly, setFreeDeliveryOnly] = useState(initialFreeDelivery || false);
@@ -41,11 +43,17 @@ export default function Catalog({
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   useEffect(() => {
-    if (initialCategory) setSelectedCategory(initialCategory);
+    if (initialSearch && initialSearch.trim()) {
+      setSelectedCategory('all');
+      setSelectedSubcategory('all');
+    } else if (initialCategory) {
+      setSelectedCategory(initialCategory);
+    }
     if (initialSubcategory) setSelectedSubcategory(initialSubcategory);
-    if (initialSearch) setSearchTerm(initialSearch);
+    const searchVal = initialSearch !== undefined ? initialSearch : (searchQuery || '');
+    setSearchTerm(searchVal);
     if (initialFreeDelivery !== undefined) setFreeDeliveryOnly(initialFreeDelivery);
-  }, [initialCategory, initialSubcategory, initialSearch, initialFreeDelivery]);
+  }, [initialCategory, initialSubcategory, initialSearch, searchQuery, initialFreeDelivery]);
 
   useEffect(() => {
     async function fetchData() {
@@ -107,11 +115,11 @@ export default function Catalog({
       {/* Universal Back Button */}
       <div className="flex items-center justify-between pb-2">
         <button
-          onClick={() => onNavigate('home')}
-          className="flex items-center space-x-1.5 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          onClick={onBack || (() => onNavigate('home'))}
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
         {freeDeliveryOnly && (
@@ -124,9 +132,13 @@ export default function Catalog({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-amber-100 gap-4">
         <div>
-          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">আল আনসার স্টোরফ্রন্ট / সুগন্ধি কালেকশন</span>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">পারফিউম, আতর ও লাক্সারি গিফট ক্যাটালগ</h1>
-          <p className="text-xs text-slate-500 mt-0.5">{toBengaliDigits(products.length)} টি প্রিমিয়াম সুগন্ধি ও উপহার প্রদর্শিত হচ্ছে</p>
+          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">
+            {searchTerm ? `অনুসন্ধান ফলাফল / "${searchTerm}"` : 'আল আনসার সুপার শপ • পণ্য ক্যাটালগ'}
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+            {searchTerm ? `"${searchTerm}" এর অনুসন্ধান ফলাফল` : activeCategoryObj ? activeCategoryObj.name : 'সকল পণ্যের সমাহার'}
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">{toBengaliDigits(products.length)} টি পণ্য প্রদর্শিত হচ্ছে</p>
         </div>
 
         {/* Sort & Mobile filter */}
@@ -211,11 +223,11 @@ export default function Catalog({
 
             {/* Keyword Search */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-2">সুবাস বা নাম দিয়ে খুঁজুন</label>
+              <label className="text-xs font-bold text-slate-700 block mb-2">পণ্য বা ক্যাটাগরি দিয়ে খুঁজুন</label>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="যেমন: রয়্যাল উদ, রোজ, অ্যাম্বার..."
+                  placeholder="যেমন: ঘি, মধু, তেল, কুকিজ, আতর..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 bg-slate-50 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500"
@@ -251,7 +263,7 @@ export default function Catalog({
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <span>সব সুগন্ধি ও উপহার</span>
+                  <span>সব পণ্য (সকল ক্যাটাগরি)</span>
                   {selectedCategory === 'all' && <Check className="w-3.5 h-3.5 text-amber-600" />}
                 </button>
 
@@ -290,7 +302,7 @@ export default function Catalog({
         {/* Product Grid */}
         <div className="md:col-span-3">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="h-80 bg-slate-200 rounded-3xl animate-pulse" />
               ))}
@@ -298,9 +310,9 @@ export default function Catalog({
           ) : products.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-amber-100 text-center space-y-4">
               <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">কোনো সুগন্ধি পণ্য পাওয়া যায়নি</h3>
+              <h3 className="text-base font-bold text-slate-800">কোনো পণ্য পাওয়া যায়নি</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                আপনার দেওয়া ফিল্টারের সাথে মিল রেখে কোনো পণ্য নেই। দয়া করে অন্য ক্যাটাগরি বা ফিল্টার পরিবর্তন করে দেখুন।
+                {searchTerm ? `"${searchTerm}" এর সাথে মিল রেখে কোনো পণ্য পাওয়া যায়নি।` : 'আপনার ফিল্টারের সাথে মিল রেখে কোনো পণ্য নেই।'} দয়া করে অন্য কোনো নাম দিয়ে চেষ্টা করুন।
               </p>
               <button
                 onClick={clearFilters}
@@ -310,7 +322,7 @@ export default function Catalog({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
               ))}

@@ -16,16 +16,17 @@ export function CartProvider({ children }) {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [siteSettings, setSiteSettings] = useState({
-    store_name: 'AL ANSAR',
-    store_tagline: 'Luxury Perfumes, Pure Attar & Exclusive Gift Collection',
+    store_name: 'AL ANSAR SUPER SHOP',
+    store_name_bn: 'আল আনসার সুপার শপ',
+    store_tagline: 'ঘরের বাজার, প্রিমিয়াম বেকারি, খাঁটি আতর, পারফিউম ও রাজকীয় উপহার সামগ্রী',
     dhaka_delivery_fee: 60,
     outside_dhaka_delivery_fee: 120,
     free_delivery_threshold: 2000,
-    logo_url: '',
-    bkash_number: '01711-223344 (Personal / Send Money)',
-    nagad_number: '01811-223344 (Personal / Send Money)',
-    rocket_number: '01911-223344 (Personal / Send Money)',
-    showroom_address: 'Al Ansar Flagship Showroom, Level 4, Sector 3, Uttara, Dhaka-1230',
+    logo_url: '/logo.jpg',
+    bkash_number: '01711-223344 (ব্যক্তিগত / Send Money)',
+    nagad_number: '01811-223344 (ব্যক্তিগত / Send Money)',
+    rocket_number: '01911-223344 (ব্যক্তিগত / Send Money)',
+    showroom_address: 'আল আনসার ফ্ল্যাগশিপ শোরুম, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
     whatsapp_number: '+880 1711-223344'
   });
 

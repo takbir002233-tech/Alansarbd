@@ -22,6 +22,7 @@ import UserDashboard from './pages/UserDashboard';
 import ContactUs from './pages/ContactUs';
 import QardHasana from './pages/QardHasana';
 import TermsAndConditions from './pages/TermsAndConditions';
+import Reviews from './pages/Reviews';
 import { Login, Register, ForgotPassword } from './pages/AuthPages';
 
 // Admin Pages
@@ -42,6 +43,9 @@ function MainApp() {
   const [pageParams, setPageParams] = useState({});
   const [searchKeyword, setSearchKeyword] = useState('');
   const [invoiceOrder, setInvoiceOrder] = useState(null);
+  
+  // Navigation History Stack for true "Back to previous page" behavior
+  const [historyStack, setHistoryStack] = useState([{ page: 'home', params: {} }]);
 
   // Admin Tab Navigation
   const [adminTab, setAdminTab] = useState('dashboard');
@@ -61,8 +65,14 @@ function MainApp() {
   }, []);
 
   const navigate = (page, params = {}) => {
+    setHistoryStack(prev => [...prev, { page, params }]);
     setCurrentPage(page);
     setPageParams(params);
+    if (params.search !== undefined) {
+      setSearchKeyword(params.search);
+    } else if (params.category !== undefined) {
+      setSearchKeyword('');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Update URL hash smoothly
@@ -70,6 +80,22 @@ function MainApp() {
       window.location.hash = '/al-ansar-admin';
     } else if (window.location.hash.includes('admin')) {
       window.location.hash = '';
+    }
+  };
+
+  const handleBack = () => {
+    if (historyStack.length > 1) {
+      const newStack = [...historyStack];
+      newStack.pop(); // Remove current page
+      const prev = newStack[newStack.length - 1];
+      setHistoryStack(newStack);
+      setCurrentPage(prev.page);
+      setPageParams(prev.params || {});
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setCurrentPage('home');
+      setPageParams({});
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -81,7 +107,7 @@ function MainApp() {
     setInvoiceOrder(null);
   };
 
-  // Render Hidden Admin Portal (Accessible via /al-ansar-admin or #/al-ansar-admin)
+  // Render Hidden Admin Portal
   if (currentPage === 'al-ansar-admin' || currentPage === 'admin') {
     if (!isAdmin) {
       return (
@@ -103,16 +129,15 @@ function MainApp() {
         {adminTab === 'chat' && <AdminChatDesk />}
         {adminTab === 'settings' && <AdminSettings />}
         {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />}
-        <NotificationToasts />
       </AdminLayout>
     );
   }
 
-  // Render Customer Storefront
+  // Render Public Customer Storefront
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen flex flex-col bg-transparent text-slate-900 selection:bg-amber-500 selection:text-slate-950 font-sans">
       
-      {/* Top Navbar (NO ADMIN BUTTONS) */}
+      {/* Top Navbar */}
       <Navbar
         onNavigate={navigate}
         currentPage={currentPage}
@@ -120,67 +145,116 @@ function MainApp() {
         setSearchKeyword={setSearchKeyword}
       />
 
-      {/* Main Content Pages */}
+      {/* Main Content Area */}
       <main className="flex-1">
-        {currentPage === 'home' && <Home onNavigate={navigate} />}
-        {currentPage === 'catalog' && (
-          <Catalog
-            initialCategory={pageParams.category}
-            initialSubcategory={pageParams.subcategory}
-            initialSearch={pageParams.search || searchKeyword}
-            initialFreeDelivery={pageParams.freeDelivery || false}
-            onNavigate={navigate}
+        {currentPage === 'home' && (
+          <Home 
+            onNavigate={navigate} 
+            searchKeyword={searchKeyword} 
+            setSearchKeyword={setSearchKeyword} 
           />
         )}
+
+        {currentPage === 'catalog' && (
+          <Catalog
+            onNavigate={navigate}
+            onBack={handleBack}
+            initialCategory={pageParams.category}
+            initialSubcategory={pageParams.subcategory}
+            initialSearch={pageParams.search !== undefined ? pageParams.search : searchKeyword}
+            searchQuery={pageParams.search !== undefined ? pageParams.search : searchKeyword}
+            freeDeliveryOnly={pageParams.freeDelivery}
+          />
+        )}
+
         {currentPage === 'product-details' && (
           <ProductDetails
             productId={pageParams.productId}
             onNavigate={navigate}
+            onBack={handleBack}
           />
         )}
+
         {currentPage === 'checkout' && (
           <Checkout
             onNavigate={navigate}
+            onBack={handleBack}
             onOrderSuccess={(order) => navigate('order-confirmation', { order })}
           />
         )}
+
         {currentPage === 'order-confirmation' && (
           <OrderConfirmation
             order={pageParams.order}
             onNavigate={navigate}
+            onBack={handleBack}
             onOpenInvoice={handleOpenInvoice}
           />
         )}
+
         {currentPage === 'track-order' && (
           <OrderTrack
-            initialCode={pageParams.code}
             onNavigate={navigate}
+            onBack={handleBack}
+            initialOrderNumber={pageParams.orderNumber}
             onOpenInvoice={handleOpenInvoice}
           />
         )}
+
         {currentPage === 'dashboard' && (
           <UserDashboard
-            initialTab={pageParams.tab || 'overview'}
             onNavigate={navigate}
+            onBack={handleBack}
+            initialTab={pageParams.tab}
             onOpenInvoice={handleOpenInvoice}
           />
         )}
-        {currentPage === 'qard-hasana' && <QardHasana onNavigate={navigate} />}
-        {currentPage === 'terms' && <TermsAndConditions onNavigate={navigate} />}
-        {currentPage === 'contact' && <ContactUs onNavigate={navigate} />}
-        {currentPage === 'login' && <Login onNavigate={navigate} />}
-        {currentPage === 'register' && <Register onNavigate={navigate} />}
-        {currentPage === 'forgot-password' && <ForgotPassword onNavigate={navigate} />}
+
+        {currentPage === 'contact' && (
+          <ContactUs onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'qard-hasana' && (
+          <QardHasana onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'terms' && (
+          <TermsAndConditions onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'reviews' && (
+          <Reviews onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'login' && (
+          <Login onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'register' && (
+          <Register onNavigate={navigate} onBack={handleBack} />
+        )}
+
+        {currentPage === 'forgot-password' && (
+          <ForgotPassword onNavigate={navigate} onBack={handleBack} />
+        )}
       </main>
+
+      {/* Global In-App Live Chat Widget */}
+      <LiveChatWidget onNavigate={navigate} />
+
+      {/* Global Slide-Over Cart Drawer */}
+      <CartDrawer onNavigate={navigate} />
+
+      {/* Global Invoice Modal */}
+      {invoiceOrder && (
+        <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />
+      )}
+
+      {/* Global Toast Notifications */}
+      <NotificationToasts />
 
       {/* Footer */}
       <Footer onNavigate={navigate} />
-
-      {/* Global Interactive Overlays */}
-      <CartDrawer onNavigate={navigate} />
-      <LiveChatWidget />
-      <NotificationToasts />
-      {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />}
     </div>
   );
 }

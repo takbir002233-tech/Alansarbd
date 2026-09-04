@@ -21,8 +21,12 @@ import {
   HandHeart,
   CreditCard,
   FileText,
-  ShieldCheck,
-  Calendar
+  Calendar,
+  Star,
+  ShoppingBasket,
+  UtensilsCrossed,
+  Baby,
+  Layers
 } from 'lucide-react';
 
 export default function Navbar({ onNavigate, currentPage, searchKeyword, setSearchKeyword }) {
@@ -41,7 +45,7 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
   // Bengali digits converter helper
   const toBengaliDigits = (str) => {
     const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return str.toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
+    return (str || '').toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
   };
 
   // Live real-time clock in Bengali
@@ -125,31 +129,45 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
   }, []);
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setShowSearchDropdown(false);
-    onNavigate('catalog', { search: searchKeyword });
+    const q = (searchKeyword || '').trim();
+    if (q) {
+      onNavigate('catalog', { search: q });
+    } else {
+      onNavigate('catalog');
+    }
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-200/80 shadow-xs font-sans">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-200/80 shadow-sm font-sans">
       
-      {/* Top Header: Islamic Greeting & Real-time Live Bengali Date & Time */}
-      <div className="bg-slate-950 text-slate-200 text-xs py-1.5 px-4 sm:px-8 border-b border-amber-900/40 flex flex-col sm:flex-row items-center justify-between gap-1">
+      {/* 1. TOP HEADER BAR: Assalamualaikum (Left) | Bismillah (Center) | Real-time Date/Time (Right) */}
+      <div className="bg-slate-950 text-slate-200 text-xs py-2 px-4 sm:px-8 border-b border-amber-900/40 flex flex-col md:flex-row items-center justify-between gap-1.5">
         
-        {/* Islamic Greeting & Welcome */}
-        <div className="flex items-center space-x-2 text-amber-300 font-bold text-[11px] sm:text-xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span>✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম</span>
+        {/* Left: Islamic Greeting */}
+        <div className="flex items-center space-x-2 text-[11px] sm:text-xs font-bold text-emerald-400">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse flex-shrink-0" />
+          <span>✨ আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম</span>
         </div>
 
-        {/* Live Real-time Clock in Bengali */}
-        <div className="flex items-center space-x-2 text-[11px] sm:text-xs font-medium text-slate-300">
-          <Calendar className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-mono text-amber-200/90">{currentDateTimeStr || 'লোড হচ্ছে...'}</span>
-          <span className="text-slate-600 hidden md:inline">|</span>
+        {/* Center: Bismillahir Rahmanir Rahim */}
+        <div className="flex items-center space-x-2 text-amber-300 font-bold text-xs sm:text-sm tracking-wide text-center">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse hidden sm:inline" />
+          <span className="font-serif">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse hidden sm:inline" />
+        </div>
+
+        {/* Right: Real-time Bengali Clock & Order Tracking */}
+        <div className="flex items-center space-x-3 text-[11px] sm:text-xs font-semibold text-amber-200">
+          <div className="flex items-center space-x-1.5 font-mono">
+            <Calendar className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <span>{currentDateTimeStr || 'লোড হচ্ছে...'}</span>
+          </div>
+          <span className="text-slate-600 hidden lg:inline">|</span>
           <button 
             onClick={() => onNavigate('track-order')} 
-            className="hover:text-amber-300 transition-colors hidden md:flex items-center text-slate-300"
+            className="hover:text-amber-300 transition-colors hidden lg:flex items-center text-slate-300 cursor-pointer font-bold"
           >
             <Clock className="w-3 h-3 mr-1 text-amber-400" />
             <span>অর্ডার ট্র্যাক</span>
@@ -157,67 +175,59 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
         </div>
       </div>
 
-      {/* Animated Marquee News Ticker (চলন্ত শিরোনাম) */}
-      {siteSettings?.marquee_enabled !== false && (
-        <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-slate-950 py-1 overflow-hidden shadow-inner flex items-center border-b border-amber-500/40">
-          <div className="animate-marquee whitespace-nowrap text-xs font-black tracking-wide flex items-center space-x-8">
-            <span>{siteSettings?.marquee_text || '✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨'}</span>
-            <span>{siteSettings?.marquee_text || '✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨'}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Main Brand & Search Bar */}
+      {/* 2. MAIN BRAND & SEARCH BAR */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-22 gap-4">
+        <div className="flex items-center justify-between h-18 sm:h-20 gap-2 lg:gap-4">
           
-          {/* Brand Logo (AL ANSAR - Larger & Clear, No extra fragrance subtext) */}
+          {/* Brand Logo & Name: AL ANSAR SUPER SHOP */}
           <div 
-            className="flex items-center space-x-3.5 cursor-pointer select-none group" 
+            className="flex items-center space-x-2.5 cursor-pointer select-none group flex-shrink-0" 
             onClick={() => onNavigate('home')}
           >
             <img 
               src={siteSettings?.logo_url || '/logo.jpg'} 
-              alt="AL ANSAR" 
-              className="h-14 sm:h-16 w-14 sm:w-16 object-contain rounded-2xl shadow-md border-2 border-amber-300 group-hover:scale-105 transition-transform duration-200 bg-white" 
+              alt="AL ANSAR SUPER SHOP" 
+              className="h-10 sm:h-12 w-10 sm:w-12 object-contain rounded-2xl shadow-md border-2 border-amber-400 group-hover:scale-105 transition-transform duration-200 bg-white" 
             />
             <div>
-              <div className="flex items-baseline space-x-1.5">
-                <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 leading-none">
-                  AL ANSAR
+              <div className="flex items-baseline space-x-1">
+                <span className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-slate-900 leading-none">
+                  {siteSettings?.store_name || 'AL ANSAR SUPER SHOP'}
                 </span>
               </div>
-              <span className="text-xs font-bold text-amber-700 tracking-wider block mt-1">
-                আল আনসার
+              <span className="text-[11px] sm:text-xs font-bold text-amber-700 tracking-wider block mt-0.5 font-sans">
+                {siteSettings?.store_name_bn || 'আল আনসার সুপার শপ'}
               </span>
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg relative" ref={searchRef}>
-            <form onSubmit={handleSearchSubmit} className="w-full relative">
+          {/* Universal Compact Desktop Search Bar (Fits without pushing login/register out) */}
+          <div className="hidden md:flex flex-1 min-w-[170px] max-w-sm lg:max-w-md mx-2 relative" ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className="w-full relative flex items-center">
               <input
                 type="text"
-                placeholder="পারফিউম, খাঁটি আতর, উদ, গিফট বক্স খুঁজুন..."
+                placeholder="পণ্য খুঁজুন (ঘি, মধু, তেল, আতর)..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
-                className="w-full pl-11 pr-24 py-2.5 bg-amber-50/40 hover:bg-amber-50/70 focus:bg-white text-slate-900 placeholder-slate-400 text-xs rounded-full border border-amber-200/80 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all outline-none"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchSubmit(e); } }}
+                className="w-full pl-8 pr-18 py-2 bg-amber-50/60 hover:bg-amber-50/90 focus:bg-white text-slate-900 placeholder-slate-400 text-xs rounded-full border border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all outline-none font-semibold shadow-xs"
               />
-              <Search className="w-4 h-4 text-amber-600 absolute left-4 top-3.5" />
+              <Search className="w-3.5 h-3.5 text-amber-600 absolute left-2.5 top-2.5" />
               <button
-                type="submit"
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold rounded-full transition-colors flex items-center shadow-xs cursor-pointer"
+                type="button"
+                onClick={handleSearchSubmit}
+                className="absolute right-1 top-1 bottom-1 px-3 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 text-xs font-black rounded-full transition-all flex items-center shadow-xs cursor-pointer select-none active:scale-95"
               >
-                খুঁজুন
+                🔍 খুঁজুন
               </button>
             </form>
 
             {/* Live Search Autocomplete Popup */}
             {showSearchDropdown && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-amber-100 py-3 z-50 overflow-hidden animate-in fade-in">
-                <div className="px-4 pb-2 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  পাওয়া গেছে
+                <div className="px-4 pb-2 border-b border-slate-100 text-xs font-black text-slate-400 uppercase tracking-wider">
+                  পাওয়া গেছে ({searchResults.length} টি)
                 </div>
                 {searchResults.map(item => (
                   <div
@@ -226,18 +236,18 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
                       setShowSearchDropdown(false);
                       onNavigate('product-details', { productId: item.id });
                     }}
-                    className="px-4 py-2.5 hover:bg-amber-50/50 flex items-center space-x-3 cursor-pointer transition-colors"
+                    className="px-4 py-2.5 hover:bg-amber-50/60 flex items-center space-x-3 cursor-pointer transition-colors"
                   >
-                    <img src={item.thumbnail} alt={item.title} className="w-10 h-10 object-cover rounded-lg bg-slate-100" />
+                    <img src={item.thumbnail} alt={item.title} className="w-10 h-10 object-cover rounded-lg bg-slate-100 border border-amber-100" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate">{item.title}</p>
-                      <p className="text-xs font-black text-amber-600">৳{(item.discount_price || item.price).toLocaleString()}</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">${item.title}</p>
+                      <p className="text-xs font-black text-amber-700">৳{(item.discount_price || item.price).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
                 <div
                   onClick={handleSearchSubmit}
-                  className="px-4 pt-2 border-t border-slate-100 text-xs font-bold text-amber-700 text-center cursor-pointer hover:underline"
+                  className="px-4 pt-2 border-t border-slate-100 text-xs font-bold text-amber-800 text-center cursor-pointer hover:underline"
                 >
                   "{searchKeyword}" এর সব ফলাফল দেখুন →
                 </div>
@@ -245,79 +255,64 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
             )}
           </div>
 
-          {/* Right Action Icons & Qard-e-Hasana Button */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Right Action Buttons */}
+          <div className="flex items-center space-x-1 sm:space-x-1.5 flex-shrink-0">
             
             {/* Dedicated Qard-e-Hasana (করযে হাসানা) Button */}
             <button
               onClick={() => onNavigate('qard-hasana')}
-              className={`flex items-center px-3.5 py-2 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer ${
+              className={`flex items-center px-2 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer whitespace-nowrap ${
                 currentPage === 'qard-hasana'
                   ? 'bg-emerald-800 text-white border-emerald-900 shadow-md ring-2 ring-emerald-500/30'
-                  : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border-emerald-300'
+                  : 'bg-emerald-50 text-emerald-950 hover:bg-emerald-100 border-emerald-300'
               }`}
               title="বিনা সুদে ঋণ সুবিধা (করযে হাসানা)"
             >
-              <HandHeart className="w-4 h-4 mr-1.5 text-emerald-600 flex-shrink-0" />
+              <HandHeart className="w-3.5 h-3.5 mr-1 text-emerald-700 flex-shrink-0" />
               <span>করযে হাসানা</span>
-              <span className="ml-1 px-1.5 py-0.2 bg-emerald-700 text-white text-[9px] font-black rounded-md hidden lg:inline">
-                ০% সুদ
+              <span className="ml-1 px-1 py-0.2 bg-emerald-700 text-white text-[8px] font-black rounded hidden 2xl:inline">
+                ১০% ধার
               </span>
             </button>
 
             {/* Dedicated VIP Loyalty Credit Card Button */}
             <button
               onClick={() => user ? onNavigate('dashboard', { tab: 'overview' }) : onNavigate('login')}
-              className="flex items-center px-3.5 py-2 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer bg-gradient-to-r from-amber-500/15 via-amber-500/25 to-amber-600/15 text-amber-900 hover:bg-amber-100/90 border-amber-300"
+              className="flex items-center px-2 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer bg-gradient-to-r from-amber-500/15 via-amber-500/25 to-amber-600/15 text-amber-950 hover:bg-amber-100/90 border-amber-300 whitespace-nowrap"
               title="আল আনসার ভিআইপি লয়ালটি ক্রেডিট কার্ড"
             >
-              <CreditCard className="w-4 h-4 mr-1.5 text-amber-700 flex-shrink-0" />
+              <CreditCard className="w-3.5 h-3.5 mr-1 text-amber-700 flex-shrink-0" />
               <span>ভিআইপি কার্ড</span>
-              <span className="ml-1 px-1.5 py-0.2 bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[9px] font-black rounded-md hidden lg:inline shadow-2xs">
-                VIP
-              </span>
-            </button>
-
-            {/* Free Delivery Quick Link */}
-            <button
-              onClick={() => onNavigate('catalog', { freeDelivery: true })}
-              className="hidden xl:flex items-center px-3 py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors border border-amber-200 cursor-pointer"
-            >
-              <Truck className="w-3.5 h-3.5 mr-1 text-amber-700" />
-              <span>ফ্রি ডেলিভারি</span>
             </button>
 
             {/* Cart Button */}
             <button
               onClick={openCart}
-              className="relative p-2.5 text-slate-800 hover:text-amber-700 hover:bg-amber-50 rounded-2xl transition-all flex items-center group border border-amber-200 hover:border-amber-300 cursor-pointer"
+              className="relative p-2 text-slate-900 hover:text-amber-800 hover:bg-amber-50 rounded-xl transition-all flex items-center group border border-amber-300 hover:border-amber-400 cursor-pointer shadow-xs whitespace-nowrap"
               title="শপিং ব্যাগ"
             >
-              <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110 text-amber-700" />
+              <ShoppingBag className="w-4 h-4 transition-transform group-hover:scale-110 text-amber-700" />
               {totalItemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[11px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-md animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[10px] font-black rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-md animate-pulse">
                   {toBengaliDigits(totalItemCount)}
                 </span>
               )}
-              <span className="hidden xl:inline-block ml-2 text-xs font-black text-slate-900">
-                ৳{toBengaliDigits(subtotal.toLocaleString())}
-              </span>
             </button>
 
-            {/* User Account Dropdown */}
+            {/* User Account / Login */}
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center space-x-2 p-1.5 pl-2 pr-3 bg-amber-50/80 hover:bg-amber-100/70 rounded-full border border-amber-200 transition-colors cursor-pointer"
+                  className="flex items-center space-x-1.5 p-1 pl-1.5 pr-2.5 bg-amber-50/80 hover:bg-amber-100/70 rounded-full border border-amber-300 transition-colors cursor-pointer"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-600 to-emerald-800 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-emerald-800 text-white flex items-center justify-center text-xs font-black shadow-xs">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-xs font-bold text-slate-800 max-w-[100px] truncate hidden md:inline-block">
+                  <span className="text-xs font-bold text-slate-900 max-w-[80px] truncate hidden md:inline-block">
                     {user.name.split(' ')[0]}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  <ChevronDown className="w-3 h-3 text-slate-500" />
                 </button>
 
                 {userDropdownOpen && (
@@ -325,7 +320,7 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
                     <div className="px-4 py-2.5 border-b border-slate-100">
                       <p className="text-[11px] font-semibold text-slate-400">লগইন একাউন্ট</p>
                       <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
-                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      <p className="text-xs text-slate-500 truncate font-mono">{user.email}</p>
                     </div>
 
                     <button
@@ -366,7 +361,7 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
                         logout();
                         onNavigate('home');
                       }}
-                      className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center transition-colors font-bold cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center transition-colors font-bold cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 mr-2" /> লগআউট করুন
                     </button>
@@ -374,16 +369,16 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
                 )}
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <button
                   onClick={() => onNavigate('login')}
-                  className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                 >
                   লগইন
                 </button>
                 <button
                   onClick={() => onNavigate('register')}
-                  className="px-4 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-xl shadow-md transition-all cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
                 >
                   রেজিস্টার
                 </button>
@@ -393,179 +388,315 @@ export default function Navbar({ onNavigate, currentPage, searchKeyword, setSear
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 md:hidden text-slate-700 hover:text-amber-700 rounded-lg cursor-pointer"
+              className="md:hidden flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-xs border border-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 transition-all cursor-pointer flex-shrink-0"
+              aria-label="মেনু বাটন"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-4 h-4 text-slate-950" /> : <Menu className="w-4 h-4 text-slate-950" />}
+              <span>মেনু</span>
             </button>
           </div>
         </div>
 
-        {/* Category & Subcategory Navigation Bar (Pure Bengali) */}
-        <div className="hidden md:flex items-center justify-between py-2.5 border-t border-amber-100/70 text-xs font-bold text-slate-700">
-          <div className="flex items-center space-x-6">
+        {/* Mobile Search Bar (Always visible below brand row on mobile screens) */}
+        <div className="md:hidden pb-3 pt-1">
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+            <input
+              type="text"
+              placeholder="পণ্য খুঁজুন (যেমন: ঘি, তেল, মধু, কুকিজ, আতর)..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchSubmit(e); } }}
+              className="w-full pl-9 pr-22 py-2.5 bg-amber-50/70 hover:bg-amber-50 border border-amber-300 focus:border-amber-600 focus:bg-white rounded-full text-xs font-semibold placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/20 shadow-xs transition-all"
+            />
+            <Search className="w-4 h-4 text-amber-700 absolute left-3 top-3" />
+            <button
+              type="button"
+              onClick={handleSearchSubmit}
+              className="absolute right-1 top-1 bottom-1 px-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 text-xs font-black rounded-full shadow-xs cursor-pointer flex items-center transition-all select-none active:scale-95"
+            >
+              🔍 খুঁজুন
+            </button>
+          </form>
+        </div>
+
+        {/* 3. SUB-MENU CATEGORY LINE (Bolder Home, Ghorer Bajar, Bakery, Attar, Gifts, Reviews, Contact) */}
+        <div className="hidden md:flex items-center justify-between py-2.5 border-t border-amber-200/80 text-xs font-bold text-slate-800">
+          <div className="flex items-center space-x-5 lg:space-x-7">
+            
+            {/* 🌟 UNIQUE BLACK HOME BUTTON ("oi ektai just") */}
             <button
               onClick={() => onNavigate('home')}
-              className={`hover:text-amber-700 transition-colors cursor-pointer ${currentPage === 'home' ? 'text-amber-700 font-black' : ''}`}
+              className={`relative px-4 py-1.5 rounded-xl font-black text-xs sm:text-sm flex items-center space-x-1.5 transition-all duration-300 cursor-pointer shadow-md transform hover:scale-105 active:scale-95 border ${
+                currentPage === 'home'
+                  ? 'bg-slate-950 text-amber-400 border-amber-400 shadow-amber-950/20 ring-2 ring-amber-400/30'
+                  : 'bg-black text-amber-300 hover:text-amber-200 border-amber-500/50 hover:border-amber-400'
+              }`}
+              title="হোম পেজে যান"
             >
-              হোম
+              <span className="text-amber-400 text-sm">🏠</span>
+              <span className="tracking-wide">হোম</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-0.5 shadow-sm"></span>
             </button>
             
-            {/* Categories in Priority Order with Hover Subcategory Dropdowns */}
-            {categories.map((cat) => {
-              const hasSub = cat.subcategories && cat.subcategories.length > 0;
-              return (
-                <div
-                  key={cat.id}
-                  className="relative group"
-                  onMouseEnter={() => setActiveCategoryDropdown(cat.id)}
-                  onMouseLeave={() => setActiveCategoryDropdown(null)}
-                >
-                  <button
-                    onClick={() => onNavigate('catalog', { category: cat.id })}
-                    className="hover:text-amber-700 transition-colors flex items-center space-x-1 py-1 cursor-pointer"
-                  >
-                    <span>{cat.name}</span>
-                    {hasSub && <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-amber-600" />}
-                  </button>
+            {/* ঘরের বাজার (Household & Daily Grocery) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_grocery' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <ShoppingBasket className="w-4 h-4 text-amber-600" />
+              <span>ঘরের বাজার</span>
+            </button>
 
-                  {/* Subcategories Dropdown */}
-                  {hasSub && activeCategoryDropdown === cat.id && (
-                    <div className="absolute top-full left-0 mt-1 w-60 bg-white rounded-2xl shadow-xl border border-amber-100 py-2 z-50 animate-in fade-in zoom-in-95">
-                      <div
-                        onClick={() => onNavigate('catalog', { category: cat.id })}
-                        className="px-4 py-2 text-[11px] font-black text-amber-700 uppercase tracking-wider hover:bg-amber-50 cursor-pointer border-b border-slate-100"
-                      >
-                        {cat.name} (সবগুলো)
-                      </div>
-                      {cat.subcategories.map(sub => (
-                        <div
-                          key={sub.id}
-                          onClick={() => onNavigate('catalog', { category: cat.id, subcategory: sub.id })}
-                          className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-800 cursor-pointer transition-colors flex items-center"
-                        >
-                          <Tag className="w-3 h-3 mr-2 text-amber-600 flex-shrink-0" />
-                          <span>{sub.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {/* বেকারি আইটেম (Fresh Bakery & Sweets) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_bakery' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <UtensilsCrossed className="w-4 h-4 text-amber-600" />
+              <span>বেকারি আইটেম</span>
+            </button>
+
+            {/* শিশু খাদ্য (Baby & Infant Food) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_baby_food' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <Baby className="w-4 h-4 text-sky-600" />
+              <span>শিশু খাদ্য</span>
+            </button>
+
+            {/* আতর ও সুগন্ধি (Attar & Pure Oud) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_attar' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <Flame className="w-4 h-4 text-amber-600" />
+              <span>আতর ও সুগন্ধি</span>
+            </button>
+
+            {/* লাক্সারি পারফিউম (Luxury Perfumes) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_perfumes' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>পারফিউম</span>
+            </button>
+
+            {/* গিফট ও স্পেশাল সামগ্রী (Gifts & Lifestyle) */}
+            <button
+              onClick={() => onNavigate('catalog', { category: 'cat_gifts' })}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-slate-800 font-bold cursor-pointer"
+            >
+              <Gift className="w-4 h-4 text-amber-600" />
+              <span>গিফট সামগ্রী</span>
+            </button>
+
+            {/* সব পণ্য / ক্যাটালগ */}
+            <button
+              onClick={() => onNavigate('catalog')}
+              className="hover:text-amber-700 transition-colors flex items-center space-x-1.5 py-1 text-amber-800 font-black cursor-pointer"
+            >
+              <Layers className="w-4 h-4 text-amber-600" />
+              <span>সব কালেকশন</span>
+            </button>
           </div>
 
+          {/* Right Sub-Bar Buttons: Reviews & Contact */}
           <div className="flex items-center space-x-4">
+            
+            {/* ⭐ কাস্টমার রিভিউ বাটন (Replaces terms in top bar) */}
             <button
-              onClick={() => user ? onNavigate('dashboard', { tab: 'overview' }) : onNavigate('login')}
-              className="text-amber-900 hover:text-amber-700 font-bold flex items-center space-x-1 cursor-pointer bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs"
+              onClick={() => onNavigate('reviews')}
+              className={`flex items-center space-x-1.5 font-bold px-3 py-1 rounded-xl transition-all cursor-pointer ${
+                currentPage === 'reviews'
+                  ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                  : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+              }`}
             >
-              <CreditCard className="w-3.5 h-3.5 text-amber-700" />
-              <span>ভিআইপি লয়ালটি কার্ড</span>
+              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span>কাস্টমার রিভিউ</span>
             </button>
-            <button
-              onClick={() => onNavigate('qard-hasana')}
-              className="text-emerald-700 hover:text-emerald-800 font-black flex items-center space-x-1 cursor-pointer"
-            >
-              <HandHeart className="w-3.5 h-3.5 text-emerald-600" />
-              <span>করযে হাসানা আবেদন</span>
-            </button>
-            <button
-              onClick={() => onNavigate('terms')}
-              className="text-slate-600 hover:text-amber-700 font-bold flex items-center space-x-1 cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>শর্তাবলী ও নীতিমালা</span>
-            </button>
+
+            {/* 📞 যোগাযোগ (যোগাযোগ এর নিচে ইংরেজি Contact Us) */}
             <button
               onClick={() => onNavigate('contact')}
-              className="text-amber-700 hover:text-amber-800 font-bold flex items-center space-x-1 cursor-pointer"
+              className="flex items-center space-x-2 text-slate-800 hover:text-amber-700 transition-colors cursor-pointer bg-slate-100 hover:bg-amber-50 px-3 py-1 rounded-xl border border-slate-200"
             >
-              <Phone className="w-3.5 h-3.5" />
-              <span>যোগাযোগ</span>
+              <Phone className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <div className="text-left leading-tight">
+                <span className="font-bold text-xs block text-slate-900">যোগাযোগ</span>
+                <span className="text-[10px] text-slate-500 font-mono block">Contact Us</span>
+              </div>
             </button>
           </div>
         </div>
 
-        {/* Mobile Search & Menu */}
+        {/* Mobile Search & Complete Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-amber-100 space-y-4">
-            <form onSubmit={handleSearchSubmit} className="relative">
+          <div className="md:hidden py-4 border-t border-amber-200 space-y-4 animate-in slide-in-from-top-3">
+            
+            {/* Search inside menu */}
+            <form onSubmit={(e) => { setMobileMenuOpen(false); handleSearchSubmit(e); }} className="relative flex items-center">
               <input
                 type="text"
-                placeholder="পারফিউম, আতর, গিফট খুঁজুন..."
+                placeholder="পণ্য খুঁজুন (ঘরের বাজার, বেকারি, আতর, গিফট)..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-100 text-xs rounded-xl border border-slate-200"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setMobileMenuOpen(false); handleSearchSubmit(e); } }}
+                className="w-full pl-9 pr-20 py-2.5 bg-amber-50/70 text-xs rounded-xl border border-amber-300 font-semibold focus:border-amber-600 focus:bg-white outline-none"
               />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-amber-700 absolute left-3 top-3" />
+              <button
+                type="button"
+                onClick={(e) => { setMobileMenuOpen(false); handleSearchSubmit(e); }}
+                className="absolute right-1 top-1 bottom-1 px-3.5 bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 text-xs font-black rounded-lg shadow-xs cursor-pointer flex items-center"
+              >
+                খুঁজুন
+              </button>
             </form>
 
-            <div className="flex flex-col space-y-1 text-xs font-bold text-slate-700">
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              {/* 1. Black Home Button */}
               <button
                 onClick={() => { setMobileMenuOpen(false); onNavigate('home'); }}
-                className="px-3 py-2 text-left hover:bg-amber-50 rounded-lg cursor-pointer"
+                className="p-3 bg-black text-amber-300 rounded-xl font-black text-left flex items-center justify-between border border-amber-500/50 shadow-md active:scale-95 transition-transform cursor-pointer"
               >
-                হোম
+                <div className="flex items-center space-x-2">
+                  <span>🏠</span>
+                  <span>হোম পেজ</span>
+                </div>
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               </button>
+
+              {/* 2. Ghorer Bajar */}
               <button
-                onClick={() => { setMobileMenuOpen(false); user ? onNavigate('dashboard', { tab: 'overview' }) : onNavigate('login'); }}
-                className="px-3 py-2 text-left bg-amber-50 text-amber-900 rounded-lg font-black flex items-center cursor-pointer border border-amber-200"
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_grocery' }); }}
+                className="p-3 bg-amber-50/70 text-slate-900 border border-amber-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
               >
-                <CreditCard className="w-4 h-4 mr-2 text-amber-700" /> ভিআইপি লয়ালটি ক্রেডিট কার্ড
+                <ShoppingBasket className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                <span className="truncate">ঘরের বাজার</span>
               </button>
+
+              {/* 3. Bakery */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_bakery' }); }}
+                className="p-3 bg-orange-50/70 text-slate-900 border border-orange-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <UtensilsCrossed className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                <span className="truncate">বেকারি আইটেম</span>
+              </button>
+
+              {/* 4. Baby Food */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_baby_food' }); }}
+                className="p-3 bg-sky-50 text-sky-950 border border-sky-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <Baby className="w-4 h-4 text-sky-600 flex-shrink-0" />
+                <span className="truncate">শিশু খাদ্য</span>
+              </button>
+
+              {/* 5. Attar */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_attar' }); }}
+                className="p-3 bg-amber-50/70 text-slate-900 border border-amber-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <Flame className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span className="truncate">আতর ও সুগন্ধি</span>
+              </button>
+
+              {/* 6. Perfumes */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_perfumes' }); }}
+                className="p-3 bg-amber-50/70 text-slate-900 border border-amber-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span className="truncate">লাক্সারি পারফিউম</span>
+              </button>
+
+              {/* 7. Gifts */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: 'cat_gifts' }); }}
+                className="p-3 bg-purple-50/70 text-purple-950 border border-purple-200/80 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <Gift className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                <span className="truncate">গিফট সামগ্রী</span>
+              </button>
+
+              {/* 8. All Collection */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog'); }}
+                className="p-3 bg-amber-100 text-amber-950 border border-amber-300 rounded-xl font-black text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer"
+              >
+                <Layers className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                <span className="truncate">সব কালেকশন</span>
+              </button>
+
+              {/* 9. Qard-e-Hasana */}
               <button
                 onClick={() => { setMobileMenuOpen(false); onNavigate('qard-hasana'); }}
-                className="px-3 py-2 text-left bg-emerald-50 text-emerald-900 rounded-lg font-black flex items-center cursor-pointer"
+                className="p-3 bg-emerald-50 text-emerald-950 border border-emerald-300 rounded-xl font-black text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer"
               >
-                <HandHeart className="w-4 h-4 mr-2 text-emerald-600" /> করযে হাসানা (বিনা সুদে ঋণ)
+                <HandHeart className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span className="truncate">করযে হাসানা (১০%)</span>
               </button>
+
+              {/* 10. VIP Card */}
               <button
-                onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { freeDelivery: true }); }}
-                className="px-3 py-2 text-left hover:bg-emerald-50 rounded-lg text-emerald-800 flex items-center cursor-pointer"
+                onClick={() => { setMobileMenuOpen(false); user ? onNavigate('dashboard', { tab: 'overview' }) : onNavigate('login'); }}
+                className="p-3 bg-gradient-to-r from-amber-50 to-amber-100 text-amber-950 border border-amber-300 rounded-xl font-black text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer"
               >
-                <Truck className="w-4 h-4 mr-2 text-emerald-600" /> ফ্রি ডেলিভারি আইটেম
+                <CreditCard className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                <span className="truncate">ভিআইপি কার্ড</span>
               </button>
-              {categories.map((cat) => (
-                <div key={cat.id} className="space-y-1">
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: cat.id }); }}
-                    className="w-full px-3 py-2 text-left hover:bg-amber-50 rounded-lg text-amber-900 font-bold cursor-pointer"
-                  >
-                    {cat.name}
-                  </button>
-                  {cat.subcategories && cat.subcategories.map(sub => (
-                    <button
-                      key={sub.id}
-                      onClick={() => { setMobileMenuOpen(false); onNavigate('catalog', { category: cat.id, subcategory: sub.id }); }}
-                      className="w-full pl-6 pr-3 py-1.5 text-left hover:bg-amber-50 rounded-lg text-slate-600 text-[11px] cursor-pointer"
-                    >
-                      ↳ {sub.name}
-                    </button>
-                  ))}
-                </div>
-              ))}
+
+              {/* 11. Customer Reviews */}
               <button
-                onClick={() => { setMobileMenuOpen(false); onNavigate('terms'); }}
-                className="px-3 py-2 text-left hover:bg-amber-50 rounded-lg cursor-pointer"
+                onClick={() => { setMobileMenuOpen(false); onNavigate('reviews'); }}
+                className="p-3 bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
               >
-                শর্তাবলী ও নীতিমালা
+                <Star className="w-4 h-4 fill-amber-500 text-amber-500 flex-shrink-0" />
+                <span className="truncate">কাস্টমার রিভিউ</span>
               </button>
-              <button
-                onClick={() => { setMobileMenuOpen(false); onNavigate('contact'); }}
-                className="px-3 py-2 text-left hover:bg-amber-50 rounded-lg cursor-pointer"
-              >
-                যোগাযোগ ও সাপোর্ট
-              </button>
+
+              {/* 12. Track Order */}
               <button
                 onClick={() => { setMobileMenuOpen(false); onNavigate('track-order'); }}
-                className="px-3 py-2 text-left hover:bg-amber-50 rounded-lg cursor-pointer"
+                className="p-3 bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-left flex items-center space-x-2 active:scale-95 transition-transform cursor-pointer font-bold"
               >
-                লাইভ অর্ডার ট্র্যাক
+                <Truck className="w-4 h-4 text-slate-600 flex-shrink-0" />
+                <span className="truncate">অর্ডার ট্র্যাক</span>
+              </button>
+
+              {/* 13. Contact Us */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigate('contact'); }}
+                className="col-span-2 p-3 bg-slate-100 text-slate-900 border border-slate-200 rounded-xl text-left flex items-center justify-between active:scale-95 transition-transform cursor-pointer font-bold"
+              >
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-amber-600" />
+                  <span>যোগাযোগ</span>
+                  <span className="text-[10px] text-slate-500 font-mono">(Contact Us)</span>
+                </div>
+                <ChevronDown className="w-4 h-4 -rotate-90 text-slate-400" />
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* 4. ANIMATED MARQUEE NEWS TICKER (চলন্ত শিরোনাম - Contained with left & right white margins) */}
+      {siteSettings?.marquee_enabled !== false && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+          <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-slate-950 py-1.5 px-4 rounded-2xl overflow-hidden shadow-xs flex items-center border border-amber-400">
+            <div className="animate-marquee whitespace-nowrap text-xs font-black tracking-wide flex items-center space-x-12">
+              <span>{siteSettings?.marquee_text || '✨ আসসালামু আলাইকুম! আল আনসার সুপার শপে আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ঘরের নিত্যপ্রয়োজনীয় বাজার, তাজা বেকারি, খাঁটি আতর ও গিফট আইটেম • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨'}</span>
+              <span>{siteSettings?.marquee_text || '✨ আসসালামু আলাইকুম! আল আনসার সুপার শপে আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ঘরের নিত্যপ্রয়োজনীয় বাজার, তাজা বেকারি, খাঁটি আতর ও গিফট আইটেম • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </header>
   );
 }

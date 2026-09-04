@@ -14,17 +14,21 @@ export default function SecretAdminLogin({ onLoginSuccess, onNavigate }) {
     setError(null);
     setLoading(true);
 
-    const result = await login(identifier, password);
-    setLoading(false);
-
-    if (result.success) {
-      if (result.user.role !== 'admin') {
-        setError('Access denied. This account does not possess Super Administrator privileges.');
-        return;
+    try {
+      const result = await login(identifier, password);
+      if (result && result.success) {
+        if (result.user.role !== 'admin') {
+          setError('Access denied. This account does not possess Super Administrator privileges.');
+          return;
+        }
+        onLoginSuccess();
+      } else {
+        setError(result?.message || 'Invalid administrator credentials.');
       }
-      onLoginSuccess();
-    } else {
-      setError(result.message || 'Invalid administrator credentials.');
+    } catch (err) {
+      setError(err.message || 'Invalid administrator credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 

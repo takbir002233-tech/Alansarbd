@@ -20,7 +20,7 @@ import {
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 
-export default function ProductDetails({ productId, onNavigate }) {
+export default function ProductDetails({ productId, onNavigate, onBack }) {
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -76,10 +76,10 @@ export default function ProductDetails({ productId, onNavigate }) {
       <div className="max-w-3xl mx-auto px-4 py-20 text-center space-y-4 font-sans">
         <h2 className="text-2xl font-black text-slate-800">পণ্যটি খুঁজে পাওয়া যায়নি</h2>
         <button
-          onClick={() => onNavigate('catalog')}
+          onClick={onBack || (() => onNavigate('catalog'))}
           className="px-6 py-2.5 bg-amber-600 text-white font-bold rounded-xl cursor-pointer"
         >
-          ক্যাটালগে ফিরে যান
+          ← পিছনে যান (Back)
         </button>
       </div>
     );
@@ -117,11 +117,11 @@ export default function ProductDetails({ productId, onNavigate }) {
       {/* Universal Back Navigation Bar */}
       <div className="flex items-center justify-between pb-2">
         <button
-          onClick={() => onNavigate('catalog')}
-          className="flex items-center space-x-1.5 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          onClick={onBack || (() => onNavigate('catalog'))}
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← সুগন্ধি কালেকশনে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
         <span className="text-xs text-slate-400 font-mono hidden sm:inline">
@@ -136,8 +136,12 @@ export default function ProductDetails({ productId, onNavigate }) {
         <div className="lg:col-span-6 space-y-4">
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 border border-amber-100 shadow-xl">
             <img
-              src={images[activeImage] || product.thumbnail}
+              src={images[activeImage] || product.thumbnail || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80'}
               alt={product.title}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+              }}
               className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale-20' : ''}`}
             />
 

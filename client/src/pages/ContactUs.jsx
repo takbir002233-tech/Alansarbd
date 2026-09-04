@@ -9,13 +9,14 @@ import {
   Check, 
   Sparkles, 
   ArrowLeft,
-  ShieldCheck
+  ShieldCheck,
+  Headphones
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
-export default function ContactUs({ onNavigate }) {
+export default function ContactUs({ onNavigate, onBack }) {
   const { siteSettings } = useCart();
-  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '', subject: 'Fragrance Consultation' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '', subject: 'পণ্য ও অর্ডার পরামর্শ' });
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e) => {
@@ -23,40 +24,45 @@ export default function ContactUs({ onNavigate }) {
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
-      setForm({ name: '', phone: '', email: '', message: '', subject: 'Fragrance Consultation' });
+      setForm({ name: '', phone: '', email: '', message: '', subject: 'পণ্য ও অর্ডার পরামর্শ' });
     }, 4000);
   };
 
   const whatsappClean = (siteSettings?.whatsapp_number || '+8801711223344').replace(/[^0-9]/g, '');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-in fade-in">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-in fade-in font-sans selection:bg-amber-500 selection:text-slate-950">
       
       {/* Universal Back Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-2 border-b border-amber-200">
         <button
-          onClick={() => onNavigate('home')}
-          className="flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-amber-800 transition-colors bg-white px-3 py-1.5 rounded-xl border border-amber-200/80 shadow-2xs"
+          onClick={onBack || (() => onNavigate('home'))}
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← Back to Home</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
-        <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-          AL ANSAR Customer Care & Concierge
+        <span className="text-xs font-black text-amber-900 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-300">
+          আল আনসার কাস্টমার কেয়ার ও হেল্পডেস্ক
         </span>
       </div>
 
       {/* Header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
-          <Sparkles className="w-6 h-6" />
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-700 flex items-center justify-center mx-auto border border-amber-300 shadow-sm">
+          <Headphones className="w-7 h-7" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900">
-          Get in Touch with AL ANSAR
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500">
-          Have queries regarding perfume longevity, custom gift box hampers, or bulk corporate fragrance gifting? We are always here to assist you.
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900">
+            যোগাযোগ করুন (Contact Us)
+          </h1>
+          <span className="text-xs font-bold text-amber-700 font-mono block mt-1">
+            24/7 Dedicated Customer Concierge & Support Desk
+          </span>
+        </div>
+        <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
+          ঘরের বাজার, বেকারি আইটেম, করযে হাসানা সুবিধা, আতর ও কাস্টম গিফট প্যাকেজ সংক্রান্ত যেকোনো জিজ্ঞাসায় আমাদের সাথে সরাসরি যোগাযোগ করুন।
         </p>
       </div>
 
@@ -65,163 +71,133 @@ export default function ContactUs({ onNavigate }) {
         {/* Left Contact Cards (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           
-          {/* Direct WhatsApp Card */}
-          <a
-            href={`https://wa.me/${whatsappClean}?text=Assalamu%20Alaikum%20AL%20ANSAR!%20I%20am%20interested%20in%20your%20fragrance%20collection.`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-5 bg-gradient-to-r from-emerald-800 to-emerald-950 text-white rounded-3xl border border-emerald-500/30 shadow-xl flex items-center justify-between group hover:scale-102 transition-all block"
-          >
-            <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                <MessageCircle className="w-6 h-6 fill-current" />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Instant Chat</span>
-                <h4 className="text-sm font-bold text-white">Direct WhatsApp Support</h4>
-                <p className="text-[11px] text-emerald-200 mt-0.5">{siteSettings?.whatsapp_number || '+880 1711-223344'}</p>
-              </div>
+          {/* Hotline */}
+          <div className="p-6 bg-white rounded-3xl border border-amber-200/90 shadow-xs space-y-2 hover:shadow-md transition-shadow">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <Phone className="w-5 h-5 text-amber-700" />
             </div>
-            <span className="px-3 py-1.5 bg-emerald-500 text-slate-950 text-xs font-black rounded-xl">
-              Chat Now
-            </span>
-          </a>
-
-          {/* Showroom & Hotline Card */}
-          <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-2xs space-y-4 text-xs">
-            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Showroom & Headquarters</h3>
-            
-            <div className="space-y-3 text-slate-600">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 block">Flagship Boutique Address:</strong>
-                  <span>{siteSettings?.showroom_address || siteSettings?.store_address || 'Al Ansar Plaza, Level 4, Sector 3, Uttara, Dhaka-1230'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Phone className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 block">Customer Hotline:</strong>
-                  <span>{siteSettings?.store_phone || '+880 1711-223344'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Mail className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 block">Email Inquiries:</strong>
-                  <span>{siteSettings?.store_email || 'info@alansarfragrance.com'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Clock className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 block">Opening Hours:</strong>
-                  <span>Saturday - Thursday: 10:00 AM - 10:00 PM</span>
-                  <span className="block text-[11px] text-slate-400">Friday: 2:30 PM - 10:30 PM</span>
-                </div>
-              </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">হটলাইন ও কল সাপোর্ট</h3>
+              <p className="text-sm font-black text-slate-900 mt-0.5 font-mono">
+                {siteSettings?.hotline_number || '+880 1711-000000'}
+              </p>
+              <p className="text-[11px] font-semibold text-slate-500 mt-1">সকাল ৯টা থেকে রাত ১১টা পর্যন্ত খোলা</p>
             </div>
           </div>
+
+          {/* WhatsApp */}
+          <a 
+            href={`https://wa.me/${whatsappClean}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="p-6 bg-emerald-50 hover:bg-emerald-100/80 rounded-3xl border border-emerald-200/90 shadow-xs space-y-2 block transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-emerald-800 uppercase tracking-wider">অফিসিয়াল হোয়াটসঅ্যাপ (WhatsApp)</h3>
+              <p className="text-sm font-black text-emerald-950 mt-0.5 font-mono group-hover:underline">
+                {siteSettings?.whatsapp_number || '+880 1711-223344'}
+              </p>
+              <p className="text-[11px] font-semibold text-emerald-700 mt-1">তাৎক্ষণিক চ্যাট ও দ্রুত অর্ডার সমাধান</p>
+            </div>
+          </a>
+
+          {/* Showroom / Address */}
+          <div className="p-6 bg-white rounded-3xl border border-amber-200/90 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">শোরুম ও প্রধান কার্যালয়</h3>
+              <p className="text-xs font-bold text-slate-900 mt-0.5 leading-relaxed">
+                {siteSettings?.showroom_address || 'হাউজ #১৪, রোড #৭, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০'}
+              </p>
+            </div>
+          </div>
+
         </div>
 
         {/* Right Contact Form (7 cols) */}
-        <div className="lg:col-span-7">
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-amber-100 shadow-2xs space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Send a Message to AL ANSAR Concierge</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Fill out the details below and our team will get back to you within 2-4 hours.</p>
+        <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-amber-200/90 shadow-sm space-y-5">
+          <h3 className="text-base font-black text-slate-900 flex items-center">
+            <Send className="w-4 h-4 mr-2 text-amber-600" /> সরাসরি বার্তা পাঠান
+          </h3>
+
+          {submitted && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center space-x-3 text-emerald-800 text-xs font-bold animate-in fade-in">
+              <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <span>আপনার বার্তাটি সফলভাবে পাঠানো হয়েছে! আমাদের টিম দ্রুত আপনার সাথে যোগাযোগ করবে।</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">আপনার নাম *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="যেমন: তানভীর আহমেদ"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-bold rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">মোবাইল নম্বর *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="017XXXXXXXX"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-mono font-bold rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
 
-            {submitted ? (
-              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2 animate-in fade-in">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto">
-                  <Check className="w-5 h-5" />
-                </div>
-                <h4 className="text-sm font-bold text-emerald-900">Message Sent Successfully!</h4>
-                <p className="text-xs text-emerald-700">Thank you for reaching out. We will contact you shortly.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Your Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Tanvir Ahmed"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">বিষয় নির্বাচন করুন</label>
+              <select
+                value={form.subject}
+                onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-bold rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
+              >
+                <option value="পণ্য ও অর্ডার পরামর্শ">পণ্য ও অর্ডার পরামর্শ</option>
+                <option value="ঘরের বাজার ও বেকারি">ঘরের বাজার ও বেকারি আইটেম</option>
+                <option value="করযে হাসানা ঋণ স্কিম">করযে হাসানা ঋণ স্কিম</option>
+                <option value="ভিআইপি কার্ড ও লয়ালটি">ভিআইপি কার্ড ও লয়ালটি পয়েন্ট</option>
+                <option value="অন্যান্য জিজ্ঞাসা">অন্যান্য জিজ্ঞাসা</option>
+              </select>
+            </div>
 
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Phone Number (11 digits) *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="017XXXXXXXX"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono font-bold"
-                    />
-                  </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">আপনার বার্তা *</label>
+              <textarea
+                rows={4}
+                required
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                placeholder="আপনার বিস্তারিত বার্তা বা মতামত লিখুন..."
+                className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-500 leading-relaxed"
+              />
+            </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="font-bold text-slate-700 block mb-1">Email Address (Optional)</label>
-                    <input
-                      type="email"
-                      placeholder="name@example.com"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="font-bold text-slate-700 block mb-1">Inquiry Topic</label>
-                    <select
-                      value={form.subject}
-                      onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
-                    >
-                      <option value="Fragrance Consultation">Fragrance Notes Consultation</option>
-                      <option value="Custom Gift Box Hamper">Custom Gift Box & Hamper Order</option>
-                      <option value="Delivery & Tracking">Delivery & Tracking Status</option>
-                      <option value="Corporate / Bulk Order">Corporate & Bulk Gifting</option>
-                      <option value="Other">Other Query</option>
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="font-bold text-slate-700 block mb-1">Your Message *</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Write your query or special requirements..."
-                      value={form.message}
-                      onChange={(e) => setForm({ ...form, message: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black rounded-xl shadow-md transition-all flex items-center space-x-2"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>Send Message</span>
-                </button>
-              </form>
-            )}
-          </div>
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              <span>বার্তা পাঠান</span>
+            </button>
+          </form>
         </div>
+
       </div>
+
     </div>
   );
 }
