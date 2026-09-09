@@ -12,6 +12,7 @@ import {
   QrCode, 
   AlertCircle
 } from 'lucide-react';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function PaymentGatewayModal({
   isOpen,
@@ -21,6 +22,7 @@ export default function PaymentGatewayModal({
   user,
   onConfirmPayment
 }) {
+  useScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('mfs'); // 'mfs', 'bank', 'cod'
   const [selectedMethod, setSelectedMethod] = useState(null); // null = method selector, 'bkash', 'nagad', 'rocket', etc.
   const [senderNumber, setSenderNumber] = useState(user?.phone || '');
@@ -301,8 +303,14 @@ export default function PaymentGatewayModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 text-slate-800 flex flex-col max-h-[92vh]">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans"
+      onClick={onClose}
+    >
+      <div 
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 text-slate-800 flex flex-col max-h-[92vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Top Header Bar */}
         <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -347,7 +355,7 @@ export default function PaymentGatewayModal({
         </div>
 
         {/* Modal Body */}
-        <div className="overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="overflow-y-auto modal-scrollable overscroll-contain p-4 sm:p-5 space-y-4">
 
           {/* STEP 1: Method Selection (Matching Photo 2 Left Screen) */}
           {!selectedMethod && (

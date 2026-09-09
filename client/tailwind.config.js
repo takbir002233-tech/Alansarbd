@@ -24,6 +24,10 @@ export default {
         bkash: '#e2136e',
         nagad: '#f7941d',
         rocket: '#8c3494',
+      },
+      fontFamily: {
+        sans: ["'Hind Siliguri'", "'Noto Sans Bengali'", "'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
+        serif: ["'Noto Serif Bengali'", "serif"],
       }
     },
   },

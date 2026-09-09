@@ -39,56 +39,136 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminChatDesk from './pages/admin/AdminChatDesk';
 import AdminSettings from './pages/admin/AdminSettings';
 
+// Parse current page and params from window.location.hash or localStorage so refresh never loses state!
+function parseInitialRoute() {
+  try {
+    const raw = (window.location.hash || '').replace(/^#\/?/, '');
+    if (raw) {
+      const [pagePart, queryPart] = raw.split('?');
+      const page = pagePart.toLowerCase();
+      const params = {};
+      if (queryPart) {
+        const sp = new URLSearchParams(queryPart);
+        sp.forEach((v, k) => { params[k] = v; });
+      }
+      
+      const aliasMap = {
+        'admin': 'al-ansar-admin',
+        'vip': 'loyalty-card',
+        'vip-card': 'loyalty-card',
+        'loyalty': 'loyalty-card',
+        'qard': 'qard-hasana'
+      };
+      const resolvedPage = aliasMap[page] || page;
+      if (resolvedPage) {
+        return { page: resolvedPage, params };
+      }
+    }
+
+    const saved = localStorage.getItem('alansar_active_page');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.page) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error parsing route:', e);
+  }
+  return { page: 'home', params: {} };
+}
+
 function MainApp() {
   const { user, isAdmin } = useAuth();
-  const [currentPage, setCurrentPage] = useState('home');
-  const [pageParams, setPageParams] = useState({});
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const initialRoute = parseInitialRoute();
+  const [currentPage, setCurrentPage] = useState(initialRoute.page);
+  const [pageParams, setPageParams] = useState(initialRoute.params || {});
+  const [searchKeyword, setSearchKeyword] = useState(initialRoute.params?.search || '');
   const [invoiceOrder, setInvoiceOrder] = useState(null);
   const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | null
   
   // Navigation History Stack for true "Back to previous page" behavior
-  const [historyStack, setHistoryStack] = useState([{ page: 'home', params: {} }]);
+  const [historyStack, setHistoryStack] = useState([{ page: initialRoute.page, params: initialRoute.params || {} }]);
 
   // Admin Tab Navigation
   const [adminTab, setAdminTab] = useState('dashboard');
 
-  // Check URL hash for direct links and secret admin route on mount or hash change
+  // Handle native browser back and mobile phone hardware/gesture back buttons
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash === '#/al-ansar-admin' || hash === '#admin' || hash === '#/admin') {
-        setCurrentPage('al-ansar-admin');
-      } else if (
-        hash === '#/loyalty-card' || 
-        hash === '#/loyalty' || 
-        hash === '#/vip' || 
-        hash === '#/vip-card' ||
-        hash === '#loyalty-card' ||
-        hash === '#loyalty' ||
-        hash === '#vip'
-      ) {
-        setCurrentPage('loyalty-card');
-      } else if (
-        hash === '#/qard-hasana' || 
-        hash === '#/qard' ||
-        hash === '#qard-hasana' ||
-        hash === '#qard'
-      ) {
-        setCurrentPage('qard-hasana');
+    const route = parseInitialRoute();
+    if (route && route.page) {
+      setCurrentPage(route.page);
+      setPageParams(route.params || {});
+      if (route.params?.search !== undefined) {
+        setSearchKeyword(route.params.search);
+      }
+    }
+
+    const handlePopState = (event) => {
+      // If modal is open, close modal first on back button press
+      if (authModal) {
+        setAuthModal(null);
+        return;
+      }
+      if (invoiceOrder) {
+        setInvoiceOrder(null);
+        return;
+      }
+
+      const state = event.state;
+      if (state && state.page) {
+        setCurrentPage(state.page);
+        setPageParams(state.params || {});
+        if (state.params?.search !== undefined) {
+          setSearchKeyword(state.params.search);
+        }
+        try {
+          localStorage.setItem('alansar_active_page', JSON.stringify(state));
+        } catch (e) {}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const fallbackRoute = parseInitialRoute();
+        setCurrentPage(fallbackRoute.page);
+        setPageParams(fallbackRoute.params || {});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [authModal, invoiceOrder]);
 
-  const navigate = (page, params = {}) => {
+  const navigate = (page, params = {}, options = {}) => {
     // Open Login / Register as sleek popup modal without navigating away from current page
     if (page === 'login' || page === 'register') {
       setAuthModal(page);
       return;
+    }
+
+    // Push into browser HTML5 history for phone/browser back button support
+    const stateObj = { page, params };
+    let hashUrl = page === 'al-ansar-admin' ? '#/al-ansar-admin' : '#' + page;
+    const qParams = new URLSearchParams();
+    if (params) {
+      Object.keys(params).forEach(k => {
+        if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+          qParams.set(k, params[k]);
+        }
+      });
+    }
+    const qStr = qParams.toString();
+    if (qStr) {
+      hashUrl += '?' + qStr;
+    }
+
+    try {
+      localStorage.setItem('alansar_active_page', JSON.stringify(stateObj));
+    } catch (e) {}
+
+    if (options.replace) {
+      window.history.replaceState(stateObj, '', hashUrl);
+    } else {
+      window.history.pushState(stateObj, '', hashUrl);
     }
 
     setHistoryStack(prev => [...prev, { page, params }]);
@@ -100,28 +180,19 @@ function MainApp() {
       setSearchKeyword('');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Update URL hash smoothly
-    if (page === 'al-ansar-admin') {
-      window.location.hash = '/al-ansar-admin';
-    } else if (window.location.hash.includes('admin')) {
-      window.location.hash = '';
-    }
   };
 
   const handleBack = () => {
-    if (historyStack.length > 1) {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else if (historyStack.length > 1) {
       const newStack = [...historyStack];
       newStack.pop(); // Remove current page
       const prev = newStack[newStack.length - 1];
       setHistoryStack(newStack);
-      setCurrentPage(prev.page);
-      setPageParams(prev.params || {});
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      navigate(prev.page, prev.params || {}, { replace: true });
     } else {
-      setCurrentPage('home');
-      setPageParams({});
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      navigate('home', {}, { replace: true });
     }
   };
 

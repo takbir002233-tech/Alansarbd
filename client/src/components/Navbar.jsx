@@ -42,6 +42,23 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
   const [activeNavCat, setActiveNavCat] = useState(currentCategory || null);
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
+  const headerRef = useRef(null);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--navbar-height', `${Math.round(height)}px`);
+      }
+    };
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    const timer = setTimeout(updateHeaderHeight, 250);
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      clearTimeout(timer);
+    };
+  }, [siteSettings, mobileMenuOpen]);
 
   useEffect(() => {
     if (currentPage === 'home') {
@@ -160,47 +177,65 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white font-sans shadow-xs">
+    <header ref={headerRef} className="sticky top-0 z-50 bg-[#062c21] font-sans shadow-md border-b border-amber-600/40 w-full">
       
-      {/* 1. TOP HEADER BAR: Salam (Left) | Bismillah (Center) | Date/Time (Right) - Ultra-Compact & Fixed Single Row */}
-      {/* 1. TOP HEADER BAR: Salam (Left) | Bismillah (Center) | Date/Time (Right) - Ultra-Compact & Fixed Single Row */}
-      <div className="bg-white text-slate-800 text-[11px] sm:text-xs py-0.5 sm:py-1 px-2.5 sm:px-4 border-b border-amber-200/80 overflow-hidden">
-        <div className="w-full flex items-center justify-between">
-          
-          {/* Left: Islamic Greeting - Strictly Fixed Left */}
-          <div className="flex items-center justify-start space-x-1 text-[10px] sm:text-xs font-black text-emerald-800 whitespace-nowrap overflow-hidden">
-            <Sparkles className="w-3 h-3 text-amber-600 animate-pulse flex-shrink-0" />
-            <span className="truncate">✨ আসসালামু আলাইকুম! আল আনসার</span>
+      {/* 1. TOP HEADER BAR: Salam (Left) | Bismillah (Exact Center) | Date/Time (Right) */}
+      <div className="bg-[#042017] text-white text-[11px] sm:text-xs py-0.5 sm:py-1 px-2.5 sm:px-4 border-b border-amber-500/20 overflow-hidden">
+        {/* Desktop & Tablet View (md and up): Exact 50% mathematical center */}
+        <div className="hidden md:flex relative w-full items-center justify-between gap-2">
+          {/* Left: Islamic Greeting - Full Complete Text */}
+          <div className="flex items-center justify-start space-x-1 text-[11px] lg:text-xs font-black text-amber-300 whitespace-nowrap flex-shrink-0 z-10">
+            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse flex-shrink-0" />
+            <span>✨ আসসালামু আলাইকুম! আল আনসার সুপার শপে আপনাকে স্বাগতম</span>
           </div>
 
-          {/* Center: Bismillahir Rahmanir Rahim - Strictly Fixed Exact Center */}
-          <div className="hidden sm:flex items-center justify-center space-x-1 text-amber-900 font-bold text-[10px] sm:text-xs tracking-wide text-center whitespace-nowrap overflow-hidden px-2">
-            <Sparkles className="w-3 h-3 text-amber-600 animate-pulse hidden md:inline flex-shrink-0" />
-            <span className="font-serif truncate">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
-            <Sparkles className="w-3 h-3 text-amber-600 animate-pulse hidden md:inline flex-shrink-0" />
+          {/* Exact Center: Bismillahir Rahmanir Rahim */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center space-x-1.5 text-amber-100/95 font-bold text-[10.5px] lg:text-xs tracking-wide text-center whitespace-nowrap z-0 pointer-events-none px-2">
+            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse flex-shrink-0" />
+            <span className="font-serif">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
+            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse flex-shrink-0" />
           </div>
 
-          {/* Right: Real-time Bengali Clock & Order Tracking - Strictly Fixed Right with Tabular Digits */}
-          <div className="flex items-center justify-end space-x-2 text-[10px] sm:text-xs font-bold text-slate-700 whitespace-nowrap flex-shrink-0">
+          {/* Right: Real-time Bengali Clock & Order Tracking */}
+          <div className="flex items-center justify-end space-x-2 text-[11px] lg:text-xs font-bold text-amber-100 whitespace-nowrap flex-shrink-0 ml-auto z-10">
             <div className="flex items-center space-x-1 font-mono tabular-nums whitespace-nowrap">
-              <Calendar className="w-3 h-3 text-amber-600 flex-shrink-0" />
-              <span className="truncate">{currentDateTimeStr || 'লোড হচ্ছে...'}</span>
+              <Calendar className="w-3 h-3 text-amber-400 flex-shrink-0" />
+              <span>{currentDateTimeStr || 'লোড হচ্ছে...'}</span>
             </div>
-            <span className="text-amber-300 hidden lg:inline">|</span>
+            <span className="text-amber-500/40 hidden lg:inline">|</span>
             <button 
               onClick={() => onNavigate('track-order')} 
-              className="hover:text-amber-700 transition-colors hidden lg:flex items-center text-slate-600 cursor-pointer font-bold"
+              className="hover:text-amber-300 text-amber-200/90 transition-colors hidden lg:flex items-center cursor-pointer font-bold"
             >
-              <Clock className="w-3 h-3 mr-1 text-amber-600" />
+              <Clock className="w-3 h-3 mr-1 text-amber-400" />
               <span>অর্ডার ট্র্যাক</span>
             </button>
           </div>
+        </div>
 
+        {/* Mobile View (< md): Stacked gracefully so all 3 are fully visible and centered */}
+        <div className="md:hidden flex flex-col space-y-0.5">
+          <div className="flex items-center justify-between text-[10px]">
+            <div className="flex items-center space-x-1 text-amber-300 font-black truncate max-w-[62%]">
+              <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-pulse flex-shrink-0" />
+              <span className="truncate">✨ আসসালামু আলাইকুম! আল আনসার সুপার শপ</span>
+            </div>
+            <div className="flex items-center space-x-1 text-amber-100 font-mono font-bold text-[9.5px]">
+              <Clock className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+              <span>{currentDateTimeStr ? (currentDateTimeStr.includes('|') ? currentDateTimeStr.split('|')[1].trim() : currentDateTimeStr) : 'লোড হচ্ছে...'}</span>
+            </div>
+          </div>
+          {/* Mobile Bismillah Center */}
+          <div className="flex items-center justify-center space-x-1 text-amber-100/95 font-bold text-[9.5px] tracking-wide text-center pt-0.5 border-t border-amber-500/15">
+            <Sparkles className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+            <span className="font-serif">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
+            <Sparkles className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+          </div>
         </div>
       </div>
 
       {/* 2. MAIN BRAND & SEARCH BAR */}
-      <div className="w-full px-3 sm:px-4 bg-white">
+      <div className="w-full px-3 sm:px-4 bg-[#062c21]">
         <div className="flex items-center justify-between h-17 sm:h-18 gap-2 lg:gap-3">
           
           {/* Brand Logo & Name: AL ANSAR SUPER SHOP */}
@@ -247,15 +282,15 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
               </div>
             </div>
 
-            {/* Brand Writing Style Creation (Clean - ZERO dag or streak over writing) */}
+            {/* Brand Name Beside Logo (Constant - Zero animation, perfectly solid and readable) */}
             <div className="relative select-none pr-2">
-              <div className="animate-brand-title">
+              <div>
                 <div className="flex items-baseline space-x-1">
-                  <span className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-slate-900 leading-none drop-shadow-xs">
+                  <span className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-white leading-none drop-shadow-xs">
                     {siteSettings?.store_name || 'AL ANSAR SUPER SHOP'}
                   </span>
                 </div>
-                <span className="text-[11px] sm:text-xs font-black text-amber-700 tracking-wider block mt-0.5 font-sans">
+                <span className="text-[11px] sm:text-xs font-black text-amber-400 tracking-wider block mt-0.5 font-sans">
                   {siteSettings?.store_name_bn || 'আল আনসার সুপার শপ'}
                 </span>
               </div>
@@ -272,13 +307,13 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchSubmit(e); } }}
-                className="w-full pl-8 pr-18 py-2 bg-amber-50/60 hover:bg-amber-50/90 focus:bg-white text-slate-900 placeholder-slate-400 text-xs rounded-full border border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all outline-none font-semibold shadow-xs"
+                className="w-full pl-8 pr-18 py-2 bg-white text-slate-900 placeholder-slate-400 text-xs rounded-full border border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all outline-none font-semibold shadow-xs"
               />
               <Search className="w-3.5 h-3.5 text-amber-600 absolute left-2.5 top-2.5" />
               <button
                 type="button"
                 onClick={handleSearchSubmit}
-                className="absolute right-1 top-1 bottom-1 px-3 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 text-xs font-black rounded-full transition-all flex items-center shadow-xs cursor-pointer select-none active:scale-95"
+                className="absolute right-1 top-1 bottom-1 px-3 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black rounded-full transition-all flex items-center shadow-xs cursor-pointer select-none active:scale-95"
               >
                 🔍 খুঁজুন
               </button>
@@ -322,16 +357,16 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
             {/* Dedicated Qard-e-Hasana (করযে হাসানা) Button - Desktop Only */}
             <button
               onClick={() => onNavigate('qard-hasana')}
-              className={`hidden md:flex items-center px-2 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer whitespace-nowrap ${
+              className={`hidden md:flex items-center px-2.5 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer whitespace-nowrap ${
                 currentPage === 'qard-hasana'
-                  ? 'bg-emerald-800 text-white border-emerald-900 shadow-md ring-2 ring-emerald-500/30'
-                  : 'bg-emerald-50 text-emerald-950 hover:bg-emerald-100 border-emerald-300'
+                  ? 'bg-emerald-700 text-white border-emerald-400 shadow-md ring-2 ring-emerald-500/30'
+                  : 'bg-emerald-950/80 text-emerald-100 hover:bg-emerald-900 border-emerald-500/40 hover:text-white'
               }`}
               title="বিনা সুদে ঋণ সুবিধা (করযে হাসানা)"
             >
-              <HandHeart className="w-3.5 h-3.5 mr-1 text-emerald-700 flex-shrink-0" />
+              <HandHeart className="w-3.5 h-3.5 mr-1 text-amber-300 flex-shrink-0" />
               <span>করযে হাসানা</span>
-              <span className="ml-1 px-1 py-0.2 bg-emerald-700 text-white text-[8px] font-black rounded hidden 2xl:inline">
+              <span className="ml-1 px-1 py-0.2 bg-emerald-600 text-white text-[8px] font-black rounded hidden 2xl:inline">
                 ১০% ধার
               </span>
             </button>
@@ -339,27 +374,26 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
             {/* Dedicated VIP Loyalty Credit Card Button - Desktop Only */}
             <button
               onClick={() => onNavigate('loyalty-card')}
-              className={`hidden md:flex items-center px-2 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer ${
+              className={`hidden md:flex items-center px-2.5 py-1.5 text-xs font-black rounded-xl transition-all border shadow-xs cursor-pointer ${
                 currentPage === 'loyalty-card' || currentPage === 'loyalty' || currentPage === 'vip' || currentPage === 'vip-card'
-                  ? 'bg-amber-600 text-white border-amber-700'
-                  : 'bg-gradient-to-r from-amber-500/15 via-amber-500/25 to-amber-600/15 text-amber-950 hover:bg-amber-100/90 border-amber-300'
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500 border-amber-400'
               } whitespace-nowrap`}
               title="আল আনসার ভিআইপি লয়ালটি ক্রেডিট কার্ড"
             >
-              <CreditCard className={`w-3.5 h-3.5 mr-1 ${currentPage === 'loyalty-card' || currentPage === 'loyalty' || currentPage === 'vip' || currentPage === 'vip-card' ? 'text-white' : 'text-amber-700'} flex-shrink-0`} />
+              <CreditCard className="w-3.5 h-3.5 mr-1 text-slate-950 flex-shrink-0" />
               <span>ভিআইপি কার্ড</span>
             </button>
 
             {/* Cart Button (Unique Luxury Styling in Same Footprint - Visible on Mobile & Desktop) */}
             <button
               onClick={openCart}
-              className="relative p-2 rounded-xl transition-all flex items-center justify-center group cursor-pointer whitespace-nowrap bg-gradient-to-b from-amber-400/25 via-amber-100/60 to-amber-500/20 hover:from-amber-400/35 hover:to-amber-500/35 border-2 border-amber-400 hover:border-amber-500 shadow-sm hover:shadow-amber-500/25 active:scale-95"
+              className="relative p-2 rounded-xl transition-all flex items-center justify-center group cursor-pointer whitespace-nowrap bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500 border-2 border-amber-400 shadow-sm active:scale-95"
               title="শপিং ব্যাগ"
             >
-              <ShoppingBag className="w-4 h-4 text-amber-950 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg] drop-shadow-xs flex-shrink-0" />
-              <span className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/40 via-transparent to-transparent pointer-events-none" />
+              <ShoppingBag className="w-4 h-4 text-slate-950 transition-transform duration-300 group-hover:scale-110 flex-shrink-0" />
               {totalItemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-emerald-800 via-emerald-700 to-amber-600 text-white text-[9px] font-black rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md ring-1.5 ring-amber-100 animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[9px] font-black rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md ring-1.5 ring-white animate-pulse">
                   {toBengaliDigits(totalItemCount)}
                 </span>
               )}
@@ -370,15 +404,15 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center space-x-1.5 p-1 pl-1.5 pr-2.5 bg-amber-50/80 hover:bg-amber-100/70 rounded-full border border-amber-300 transition-colors cursor-pointer"
+                  className="flex items-center space-x-1.5 p-1 pl-1.5 pr-2.5 bg-emerald-950/90 hover:bg-emerald-900 rounded-full border border-amber-500/40 text-white transition-colors cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-emerald-800 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center text-xs font-black shadow-xs">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-xs font-bold text-slate-900 max-w-[80px] truncate hidden md:inline-block">
+                  <span className="text-xs font-bold text-amber-200 max-w-[80px] truncate hidden md:inline-block">
                     {user.name.split(' ')[0]}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-slate-500" />
+                  <ChevronDown className="w-3 h-3 text-amber-400" />
                 </button>
 
                 {userDropdownOpen && (
@@ -435,16 +469,16 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
                 )}
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-1">
+              <div className="hidden md:flex items-center space-x-1.5">
                 <button
                   onClick={() => openAuthModal ? openAuthModal('login') : onNavigate('login')}
-                  className="px-2.5 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                  className="px-2.5 py-1.5 text-xs font-bold text-amber-200 hover:text-white hover:bg-white/10 border border-amber-500/30 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                 >
                   লগইন
                 </button>
                 <button
                   onClick={() => openAuthModal ? openAuthModal('register') : onNavigate('register')}
-                  className="px-3 py-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                  className="px-3 py-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
                 >
                   রেজিস্টার
                 </button>
@@ -472,13 +506,13 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchSubmit(e); } }}
-              className="w-full pl-9 pr-22 py-2.5 bg-amber-50/70 hover:bg-amber-50 border border-amber-300 focus:border-amber-600 focus:bg-white rounded-full text-xs font-semibold placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/20 shadow-xs transition-all"
+              className="w-full pl-9 pr-22 py-2.5 bg-white border border-amber-400 focus:border-amber-500 focus:bg-white rounded-full text-xs font-semibold placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/20 shadow-xs transition-all text-slate-900"
             />
-            <Search className="w-4 h-4 text-amber-700 absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-amber-600 absolute left-3 top-3" />
             <button
               type="button"
               onClick={handleSearchSubmit}
-              className="absolute right-1 top-1 bottom-1 px-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 text-xs font-black rounded-full shadow-xs cursor-pointer flex items-center transition-all select-none active:scale-95"
+              className="absolute right-1 top-1 bottom-1 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black rounded-full shadow-xs cursor-pointer flex items-center transition-all select-none active:scale-95"
             >
               🔍 খুঁজুন
             </button>
@@ -486,8 +520,8 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
         </div>
 
         {/* 3. SUB-MENU CATEGORY LINE (Balanced layout: Contact button securely docked inside) */}
-        <div className="hidden md:flex items-center justify-between py-1 border-t border-amber-200/80 text-xs font-bold text-slate-800 w-full">
-          <div className="flex items-center space-x-1 lg:space-x-1.5 xl:space-x-2.5 min-w-0">
+        <div className="hidden md:flex items-center justify-between py-1 border-t border-amber-500/20 text-xs font-bold w-full bg-[#04241b] px-1">
+          <div className="flex items-center space-x-1 lg:space-x-1.5 xl:space-x-2 min-w-0">
             
             {/* 🌟 UNIQUE BLACK HOME BUTTON */}
             <button
@@ -507,70 +541,70 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
             {/* 1. ঘরের বাজার (Household & Daily Grocery) */}
             <button
               onClick={() => handleNavCategoryClick('cat_grocery')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_grocery' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="ঘরের বাজার"
             >
-              <ShoppingBasket className="w-3.5 h-3.5 text-amber-600" />
+              <ShoppingBasket className="w-3.5 h-3.5 text-amber-400" />
               <span>ঘরের বাজার</span>
             </button>
 
             {/* 2. বেকারি আইটেম (Fresh Bakery & Sweets) */}
             <button
               onClick={() => handleNavCategoryClick('cat_bakery')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_bakery' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="বেকারি আইটেম"
             >
-              <UtensilsCrossed className="w-3.5 h-3.5 text-amber-600" />
+              <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400" />
               <span>বেকারি আইটেম</span>
             </button>
 
             {/* 3. শিশু খাদ্য (Baby & Infant Food) */}
             <button
               onClick={() => handleNavCategoryClick('cat_baby_food')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_baby_food' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="শিশু খাদ্য"
             >
-              <Baby className="w-3.5 h-3.5 text-sky-600" />
+              <Baby className="w-3.5 h-3.5 text-sky-400" />
               <span>শিশু খাদ্য</span>
             </button>
 
             {/* 4. আতর ও সুগন্ধি (Attar & Pure Oud) */}
             <button
               onClick={() => handleNavCategoryClick('cat_attar')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_attar' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="আতর ও সুগন্ধি"
             >
-              <Flame className="w-3.5 h-3.5 text-amber-600" />
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
               <span>আতর ও সুগন্ধি</span>
             </button>
 
             {/* 5. লাক্সারি পারফিউম (Luxury Perfumes) */}
             <button
               onClick={() => handleNavCategoryClick('cat_perfumes')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_perfumes' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="পারফিউম"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>পারফিউম</span>
             </button>
 
             {/* 6. গিফট ও স্পেশাল সামগ্রী (Gifts & Lifestyle) */}
             <button
               onClick={() => handleNavCategoryClick('cat_gifts')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'cat_gifts' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="গিফট সামগ্রী"
             >
-              <Gift className="w-3.5 h-3.5 text-amber-600" />
+              <Gift className="w-3.5 h-3.5 text-amber-400" />
               <span>গিফট সামগ্রী</span>
             </button>
 
             {/* 7. সব কালেকশন (All Collections / Catalog) */}
             <button
               onClick={() => handleNavCategoryClick('all')}
-              className="menu-cat-btn"
+              className={`menu-cat-btn ${activeNavCat === 'all' ? '!bg-amber-500 !text-slate-950 !border-amber-400 shadow-xs' : ''}`}
               title="সব কালেকশন"
             >
-              <Layers className="w-3.5 h-3.5 text-amber-600" />
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
               <span>সব কালেকশন</span>
             </button>
           </div>
@@ -580,12 +614,12 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
             {/* 📞 যোগাযোগ (যোগাযোগ এর নিচে ইংরেজি Contact Us) */}
             <button
               onClick={() => onNavigate('contact')}
-              className="flex items-center space-x-1.5 text-slate-800 hover:text-amber-700 transition-colors cursor-pointer bg-slate-100 hover:bg-amber-50 px-2.5 py-0.5 rounded-xl border border-slate-200 flex-shrink-0 shadow-2xs"
+              className="flex items-center space-x-1.5 text-amber-200 hover:text-slate-950 hover:bg-gradient-to-r hover:from-amber-400 hover:to-amber-500 transition-all cursor-pointer bg-emerald-950/90 px-3 py-0.5 rounded-xl border border-amber-400/50 flex-shrink-0 shadow-xs"
             >
-              <Phone className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+              <Phone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               <div className="text-left leading-tight">
-                <span className="font-bold text-xs block text-slate-900">যোগাযোগ</span>
-                <span className="text-[9px] text-slate-500 font-mono block -mt-0.5">Contact Us</span>
+                <span className="font-bold text-xs block">যোগাযোগ</span>
+                <span className="text-[9px] opacity-80 font-mono block -mt-0.5">Contact Us</span>
               </div>
             </button>
           </div>

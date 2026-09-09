@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { X, HandHeart, CheckCircle2, AlertCircle, Sparkles, ShieldCheck } from 'lucide-react';
+import { 
+  X, 
+  HandHeart, 
+  CheckCircle2, 
+  AlertCircle, 
+  Sparkles, 
+  ShieldCheck, 
+  ArrowLeft, 
+  FileText 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useScrollLock from '../hooks/useScrollLock';
 
-export default function QardApplicationModal({ isOpen, onClose, onSuccess }) {
+export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
   const { user } = useAuth();
+  useScrollLock(isOpen);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -76,80 +87,117 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleTermsClick = () => {
+    onClose();
+    if (onNavigate) {
+      onNavigate('terms');
+    } else {
+      window.location.hash = '#terms';
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in font-sans">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 font-sans"
+      onClick={onClose}
+    >
+      {/* Centered Modal Card matching Register modal architecture */}
       <div 
-        className="bg-white w-full max-w-lg rounded-3xl border border-amber-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] relative"
+        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-emerald-300/80 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-150 relative"
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-slate-950 to-emerald-900 text-white p-5 flex items-center justify-between border-b border-amber-500/30">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-400/40">
-              <HandHeart className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white flex items-center space-x-1.5">
-                <span>করযে হাসানা ঋণের আবেদন ফর্ম</span>
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              </h3>
-              <p className="text-[11px] text-amber-200/90 font-mono">
-                ১০০% সুদমুক্ত ইসলামী সেবা • কোনো হিডেন ফি নেই
-              </p>
-            </div>
-          </div>
+        {/* Modal Top Bar (Register style with Dual-Language Back Button and Close) */}
+        <div className="bg-gradient-to-r from-emerald-900/15 via-emerald-100/50 to-emerald-900/15 px-3 sm:px-4 py-2 border-b border-emerald-200/80 flex items-center justify-between flex-shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center space-x-1 text-[11px] font-black text-slate-800 hover:text-emerald-900 bg-white/90 hover:bg-white px-2.5 py-1 rounded-lg border border-emerald-300 shadow-2xs transition-all active:scale-95 cursor-pointer"
+            title="বন্ধ করে ফিরে যান"
+          >
+            <ArrowLeft className="w-3 h-3 text-emerald-700 flex-shrink-0" />
+            <span>← ফিরে যান (Back)</span>
+          </button>
+
+          <span className="text-[11px] font-black text-emerald-900 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center space-x-1">
+            <HandHeart className="w-3 h-3 text-emerald-700" />
+            <span>করযে হাসানা আবেদন</span>
+          </span>
 
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-white/80 rounded-full transition-colors cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body / Scrollable Form */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
+        {/* Scrollable Modal Body */}
+        <div className="p-3.5 sm:p-5 overflow-y-auto modal-scrollable overscroll-contain space-y-3 flex-1 text-xs">
           
+          {/* Brand Header with Logo (Register modal style) */}
+          <div className="text-center space-y-1 pb-1">
+            <div className="flex justify-center">
+              <img 
+                src="/logo.jpg" 
+                alt="AL ANSAR" 
+                className="w-10 h-10 object-contain rounded-2xl border-2 border-emerald-500 ring-2 ring-emerald-400/30 shadow-xs"
+              />
+            </div>
+            <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight flex items-center justify-center space-x-1.5">
+              <span>করযে হাসানা ঋণের আবেদন ফর্ম</span>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            </h2>
+            <p className="text-[11px] text-emerald-800 font-medium">
+              ১০০% সুদমুক্ত ইসলামী ঋণ সেবা • কোনো অতিরিক্ত চার্জ বা হিডেন ফি নেই
+            </p>
+          </div>
+
+          {/* Success Alert */}
           {successMsg && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-start space-x-2.5 text-emerald-900">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-start space-x-2 text-emerald-900 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold">আবেদন সফল হয়েছে!</h4>
-                <p className="mt-0.5 leading-relaxed">{successMsg}</p>
+                <h4 className="font-bold text-xs">আবেদন সফল হয়েছে!</h4>
+                <p className="mt-0.5 text-[11px] leading-relaxed">{successMsg}</p>
               </div>
             </div>
           )}
 
+          {/* Error Alert */}
           {errorMsg && (
-            <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-2xl flex items-start space-x-2.5 text-rose-800">
-              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-bold">সঠিক তথ্য দিন:</h4>
-                <p className="mt-0.5 leading-relaxed">{errorMsg}</p>
-              </div>
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start space-x-2 text-rose-800 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+              <span className="font-semibold text-xs">{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Application Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               
               {/* Name */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">আবেদনকারীর পূর্ণ নাম *</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  আবেদনকারীর পূর্ণ নাম <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="যেমন: তানভীর আহমেদ"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-medium text-xs text-slate-900"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">সক্রিয় মোবাইল নম্বর *</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  সক্রিয় মোবাইল নম্বর <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
@@ -157,30 +205,34 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess }) {
                   placeholder="017XXXXXXXX"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono font-bold"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-mono font-bold text-xs text-slate-900"
                 />
               </div>
 
               {/* NID */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">জাতীয় পরিচয়পত্র (NID) নম্বর *</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  জাতীয় পরিচয়পত্র (NID) নম্বর <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="১০ বা ১৭ ডিজিট"
+                  placeholder="১০ বা ১৭ ডিজিটের NID"
                   value={formData.nid_number}
                   onChange={(e) => setFormData({ ...formData, nid_number: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono font-bold"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-mono font-bold text-xs text-slate-900"
                 />
               </div>
 
               {/* Requested Limit */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">কাঙ্ক্ষিত ক্রেডিট লিমিট (টাকা)</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  কাঙ্ক্ষিত ক্রেডিট লিমিট (টাকা)
+                </label>
                 <select
                   value={formData.requested_limit}
                   onChange={(e) => setFormData({ ...formData, requested_limit: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-bold"
+                  className="w-full px-3 py-1.5 bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-bold text-xs cursor-pointer text-slate-900"
                 >
                   <option value="2000">৳২,০০০ (টাকা)</option>
                   <option value="3000">৳৩,০০০ (টাকা)</option>
@@ -191,33 +243,37 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess }) {
 
               {/* Address */}
               <div className="sm:col-span-2">
-                <label className="font-bold text-slate-700 block mb-1">বর্তমান বাসস্থান ও স্থায়ী ঠিকানা *</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  বর্তমান বাসস্থান ও স্থায়ী ঠিকানা <span className="text-rose-500">*</span>
+                </label>
                 <textarea
                   rows={2}
                   required
-                  placeholder="বাসা নম্বর, রোড নম্বর, এলাকা, জেলা..."
+                  placeholder="বাসা নম্বর, রোড নম্বর, এলাকা, থানা, জেলা..."
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-medium text-xs text-slate-900"
                 />
               </div>
 
               {/* Commitment Notes */}
               <div className="sm:col-span-2">
-                <label className="font-bold text-slate-700 block mb-1">পরিশোধের অঙ্গীকার বার্তা (ঐচ্ছিক)</label>
+                <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
+                  পরিশোধের অঙ্গীকার বার্তা (ঐচ্ছিক)
+                </label>
                 <input
                   type="text"
                   placeholder="যেমন: পরবর্তী মাসের ১০ তারিখের মধ্যে পরিশোধ করব।"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-medium text-xs text-slate-900"
                 />
               </div>
 
             </div>
 
             {/* Shariah Trust Note */}
-            <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed flex items-center space-x-2">
+            <div className="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl text-[11px] text-emerald-950 leading-relaxed flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
               <span>
                 করযে হাসানা পরিশোধ ঈমানী আমানত। সময়মতো পরিশোধে আপনার ক্রেডিট লিমিট বৃদ্ধি পাবে।
@@ -225,17 +281,33 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-800/20 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-800/20 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 active:scale-98"
               >
                 <HandHeart className="w-4 h-4 text-amber-300" />
                 <span>{submitting ? 'আবেদন জমা হচ্ছে...' : 'আবেদন সাবমিট করুন (Submit Application)'}</span>
               </button>
             </div>
           </form>
+
+          {/* Bottom Row: Terms & Conditions Link on Bottom-Left */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleTermsClick}
+              className="inline-flex items-center space-x-1.5 text-xs font-black text-emerald-700 hover:text-emerald-950 hover:underline cursor-pointer group"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+              <span>শর্তাবলী ও নিয়মাবলী (Terms & Conditions)</span>
+            </button>
+
+            <span className="text-[10px] text-slate-400 font-medium select-none">
+              আল আনসার শরিয়াহ বোর্ড
+            </span>
+          </div>
 
         </div>
       </div>

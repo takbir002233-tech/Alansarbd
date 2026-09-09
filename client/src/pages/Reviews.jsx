@@ -13,12 +13,16 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function Reviews({ onNavigate, onBack }) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  // Lock body scroll when review modal is open
+  useScrollLock(showSubmitModal);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [name, setName] = useState(user?.name || '');
@@ -209,8 +213,14 @@ export default function Reviews({ onNavigate, onBack }) {
 
       {/* Review Submission Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-2xl border border-amber-200 animate-in zoom-in-95 font-sans">
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 font-sans"
+          onClick={() => setShowSubmitModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-2xl border border-amber-200 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto modal-scrollable overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 flex items-center">
                 <Star className="w-4 h-4 mr-2 text-amber-600 fill-amber-500" /> আপনার রিভিউ ও রেটিং দিন

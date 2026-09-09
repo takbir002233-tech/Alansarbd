@@ -52,7 +52,7 @@ export function CartProvider({ children }) {
     localStorage.setItem('al_ansar_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, quantity = 1, variant = null, shouldOpenDrawer = true) => {
+  const addToCart = (product, quantity = 1, variant = null, shouldOpenDrawer = false) => {
     setCartItems(prevItems => {
       const existingIdx = prevItems.findIndex(
         item => item.id === product.id && JSON.stringify(item.variant) === JSON.stringify(variant)

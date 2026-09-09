@@ -329,6 +329,7 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
 
       {/* Popup Application Modal */}
       <LoyaltyApplicationModal
+        onNavigate={onNavigate}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSuccess={handleApplySuccess}

@@ -22,10 +22,14 @@ import {
   getThanasForDistrict, 
   getPostOfficesForThana 
 } from '../data/bangladeshLocations';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onNavigate, onSuccess, customNotice }) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState(initialMode); // 'login' | 'register'
+
+  // Lock body scroll when auth popup is open
+  useScrollLock(isOpen);
 
   // Sync mode when initialMode changes or modal opens
   useEffect(() => {
@@ -271,7 +275,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onNa
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 font-sans">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 font-sans"
+      onClick={onClose}
+    >
       
       {/* Centered Modal Card */}
       <div 
@@ -331,7 +338,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onNa
         </div>
 
         {/* Scrollable Modal Body (Ultra-compact so normal screens need NO scroll) */}
-        <div className="p-3 sm:p-4 overflow-y-auto space-y-2 flex-1">
+        <div className="p-3 sm:p-4 overflow-y-auto modal-scrollable overscroll-contain space-y-2 flex-1">
           
           {/* Brand Header with Compact Logo */}
           <div className="text-center space-y-0.5 pb-0.5">

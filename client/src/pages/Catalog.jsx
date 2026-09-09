@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
+import useScrollLock from '../hooks/useScrollLock';
 import { 
   Filter, 
   SlidersHorizontal, 
   Search, 
   Check, 
   ArrowUpDown,
-  ShoppingBag,
-  Sparkles,
-  ArrowLeft,
-  Truck,
-  Tag
+  ShoppingBag, 
+  Sparkles, 
+  ArrowLeft, 
+  Truck, 
+  Tag,
+  X,
+  RotateCcw
 } from 'lucide-react';
 
 export default function Catalog({ 
@@ -19,7 +22,7 @@ export default function Catalog({
   initialSearch = '', 
   searchQuery = '',
   initialFreeDelivery = false, 
-  onNavigate,
+  onNavigate, 
   onBack 
 }) {
   const [products, setProducts] = useState([]);
@@ -41,6 +44,9 @@ export default function Catalog({
   const [freeDeliveryOnly, setFreeDeliveryOnly] = useState(initialFreeDelivery || false);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Lock body scroll when mobile filter modal is open
+  useScrollLock(mobileFilterOpen);
 
   useEffect(() => {
     if (initialSearch && initialSearch.trim()) {
@@ -110,248 +116,222 @@ export default function Catalog({
   const hasActiveFilters = selectedCategory !== 'all' || selectedSubcategory !== 'all' || searchTerm || inStockOnly || freeDeliveryOnly || priceRange.min || priceRange.max;
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 space-y-3 animate-in fade-in font-sans">
+    <div className="w-full font-sans animate-in fade-in">
       
-      {/* Top Aligned Bar: [ Left: Back Button ] | [ Center: Title & Details ] | [ Right: Sort & Filter ] */}
-      <div className="flex items-center justify-between gap-2 sm:gap-4 pb-2 border-b border-amber-200/80">
-        {/* Left: Back Button (ফিরে যান) */}
-        <div className="flex items-center space-x-2 flex-shrink-0">
+      {/* 1. SLIM CONSTANT STICKY CATEGORY & FILTER HEADER:
+          - Reduced height, low-profile and sleek ("bar ta ache otar height ta arektu choto kore deo")
+          - Touching moving bar with 0 gap ("moving tar sathe lege jabe")
+          - Left: Back button
+          - Center: Grand Animated Category Title
+          - Right: Vertical compact filter box in place of 'সাজান'
+      */}
+      <div 
+        className="sticky z-40 w-full bg-gradient-to-r from-[#031d16] via-[#062c21] to-[#031d16] text-white border-b-2 border-amber-500/80 shadow-md px-2 sm:px-4 md:px-6 py-1 flex flex-wrap items-center justify-between gap-1.5 backdrop-blur-md"
+        style={{ top: 'var(--navbar-height, 160px)' }}
+      >
+        {/* Left: Back Button (← পিছনে যান) */}
+        <div className="flex items-center space-x-1.5 flex-shrink-0">
           <button
             onClick={onBack || (() => onNavigate('home'))}
-            className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
+            className="inline-flex items-center space-x-1 text-[11px] sm:text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-amber-300 transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap"
+            title="পিছনে যান"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-950 flex-shrink-0" />
+            <span className="hidden sm:inline">← পিছনে যান</span>
+            <span className="sm:hidden">← Back</span>
+          </button>
+        </div>
+
+        {/* Center: GRAND ANIMATED CATEGORY TITLE (Slim Profile) */}
+        <div 
+          key={selectedCategory + (searchTerm || '')} 
+          className="text-center flex-1 min-w-[130px] px-1 flex flex-col items-center justify-center animate-category-grand"
+        >
+          <div className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-0.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-300/30 to-amber-500/20 border border-amber-400/80 animate-aura-pulse shadow-xs">
+            <Sparkles className="w-3 h-3 text-amber-300 animate-spin-slow flex-shrink-0" />
+            <span className="text-amber-400 text-[10px] sm:text-xs font-black select-none">✦</span>
+            <h1 className="text-xs sm:text-sm md:text-base font-black animate-gold-gleam leading-tight tracking-tight drop-shadow-md truncate max-w-[130px] sm:max-w-xs md:max-w-sm">
+              {searchTerm ? `"${searchTerm}"` : activeCategoryObj ? activeCategoryObj.name : 'সকল কালেকশন'}
+            </h1>
+            <span className="text-amber-400 text-[10px] sm:text-xs font-black select-none">✦</span>
+            <Sparkles className="w-3 h-3 text-amber-300 animate-spin-reverse-slow flex-shrink-0" />
+          </div>
+          <p className="text-[8.5px] sm:text-[9.5px] text-amber-200/90 font-bold mt-0.5 truncate flex items-center space-x-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>মোট {toBengaliDigits(products.length)} টি পণ্য</span>
+          </p>
+        </div>
+
+        {/* Right: 🌟 SLIM VERTICAL COMPACT FILTER BOX IN PLACE OF "সাজান"
+            ("diye sajan er jaygay deo kintu obossoi vertically sob kichui jeno filter er okhane sajan er oi jaygatay thake choto kore holeo")
+        */}
+        <div className="flex-shrink-0">
+          <div className="flex flex-col space-y-0.5 bg-[#04241b] border border-amber-400/80 rounded-xl p-1 sm:p-1.5 shadow-md w-[155px] sm:w-[185px] md:w-[205px] text-white">
+            
+            {/* 1. Vertical Row 1: Search Input + Reset Button */}
+            <div className="flex items-center space-x-1">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="পণ্য খুঁজুন..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-5 pr-1 py-0.5 bg-white text-slate-900 text-[9px] sm:text-[10px] rounded border border-amber-300 focus:outline-none focus:border-amber-500 font-semibold h-5 shadow-2xs"
+                />
+                <Search className="w-2.5 h-2.5 text-slate-400 absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[8.5px] font-black text-rose-300 bg-rose-950/90 hover:bg-rose-900 px-1 py-0.5 rounded border border-rose-500/50 cursor-pointer flex items-center space-x-0.5 h-5 flex-shrink-0"
+                  title="রিসেট"
+                >
+                  <RotateCcw className="w-2 h-2" />
+                  <span>রিসেট</span>
+                </button>
+              )}
+            </div>
+
+            {/* 2. Vertical Row 2: Sort Dropdown (সাজান) */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-1 py-0.5 bg-white text-slate-900 text-[9px] sm:text-[10px] font-bold rounded border border-amber-300 focus:outline-none focus:border-amber-500 cursor-pointer h-5 shadow-2xs"
+              >
+                <option value="featured">সাজান: জনপ্রিয় / রয়্যাল</option>
+                <option value="low_high">সাজান: মূল্য (কম থেকে বেশি)</option>
+                <option value="high_low">সাজান: মূল্য (বেশি থেকে কম)</option>
+                <option value="rating">সাজান: সেরা রেটিংপ্রাপ্ত</option>
+                <option value="newest">সাজান: নতুন সংযোজন</option>
+              </select>
+            </div>
+
+            {/* 3. Vertical Row 3: In Stock & Free Delivery Checkboxes */}
+            <div className="flex items-center justify-between text-[8.5px] sm:text-[9px] font-bold text-amber-200">
+              <label className="flex items-center space-x-1 cursor-pointer hover:text-white select-none">
+                <input
+                  type="checkbox"
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.target.checked)}
+                  className="w-2.5 h-2.5 rounded text-amber-500 focus:ring-amber-400 border-amber-400/50 cursor-pointer"
+                />
+                <span>স্টকে থাকা</span>
+              </label>
+
+              <label className="flex items-center space-x-0.5 cursor-pointer text-emerald-300 hover:text-emerald-200 select-none">
+                <input
+                  type="checkbox"
+                  checked={freeDeliveryOnly}
+                  onChange={(e) => setFreeDeliveryOnly(e.target.checked)}
+                  className="w-2.5 h-2.5 rounded text-emerald-500 focus:ring-emerald-400 border-emerald-400/50 cursor-pointer"
+                />
+                <span className="flex items-center">
+                  <Truck className="w-2.5 h-2.5 mr-0.5" /> ফ্রি ডেলিভারি
+                </span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* 2. MAIN BODY AREA:
+          - Subcategory Pills (if available)
+          - 5 COMPACT PRODUCTS IN EVERY ROW ("ar product er height tao ei page er shudhu, ar niche 5 ta kore product deo")
+      */}
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 space-y-2">
+        
+        {/* Subcategories Selector (if any) */}
+        {activeCategoryObj && activeCategoryObj.subcategories && activeCategoryObj.subcategories.length > 0 && (
+          <div className="py-1 px-3 bg-amber-50/80 rounded-xl border border-amber-200 flex items-center space-x-1.5 overflow-x-auto scrollbar-none">
+            <span className="text-[10.5px] font-bold text-amber-900 flex items-center flex-shrink-0 mr-1">
+              <Tag className="w-3 h-3 mr-1 text-amber-700" /> সাব-ক্যাটাগরি:
+            </span>
+            <button
+              onClick={() => setSelectedSubcategory('all')}
+              className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                selectedSubcategory === 'all'
+                  ? 'bg-amber-600 text-slate-950 font-black border-amber-600 shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-amber-100 hover:text-amber-900 border-amber-200'
+              }`}
+            >
+              {activeCategoryObj.name} (সব)
+            </button>
+            {activeCategoryObj.subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => setSelectedSubcategory(sub.id)}
+                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                  selectedSubcategory === sub.id
+                    ? 'bg-amber-600 text-slate-950 font-black border-amber-600 shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-amber-100 hover:text-amber-900 border-amber-200'
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 🌟 3. CLEAN FULL-WIDTH 5-PRODUCT ROW GRID WITH COMPACT PRODUCT CARD HEIGHT
+            ("ar product er height tao ei page er shudhu, ar niche 5 ta kore product deo")
+        */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-2.5 md:gap-3">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+              <div key={i} className="h-56 bg-slate-200 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-amber-200 text-center space-y-3 flex flex-col items-center justify-center min-h-[260px]">
+            <ShoppingBag className="w-10 h-10 text-slate-300" />
+            <h3 className="text-sm font-bold text-slate-800">কোনো পণ্য পাওয়া যায়নি</h3>
+            <p className="text-xs text-slate-500 max-w-xs">
+              {searchTerm ? `"${searchTerm}" এর সাথে মিল রেখে কোনো পণ্য পাওয়া যায়নি।` : 'আপনার ফিল্টারের সাথে মিল রেখে কোনো পণ্য নেই।'}
+            </p>
+            <button
+              onClick={clearFilters}
+              className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-slate-950 text-xs font-black rounded-xl shadow-xs cursor-pointer"
+            >
+              সব ফিল্টার মুছুন
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-2.5 md:gap-3 items-stretch">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                compact={true}
+                onNavigate={onNavigate}
+                onSelect={(id) => onNavigate('product-details', { productId: id })}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Bottom Navigation & Scroll to top */}
+        <div className="pt-3 pb-2 flex items-center justify-between border-t border-amber-200/80 mt-3">
+          <button
+            onClick={onBack || (() => onNavigate('home'))}
+            className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-3.5 py-1.5 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
             title="পিছনে যান"
           >
             <ArrowLeft className="w-4 h-4 text-amber-800" />
             <span>← পিছনে যান (Back)</span>
           </button>
 
-          {freeDeliveryOnly && (
-            <span className="hidden lg:flex bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full items-center">
-              <Truck className="w-3 h-3 mr-1" /> ফ্রি ডেলিভারি
-            </span>
-          )}
-        </div>
-
-        {/* Center: Catalog Name & Details (একদম সোজা লাইনে মাঝে) */}
-        <div className="text-center flex-1 min-w-0 px-1 sm:px-2">
-          <h1 className="text-sm sm:text-base md:text-lg font-black text-slate-900 leading-tight truncate">
-            {searchTerm ? `"${searchTerm}" এর ফলাফল` : activeCategoryObj ? activeCategoryObj.name : 'সকল পণ্যের সমাহার'}
-          </h1>
-          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold mt-0.5 truncate">
-            {activeCategoryObj && activeCategoryObj.subcategories && activeCategoryObj.subcategories.length > 0
-              ? `${activeCategoryObj.subcategories.map(s => s.name).slice(0, 3).join(', ')} • ${toBengaliDigits(products.length)} টি পণ্য`
-              : `${toBengaliDigits(products.length)} টি পণ্য প্রদর্শিত হচ্ছে`}
-          </p>
-        </div>
-
-        {/* Right: Sort Dropdown & Filter Toggle (সমান ডান পাশে সাজান) */}
-        <div className="flex items-center space-x-2 flex-shrink-0">
           <button
-            onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-            className="md:hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl flex items-center space-x-1 cursor-pointer border border-amber-200"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="text-xs font-bold text-amber-800 hover:text-amber-950 hover:underline cursor-pointer flex items-center space-x-1"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>ফিল্টার</span>
+            <span>↑ উপরে যান</span>
           </button>
-
-          <div className="flex items-center space-x-1.5 bg-white border border-amber-200 rounded-xl px-2.5 py-1 shadow-2xs">
-            <ArrowUpDown className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline">সাজান:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 outline-none cursor-pointer py-0.5"
-            >
-              <option value="featured">জনপ্রিয় / রয়্যাল সিলেক্ট</option>
-              <option value="low_high">মূল্য: কম থেকে বেশি</option>
-              <option value="high_low">মূল্য: বেশি থেকে কম</option>
-              <option value="rating">সর্বোচ্চ রেটিংপ্রাপ্ত</option>
-              <option value="newest">নতুন সংযোজন</option>
-            </select>
-          </div>
         </div>
+
       </div>
 
-      {/* Subcategory Filter Pills (ছোট আকারে ও খুব কম দূরত্বে) */}
-      {activeCategoryObj && activeCategoryObj.subcategories && activeCategoryObj.subcategories.length > 0 && (
-        <div className="py-1.5 px-3 bg-amber-50/70 rounded-xl border border-amber-200/80 flex items-center space-x-1.5 overflow-x-auto scrollbar-none">
-          <span className="text-[11px] font-bold text-amber-900 flex items-center flex-shrink-0 mr-1">
-            <Tag className="w-3 h-3 mr-1 text-amber-700" /> সাব-ক্যাটাগরি:
-          </span>
-          <button
-            onClick={() => setSelectedSubcategory('all')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap border ${
-              selectedSubcategory === 'all'
-                ? 'bg-amber-600 text-slate-950 font-black border-amber-600 shadow-xs'
-                : 'bg-white text-slate-700 hover:bg-amber-100 hover:text-amber-900 border-amber-200'
-            }`}
-          >
-            {activeCategoryObj.name} (সব)
-          </button>
-          {activeCategoryObj.subcategories.map((sub) => (
-            <button
-              key={sub.id}
-              onClick={() => setSelectedSubcategory(sub.id)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap border ${
-                selectedSubcategory === sub.id
-                  ? 'bg-amber-600 text-slate-950 font-black border-amber-600 shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-amber-100 hover:text-amber-900 border-amber-200'
-              }`}
-            >
-              {sub.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 sm:gap-6 pt-1">
-        
-        {/* Sidebar Filters */}
-        <div className={`space-y-6 ${mobileFilterOpen ? 'block' : 'hidden md:block'}`}>
-          <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-2xs space-y-6">
-            
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center">
-                <Filter className="w-4 h-4 mr-2 text-amber-600" /> ফিল্টার সমূহ
-              </h3>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
-                >
-                  সব রিসেট করুন
-                </button>
-              )}
-            </div>
-
-            {/* Keyword Search */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-2">পণ্য বা ক্যাটাগরি দিয়ে খুঁজুন</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="যেমন: ঘি, মধু, তেল, কুকিজ, আতর..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 bg-slate-50 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500"
-                />
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              </div>
-            </div>
-
-            {/* Free Delivery Filter Checkbox */}
-            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
-              <label className="flex items-center space-x-2.5 cursor-pointer text-xs font-bold text-emerald-900">
-                <input
-                  type="checkbox"
-                  checked={freeDeliveryOnly}
-                  onChange={(e) => setFreeDeliveryOnly(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300"
-                />
-                <span className="flex items-center">
-                  <Truck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> শুধুমাত্র ফ্রি ডেলিভারি আইটেম
-                </span>
-              </label>
-            </div>
-
-            {/* Categories */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-2">মূল ক্যাটাগরি</label>
-              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                <button
-                  onClick={() => { setSelectedCategory('all'); setSelectedSubcategory('all'); }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 flex items-center justify-between cursor-pointer border ${
-                    selectedCategory === 'all'
-                      ? 'animate-menu-cat-active font-black shadow-xs'
-                      : 'text-slate-700 bg-white hover:bg-amber-50/70 border-amber-200/50 hover:border-amber-300'
-                  }`}
-                >
-                  <span>সব পণ্য (সকল ক্যাটাগরি)</span>
-                  {selectedCategory === 'all' && <Check className="w-3.5 h-3.5 text-slate-950 font-black" />}
-                </button>
-
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('all'); }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 flex items-center justify-between cursor-pointer border ${
-                      selectedCategory === cat.id
-                        ? 'animate-menu-cat-active font-black shadow-xs'
-                        : 'text-slate-700 bg-white hover:bg-amber-50/70 border-amber-200/50 hover:border-amber-300'
-                    }`}
-                  >
-                    <span>{cat.name}</span>
-                    {selectedCategory === cat.id && <Check className="w-3.5 h-3.5 text-slate-950 font-black" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* In Stock Only */}
-            <div className="pt-2 border-t border-slate-100">
-              <label className="flex items-center space-x-2.5 cursor-pointer text-xs font-bold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300"
-                />
-                <span>শুধুমাত্র স্টকে থাকা পণ্য</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Product Grid */}
-        <div className="md:col-span-3">
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="h-72 bg-slate-200 rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-amber-100 text-center space-y-4">
-              <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">কোনো পণ্য পাওয়া যায়নি</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                {searchTerm ? `"${searchTerm}" এর সাথে মিল রেখে কোনো পণ্য পাওয়া যায়নি।` : 'আপনার ফিল্টারের সাথে মিল রেখে কোনো পণ্য নেই।'} দয়া করে অন্য কোনো নাম দিয়ে চেষ্টা করুন।
-              </p>
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer"
-              >
-                সব ফিল্টার মুছুন
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-3.5">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-              ))}
-            </div>
-          )}
-
-          {/* Bottom Back Button (উপরে ও নিচে একই ব্যাক বাটন) */}
-          <div className="pt-6 pb-2 flex items-center justify-between border-t border-amber-200/80 mt-6">
-            <button
-              onClick={onBack || (() => onNavigate('home'))}
-              className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
-              title="পিছনে যান"
-            >
-              <ArrowLeft className="w-4 h-4 text-amber-800" />
-              <span>← পিছনে যান (Back)</span>
-            </button>
-
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-xs font-bold text-amber-800 hover:text-amber-950 hover:underline cursor-pointer flex items-center space-x-1"
-            >
-              <span>↑ উপরে যান</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

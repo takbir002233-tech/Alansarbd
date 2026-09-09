@@ -1,9 +1,11 @@
 import React from 'react';
 import { X, Printer, CheckCircle, ShieldCheck, Phone, MapPin, Mail, Truck, ExternalLink, Download, ArrowLeft, Sparkles, BookOpen } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function InvoiceModal({ order, onClose }) {
   const { siteSettings } = useCart();
+  useScrollLock(!!order);
 
   if (!order) return null;
 
@@ -28,11 +30,17 @@ export default function InvoiceModal({ order, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-amber-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs font-sans"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-amber-100 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Top Control Bar (Hidden on Print) */}
-        <div className="p-4 bg-slate-950 text-white flex items-center justify-between print:hidden">
+        <div className="p-4 bg-slate-950 text-white flex items-center justify-between print:hidden flex-shrink-0">
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
@@ -65,7 +73,7 @@ export default function InvoiceModal({ order, onClose }) {
         </div>
 
         {/* Invoice Printable Sheet */}
-        <div className="p-8 space-y-6 print:p-6 text-slate-800 bg-white" id="printable-invoice">
+        <div className="p-8 space-y-6 print:p-6 text-slate-800 bg-white overflow-y-auto modal-scrollable overscroll-contain flex-1" id="printable-invoice">
           
           {/* Header with Official Logo at Top Corner */}
           <div className="flex items-start justify-between border-b border-amber-200/80 pb-6">

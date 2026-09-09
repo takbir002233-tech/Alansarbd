@@ -273,6 +273,7 @@ export default function QardHasana({ onNavigate, onBack }) {
 
       {/* Popup Application Modal */}
       <QardApplicationModal
+        onNavigate={onNavigate}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSuccess={handleApplySuccess}

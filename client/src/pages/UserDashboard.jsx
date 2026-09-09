@@ -20,7 +20,8 @@ import {
   HandHeart,
   Award,
   QrCode,
-  ShieldCheck
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
@@ -138,7 +139,11 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
 
   const totalSpent = orders.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? (o.total_amount || 0) : 0), 0);
   const activeOrders = orders.filter(o => !['Delivered', 'Cancelled'].includes(o.status));
-  const loyaltyPoints = user?.loyalty_points !== undefined ? user.loyalty_points : 120;
+  const isLoyaltyApproved = (userLoyaltyStatus === 'Approved') || (user?.loyalty_card_status === 'Approved') || (user?.loyalty_card_approved === true);
+  const isLoyaltyPending = (userLoyaltyStatus === 'Pending') || (user?.loyalty_card_status === 'Pending');
+  const isQardApproved = user?.qard_status === 'Approved';
+  const isQardPending = user?.qard_status === 'Pending';
+  const loyaltyPoints = user?.loyalty_points !== undefined ? user.loyalty_points : (isLoyaltyApproved ? 250 : 0);
   const qardLimit = user?.qard_credit_limit || 5000;
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
 
@@ -168,23 +173,30 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-black text-white">{user?.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-white">{user?.name || 'সম্মানিত গ্রাহক'}</h1>
               <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                {user?.loyalty_tier || 'Gold VIP Patron'}
+                {isLoyaltyApproved ? (user?.loyalty_tier || 'Gold VIP Patron') : 'সাধারণ গ্রাহক (Regular Member)'}
               </span>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5 font-mono">{user?.phone} • {user?.email}</p>
+            <p className="text-xs text-slate-300 mt-0.5 font-mono">{user?.phone || ''} {user?.email ? `• ${user?.email}` : ''}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => onNavigate('qard-hasana')}
-            className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600/40 flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
-          >
-            <HandHeart className="w-4 h-4 text-amber-300" />
-            <span>করযে হাসানা আবেদন</span>
-          </button>
+          {isQardApproved ? (
+            <div className="px-4 py-2 bg-emerald-900/80 text-amber-300 text-xs font-black rounded-xl border border-emerald-500/40 flex items-center space-x-1.5 shadow-md">
+              <HandHeart className="w-4 h-4 text-amber-300" />
+              <span>করযে হাসানা লিমিট: ৳{toBengaliDigits(qardLimit.toLocaleString())}</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setQardModalOpen(true)}
+              className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600/40 flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
+            >
+              <HandHeart className="w-4 h-4 text-amber-300" />
+              <span>{isQardPending ? 'করযে হাসানা আবেদন পর্যালোচনায়' : 'করযে হাসানা আবেদন'}</span>
+            </button>
+          )}
 
           <button
             onClick={() => onNavigate('catalog')}
@@ -257,8 +269,8 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
           {activeTab === 'overview' && (
             <div className="space-y-6">
               
-              {/* CONDITIONAL LOYALTY CARD DISPLAY (Only for approved users) */}
-              {hasApprovedCard ? (
+              {/* 1. CONDITIONAL VIP LOYALTY CARD DISPLAY */}
+              {isLoyaltyApproved ? (
                 <div className="bg-white p-4 sm:p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-slate-100 pb-2">
                     <div>
@@ -275,7 +287,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                   {/* Luxury Member Card matching Photo */}
                   <LuxuryLoyaltyCard user={user} />
                 </div>
-              ) : isPendingCard ? (
+              ) : isLoyaltyPending ? (
                 /* Pending Review Banner */
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100/70 p-6 sm:p-7 rounded-3xl border-2 border-amber-300 shadow-xs space-y-3">
                   <div className="flex items-center space-x-3 text-amber-900">
@@ -306,7 +318,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                   </div>
                 </div>
               ) : (
-                /* 4-Card Wireframe Layout for Unapplied Users (Matches Image 1) */
+                /* 4-Card Wireframe Layout for Unapplied Users */
                 <div className="space-y-4">
                   {/* Top Compact Advert Banner */}
                   <div className="bg-gradient-to-r from-emerald-950 via-[#03241b] to-slate-950 text-white p-5 sm:p-6 rounded-3xl border-2 border-amber-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
@@ -383,20 +395,102 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                 </div>
               )}
 
+              {/* 2. CONDITIONAL QARD-E-HASANA (করযে হাসানা) DISPLAY */}
+              {isQardApproved ? (
+                <div className="bg-gradient-to-r from-[#04261d] via-[#073629] to-[#04261d] p-6 rounded-3xl border-2 border-emerald-500/40 text-white shadow-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-700/50 pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-700/60 border border-emerald-400/30 flex items-center justify-center text-amber-300">
+                        <HandHeart className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                          ✓ অনুমোদিত সুবিধা (Approved)
+                        </span>
+                        <h3 className="text-sm sm:text-base font-black text-white mt-1">করযে হাসানা ডিজিটাল ক্রেডিট লিমিট</h3>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <span className="text-[10px] text-emerald-200 block font-bold uppercase">অনুমোদিত ঋণ সীমা</span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
+                        ৳{toBengaliDigits(qardLimit.toLocaleString())}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
+                      <span className="text-emerald-300 font-bold block">সুদের হার</span>
+                      <span className="text-sm font-black text-white">০% (সম্পূর্ণ সুদমুক্ত)</span>
+                    </div>
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
+                      <span className="text-emerald-300 font-bold block">ব্যবহার পদ্ধতি</span>
+                      <span className="text-sm font-black text-white">চেকআউটে 'করযে হাসানা' সিলেক্ট</span>
+                    </div>
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
+                      <span className="text-emerald-300 font-bold block">পরিশোধের মেয়াদ</span>
+                      <span className="text-sm font-black text-white">সুবিধাজনক কিস্তি বা ৩০ দিন</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-emerald-100/90 leading-relaxed">
+                    💡 আপনি যেকোনো অর্ডারে সর্বোচ্চ ১০% পর্যন্ত করযে হাসানা ধার সুবিধা ব্যবহার করে অবশিষ্ট টাকা ক্যাশ অন ডেলিভারিতে দিতে পারবেন।
+                  </p>
+                </div>
+              ) : isQardPending ? (
+                <div className="bg-emerald-50 p-5 rounded-3xl border border-emerald-200 text-emerald-950 space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <HandHeart className="w-5 h-5 text-emerald-700" />
+                    <h3 className="text-xs font-black text-emerald-900">আপনার করযে হাসানা আবেদনটি যাচাই করা হচ্ছে</h3>
+                  </div>
+                  <p className="text-xs text-emerald-800 leading-relaxed">
+                    আপনার প্রদত্ত জাতীয় পরিচয়পত্র ও তথ্য অ্যাডমিন টিম ভেরিফাই করছে। অনুমোদন পাওয়ার সাথে সাথে আপনার ড্যাশবোর্ডে ক্রেডিট লিমিট সক্রিয় হবে।
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-emerald-50 via-white to-amber-50/40 p-5 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start space-x-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <HandHeart className="w-6 h-6 text-emerald-700" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900">বিনা সুদে করযে হাসানা (১০% ধার সুবিধা)</h4>
+                        <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">সুদমুক্ত</span>
+                      </div>
+                      <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
+                        জরুরি প্রয়োজনে বা কেনাকাটায় অর্ডারের ১০% তাৎক্ষণিক সুদমুক্ত ধারের সুবিধা পেতে আবেদন করুন। অনুমোদিত হলে ড্যাশবোর্ডে আপনার ক্রেডিট লিমিট সক্রিয় হবে।
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setQardModalOpen(true)}
+                    className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600 shadow-xs transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto flex items-center space-x-1.5"
+                  >
+                    <HandHeart className="w-3.5 h-3.5 text-amber-300" />
+                    <span>করযে হাসানা আবেদন করুন</span>
+                  </button>
+                </div>
+              )}
+
 
               {/* Quick Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase">মোট অর্ডার</span>
-                  <p className="text-2xl font-black text-slate-900">{toBengaliDigits(orders.length)}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase">মোট অর্ডার</span>
+                  <p className="text-xl sm:text-2xl font-black text-slate-900">{toBengaliDigits(orders.length)}</p>
                 </div>
-                <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[11px] font-bold text-amber-700 uppercase">চলমান ডেলিভারি</span>
-                  <p className="text-2xl font-black text-amber-700">{toBengaliDigits(activeOrders.length)}</p>
+                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase">চলমান ডেলিভারি</span>
+                  <p className="text-xl sm:text-2xl font-black text-amber-700">{toBengaliDigits(activeOrders.length)}</p>
                 </div>
-                <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[11px] font-bold text-emerald-700 uppercase">মোট কেনাকাটা</span>
-                  <p className="text-2xl font-black text-emerald-700">৳{toBengaliDigits(totalSpent.toLocaleString())}</p>
+                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase">মোট কেনাকাটা</span>
+                  <p className="text-xl sm:text-2xl font-black text-emerald-700">৳{toBengaliDigits(totalSpent.toLocaleString())}</p>
+                </div>
+                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-600 uppercase">ক্যাশ পয়েন্ট</span>
+                  <p className="text-xl sm:text-2xl font-black text-amber-600">{toBengaliDigits(loyaltyPoints)}</p>
                 </div>
               </div>
 
@@ -734,6 +828,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
 
       {/* Loyalty Application Popup Modal */}
       <LoyaltyApplicationModal
+        onNavigate={onNavigate}
         isOpen={loyaltyModalOpen}
         onClose={() => setLoyaltyModalOpen(false)}
         onSuccess={(app) => setUserLoyaltyStatus('Pending')}
@@ -741,6 +836,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
 
       {/* Qard Application Popup Modal */}
       <QardApplicationModal
+        onNavigate={onNavigate}
         isOpen={qardModalOpen}
         onClose={() => setQardModalOpen(false)}
       />
