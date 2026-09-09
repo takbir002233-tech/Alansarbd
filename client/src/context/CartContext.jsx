@@ -52,7 +52,7 @@ export function CartProvider({ children }) {
     localStorage.setItem('al_ansar_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, quantity = 1, variant = null) => {
+  const addToCart = (product, quantity = 1, variant = null, shouldOpenDrawer = true) => {
     setCartItems(prevItems => {
       const existingIdx = prevItems.findIndex(
         item => item.id === product.id && JSON.stringify(item.variant) === JSON.stringify(variant)
@@ -82,7 +82,9 @@ export function CartProvider({ children }) {
         ];
       }
     });
-    setIsCartOpen(true);
+    if (shouldOpenDrawer) {
+      setIsCartOpen(true);
+    }
   };
 
   const updateQuantity = (productId, quantity, variant = null) => {

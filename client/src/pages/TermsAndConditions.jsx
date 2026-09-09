@@ -22,7 +22,7 @@ export default function TermsAndConditions({ onNavigate, onBack }) {
       <div className="flex items-center justify-between pb-2">
         <button
           onClick={onBack || (() => onNavigate('home'))}
-          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4 text-amber-800" />
           <span>← পিছনে যান (Back)</span>

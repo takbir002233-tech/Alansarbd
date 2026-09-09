@@ -101,9 +101,9 @@ export default function Reviews({ onNavigate, onBack }) {
         <div className="space-y-1">
           <button
             onClick={onBack || (() => onNavigate('home'))}
-            className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3.5 py-1.5 rounded-xl border border-amber-300 transition-all cursor-pointer mb-2 shadow-2xs"
+            className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs mb-2"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 text-amber-800" />
             <span>← পিছনে যান (Back)</span>
           </button>
           <div className="flex items-center space-x-2">

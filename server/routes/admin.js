@@ -204,6 +204,57 @@ router.put('/qard-applications/:id', requireAdmin, (req, res) => {
   }
 });
 
+// LOYALTY CARD APPLICATIONS (Submit & Review)
+router.get('/loyalty-applications', requireAdmin, (req, res) => {
+  try {
+    const apps = db.getLoyaltyApplications();
+    return res.json({ success: true, applications: apps });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch loyalty applications.' });
+  }
+});
+
+router.post('/loyalty-applications', (req, res) => {
+  try {
+    const { name, phone, email, address, city, nid_number, user_id } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, message: 'নাম ও মোবাইল নম্বর আবশ্যক।' });
+    }
+
+    const newApp = db.createLoyaltyApplication({
+      user_id: user_id || null,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      address: (address || '').trim(),
+      city: (city || 'Dhaka').trim(),
+      nid_number: (nid_number || '').trim()
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'আপনার লয়ালটি মেম্বারশিপ আবেদনটি সফলভাবে জমা হয়েছে! অ্যাডমিন টিম যাচাই করে অনুমোদন করবে।',
+      application: newApp
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to submit loyalty application.' });
+  }
+});
+
+router.put('/loyalty-applications/:id', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const updated = db.updateLoyaltyApplicationStatus(id, status, notes);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Loyalty application not found.' });
+    }
+    return res.json({ success: true, message: `Loyalty application status updated to ${status}!`, application: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to update loyalty application.' });
+  }
+});
+
 // ACCOUNT SUSPENSION APPEALS (Submit & Review)
 router.get('/account-appeals', requireAdmin, (req, res) => {
   try {

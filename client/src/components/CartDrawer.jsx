@@ -66,34 +66,34 @@ export default function CartDrawer({ onNavigate }) {
           {/* Header */}
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center space-x-2">
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                <ShoppingBag className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-400 text-amber-800">
+                <ShoppingBag className="w-5 h-5 text-amber-700" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900">Your Shopping Cart</h2>
-                <p className="text-xs text-slate-500">{totalItemCount} {totalItemCount === 1 ? 'item' : 'items'} selected</p>
+                <h2 className="text-base font-black text-slate-900">আপনার শপিং ব্যাগ</h2>
+                <p className="text-xs text-slate-500">{totalItemCount} টি পণ্য নির্বাচিত</p>
               </div>
             </div>
             <button
               onClick={closeCart}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Free Shipping Milestone Progress Bar */}
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+          <div className="p-4 bg-amber-50/60 border-b border-amber-200/80">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
-              <span className="flex items-center text-blue-700">
-                <Truck className="w-4 h-4 mr-1 text-blue-600" />
-                {isFreeDelivery ? '🎉 You unlocked FREE Nationwide Delivery!' : `Add ৳${diffToFree.toLocaleString()} more for FREE Delivery!`}
+              <span className="flex items-center text-amber-900 font-bold">
+                <Truck className="w-4 h-4 mr-1 text-amber-600" />
+                {isFreeDelivery ? '🎉 আপনি ফ্রি হোম ডেলিভারি আনলক করেছেন!' : `আর মাত্র ৳${diffToFree.toLocaleString()} কেনাকাটায় ফ্রি ডেলিভারি!`}
               </span>
-              <span className="text-blue-900 font-bold">{progressPercent}%</span>
+              <span className="text-amber-900 font-black">{progressPercent}%</span>
             </div>
-            <div className="w-full bg-blue-200/80 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-amber-200/80 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -103,13 +103,13 @@ export default function CartDrawer({ onNavigate }) {
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {cartItems.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
+                <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center text-amber-400">
                   <ShoppingBag className="w-10 h-10" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-800">Your cart is empty</h3>
+                  <h3 className="text-base font-black text-slate-800">আপনার শপিং ব্যাগ খালি</h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                    Explore our modern catalog and discover premium gadgets, fashion, and lifestyle deals!
+                    আল আনসার কালেকশন ঘুরে খাঁটি ঘি, মধু, আতর ও খাদ্য সামগ্রী যুক্ত করুন।
                   </p>
                 </div>
                 <button
@@ -117,9 +117,9 @@ export default function CartDrawer({ onNavigate }) {
                     closeCart();
                     onNavigate('catalog');
                   }}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition-all"
+                  className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
                 >
-                  Browse Catalog
+                  কালেকশন ঘুরে দেখুন
                 </button>
               </div>
             ) : (
@@ -249,8 +249,8 @@ export default function CartDrawer({ onNavigate }) {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
-                  <span>Estimated Total</span>
-                  <span className="text-base text-blue-600">
+                  <span>সর্বমোট প্রদেয়</span>
+                  <span className="text-base text-amber-900 font-mono">
                     ৳{(Math.max(0, subtotal - discountAmount)).toLocaleString()}
                   </span>
                 </div>
@@ -259,9 +259,9 @@ export default function CartDrawer({ onNavigate }) {
               {/* Checkout CTA */}
               <button
                 onClick={handleCheckoutClick}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2 transition-all active:scale-98"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-amber-600/20 flex items-center justify-center space-x-2 transition-all cursor-pointer"
               >
-                <span>Proceed to Checkout</span>
+                <span>চেকআউটে এগিয়ে যান (Proceed to Checkout)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

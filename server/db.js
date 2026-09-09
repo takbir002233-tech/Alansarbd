@@ -35,6 +35,33 @@ function getInitialData() {
         postal_code: '1216',
         role: 'user',
         is_blocked: false,
+        loyalty_card_approved: true,
+        loyalty_card_status: 'Approved',
+        loyalty_card_number: 'ANSAR-VIP-7861-2026',
+        loyalty_points: 250,
+        loyalty_tier: 'Royal Gold VIP',
+        qard_credit_limit: 10000,
+        qard_status: 'Approved',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'usr_vip_member',
+        name: 'তানভীর আহমেদ',
+        email: 'vip@alansar.com',
+        phone: '01700112233',
+        password_hash: userPasswordHash,
+        address: 'বাড়ি ১২, রোড ৫, সেক্টর ৩, উত্তরা',
+        city: 'ঢাকা',
+        postal_code: '1230',
+        role: 'user',
+        is_blocked: false,
+        loyalty_card_approved: true,
+        loyalty_card_status: 'Approved',
+        loyalty_card_number: 'ANSAR-VIP-7861-2026',
+        loyalty_points: 250,
+        loyalty_tier: 'Royal Gold VIP',
+        qard_credit_limit: 10000,
+        qard_status: 'Approved',
         created_at: new Date().toISOString()
       }
     ],
@@ -627,6 +654,23 @@ function getInitialData() {
       qard_hasana_terms: '১. করযে হাসানা হলো সম্পূর্ণ সুদমুক্ত এবং কোনো প্রকার প্রসেসিং বা হিডেন চার্জ বিহীন ইসলামী ঋণ সুবিধা।\n২. ক্রেতা অর্ডারের সময় ৯০% পেমেন্ট করবেন এবং বাকি ১০% টাকা নির্ধারিত মেয়াদের মধ্যে কোনো সুদ ছাড়াই পরিশোধ করবেন।\n৩. এই সুবিধা গ্রহণের জন্য জাতীয় পরিচয়পত্র (NID) নম্বর ও বিস্তারিত তথ্য প্রদান করতে হবে।\n৪. অঙ্গীকার অনুযায়ী যথাসময়ে ঋণ পরিশোধ করা ঈমানী দায়িত্ব ও ইসলামী আমানতদারিতার অন্তর্ভুক্ত।',
       qard_special_notice: 'আবেদন অনুমোদিত হলে আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে ক্রেডিট লিমিট যুক্ত হবে এবং যেকোনো অর্ডারে ১-ক্লিকে ব্যবহার করা যাবে।',
 
+      // Loyalty Card / Privilege Club Full CMS
+      loyalty_card_enabled: true,
+      loyalty_hero_badge: 'AL ANSAR PRIVILEGE CLUB',
+      loyalty_hero_title: 'আল আনসার ভিআইপি মেম্বারশিপ ও ডিজিটাল লয়ালটি কার্ড',
+      loyalty_hero_subtitle: 'আল আনসার সুপার শপের সম্মানিত নিয়মিত গ্রাহকদের জন্য বিশেষ সম্মাননা। প্রতি কেনাকাটায় ক্যাশব্যাক, রিওয়ার্ড পয়েন্ট ও বিশেষ ভিআইপি ডিসকাউন্ট সুবিধা।',
+      loyalty_hadith_quote: 'লাইফটাইম ক্যাশ পয়েন্ট • ইউনিক ডিজিটাল বারকোড • বিশেষ মেম্বারশিপ ডিসকাউন্ট',
+      loyalty_pillar_1_title: 'লাইফটাইম রিওয়ার্ড পয়েন্ট',
+      loyalty_pillar_1_desc: 'প্রতি ১০০ টাকা কেনাকাটায় ক্যাশ পয়েন্ট সংগ্রহ করুন। পরবর্তী যেকোনো অর্ডারে পয়েন্ট রিডিম করে সরাসরি মূল্যছাড় পান।',
+      loyalty_pillar_2_title: 'স্পেশাল মেম্বারশিপ ছাড়',
+      loyalty_pillar_2_desc: 'প্রিমিয়াম খাঁটি আতর, ফ্রেঞ্চ পারফিউম ও উপহার সামগ্রীতে অতিরিক্ত ৫% থেকে ১৫% পর্যন্ত বিশেষ ভিআইপি মূল্যছাড়।',
+      loyalty_pillar_3_title: 'ফ্রি ডেলিভারি ও অগ্রাধিকার',
+      loyalty_pillar_3_desc: 'নির্ধারিত অর্ডারে সারা দেশে ফ্রি হোম ডেলিভারি এবং যেকোনো সহযোগিতায় ২৪/৭ ডেডিকেটেড ভিআইপি হেল্পলাইন সাপোর্ট।',
+      loyalty_terms_title: 'কার্ডের শর্তাবলী ও নিয়ম',
+      loyalty_terms_desc: '১. কার্ডটি আবেদনকারীর নিজস্ব নামে সংরক্ষিত ও হস্তান্তরঅযোগ্য।\n২. প্রতিটি সফল ডেলিভারির পর পয়েন্ট স্বয়ংক্রিয় যোগ হবে।\n৩. চেকআউটে কার্ডের বারকোড স্ক্যান বা নম্বর ব্যবহারযোগ্য।',
+      loyalty_button_bn: 'লয়ালটি কার্ডের জন্য আবেদন করুন',
+      loyalty_button_en: 'Apply for Loyalty Card',
+
       // Terms and Conditions Full CMS
       terms_hero_badge: 'অফিসিয়াল পলিসি ও নীতিমালা',
       terms_hero_title: 'শর্তাবলী, ডেলিভারি ও শরিয়াহ নীতিমালা',
@@ -652,6 +696,50 @@ function getInitialData() {
       hero_metric_2_label: 'দ্রুততম হোম ডেলিভারি',
       hero_metric_3_val: 'স্টিভফাস্ট/রেডএক্স',
       hero_metric_3_label: 'লাইভ কুরিয়ার ট্র্যাক',
+
+      // Compact Photo Hero Slider Banners CMS
+      hero_banners: [
+        {
+          id: 'banner_1',
+          title: 'ঘরের নিত্যপ্রয়োজনীয় খাঁটি বাজার ও অর্গানিক পণ্য',
+          badge: '🛒 ১০০% খাঁটি পণ্য',
+          image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
+          link: 'cat_grocery',
+          active: true
+        },
+        {
+          id: 'banner_2',
+          title: 'বিনা সুদে কেনাকাটা করুন ১০% তাৎক্ষণিক করযে হাসানার সুবিধায়',
+          badge: '🤝 করযে হাসানা (১০% ধার)',
+          image_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1400&q=80',
+          link: 'qard-hasana',
+          active: true
+        },
+        {
+          id: 'banner_3',
+          title: 'দৈনন্দিন ফ্রেশ বেকারি আইটেম ও স্পেশাল কুকিজ কালেকশন',
+          badge: '🥐 তাজা বেকারি',
+          image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=80',
+          link: 'cat_bakery',
+          active: true
+        },
+        {
+          id: 'banner_4',
+          title: '১০০% অ্যালকোহলমুক্ত খাঁটি আতর, উদ ও লাক্সারি পারফিউম',
+          badge: '✨ খাঁটি সুবাস',
+          image_url: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=1400&q=80',
+          link: 'cat_attar',
+          active: true
+        },
+        {
+          id: 'banner_5',
+          title: 'সারাদেশে দ্রুততম হোম ডেলিভারি • ২০০০+ অর্ডারে ফ্রি ডেলিভারি',
+          badge: '🚚 ফ্রি ডেলিভারি',
+          image_url: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1400&q=80',
+          link: 'catalog',
+          active: true
+        }
+      ],
 
       // Deals Section CMS
       deals_badge: 'সীমিত সময়ের বিশেষ অফার',
@@ -702,6 +790,22 @@ class Database {
         if (!this.data.reviews) this.data.reviews = initial.reviews;
         if (!this.data.categories || this.data.categories.length === 0) this.data.categories = initial.categories;
         if (!this.data.products || this.data.products.length === 0) this.data.products = initial.products;
+        if (!this.data.users || this.data.users.length === 0) this.data.users = initial.users;
+        
+        // Ensure VIP account exists
+        if (!this.data.users.find(u => u.phone === '01700112233' || u.id === 'usr_vip_member')) {
+          const vipUser = initial.users.find(u => u.id === 'usr_vip_member');
+          if (vipUser) this.data.users.push(vipUser);
+        }
+        // Ensure demo customer has approved card
+        const demoCust = this.data.users.find(u => u.id === 'usr_demo_customer' || u.phone === '01712345678');
+        if (demoCust) {
+          demoCust.loyalty_card_approved = true;
+          demoCust.loyalty_card_status = 'Approved';
+          demoCust.loyalty_card_number = 'ANSAR-VIP-7861-2026';
+          demoCust.loyalty_points = 250;
+          demoCust.loyalty_tier = 'Royal Gold VIP';
+        }
         this.save();
       } else {
         this.data = getInitialData();
@@ -923,22 +1027,25 @@ class Database {
 
   // Orders
   getOrders() { return this.data.orders; }
-  getOrderById(id) { return this.data.orders.find(o => o.id === id); }
+  getOrderById(id) { 
+    return this.data.orders.find(o => o.id === id || o.order_code === id || o.order_number === id); 
+  }
   getOrdersByUserId(userId) { return this.data.orders.filter(o => o.user_id === userId); }
   
   createOrder(orderData) {
-    const orderNumber = 'ANSAR-' + Math.floor(100000 + Math.random() * 900000);
+    const orderNumber = orderData.order_code || orderData.order_number || ('ANSAR-' + Math.floor(100000 + Math.random() * 900000));
     const trackingCode = 'STF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const trackingUrl = `https://steadfast.com.bd/t/${trackingCode}`;
     
     const newOrder = {
       id: 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      order_code: orderNumber,
       order_number: orderNumber,
       tracking_code: trackingCode,
       tracking_url: trackingUrl,
       courier_status: 'Processing at Uttara Hub',
       created_at: new Date().toISOString(),
-      status: 'pending',
+      status: 'Pending',
       ...orderData
     };
     this.data.orders.unshift(newOrder);
@@ -946,7 +1053,8 @@ class Database {
     // Reduce stock
     if (Array.isArray(orderData.items)) {
       orderData.items.forEach(item => {
-        const prd = this.getProductById(item.product_id);
+        const prdId = item.product_id || item.id;
+        const prd = this.getProductById(prdId);
         if (prd) {
           prd.stock = Math.max(0, prd.stock - (item.quantity || 1));
         }
@@ -1097,6 +1205,58 @@ class Database {
         user.qard_status = 'Approved';
         user.qard_credit_limit = Number(app.requested_limit) || 5000;
         user.qard_available_credit = Number(app.requested_limit) || 5000;
+      }
+    }
+    this.save();
+    return app;
+  }
+
+  // Loyalty Card Applications
+  getLoyaltyApplications() {
+    return (this.data.loyalty_applications || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  createLoyaltyApplication(appData) {
+    if (!this.data.loyalty_applications) this.data.loyalty_applications = [];
+    const newApp = {
+      id: 'lyt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      status: 'Pending',
+      created_at: new Date().toISOString(),
+      ...appData
+    };
+    this.data.loyalty_applications.unshift(newApp);
+
+    // If user exists, also update user's status to Pending
+    if (appData.user_id) {
+      const user = this.getUserById(appData.user_id);
+      if (user) {
+        user.loyalty_card_status = 'Pending';
+      }
+    }
+    this.save();
+    return newApp;
+  }
+
+  updateLoyaltyApplicationStatus(id, status, notes = '') {
+    if (!this.data.loyalty_applications) return null;
+    const app = this.data.loyalty_applications.find(a => a.id === id);
+    if (!app) return null;
+    app.status = status;
+    app.admin_notes = notes;
+    app.reviewed_at = new Date().toISOString();
+
+    if (status === 'Approved') {
+      let user = app.user_id ? this.getUserById(app.user_id) : null;
+      if (!user && app.email) user = this.getUserByEmail(app.email);
+      if (!user && app.phone) user = this.getUserByPhone(app.phone);
+
+      if (user) {
+        user.loyalty_card_status = 'Approved';
+        user.loyalty_card_approved = true;
+        user.loyalty_tier = 'Royal Gold VIP';
+        if (!user.loyalty_card_number) {
+          user.loyalty_card_number = `ANSAR-VIP-${Math.floor(1000 + Math.random() * 9000)}-2026`;
+        }
       }
     }
     this.save();

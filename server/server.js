@@ -83,6 +83,16 @@ const fs = require('fs');
 const clientDistPath = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDistPath));
 
+app.get(['/preview', '/preview.html'], (req, res) => {
+  const previewDist = path.join(clientDistPath, 'preview.html');
+  const previewBrain = 'C:\\Users\\HP\\.gemini\\antigravity\\brain\\1ad9fe0d-4a65-40dd-aaae-eb41dc0ea843\\preview.html';
+  const target = fs.existsSync(previewDist) ? previewDist : previewBrain;
+  if (fs.existsSync(target)) {
+    return res.type('html').send(fs.readFileSync(target, 'utf8'));
+  }
+  return res.send('Preview file not found.');
+});
+
 app.use((req, res, next) => {
   if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {
     return next();

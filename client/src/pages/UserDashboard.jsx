@@ -22,12 +22,18 @@ import {
   QrCode,
   ShieldCheck
 } from 'lucide-react';
+import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
+import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
+import QardApplicationModal from '../components/QardApplicationModal';
 
 export default function UserDashboard({ initialTab = 'overview', onNavigate, onOpenInvoice }) {
   const { user, token, updateProfile, changePassword } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
+  const [qardModalOpen, setQardModalOpen] = useState(false);
+  const [userLoyaltyStatus, setUserLoyaltyStatus] = useState(user?.loyalty_card_status || null);
 
   // Bengali digits converter helper
   const toBengaliDigits = (str) => {
@@ -143,10 +149,10 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
       <div className="flex items-center justify-between pb-2">
         <button
           onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
 
         <span className="text-xs font-semibold text-slate-500 hidden sm:inline">
@@ -251,72 +257,132 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
           {activeTab === 'overview' && (
             <div className="space-y-6">
               
-              {/* AL ANSAR VIRTUAL VIP LOYALTY CREDIT CARD GRAPHIC */}
-              <div className="bg-gradient-to-tr from-slate-950 via-amber-950 to-emerald-950 text-white p-6 sm:p-8 rounded-3xl border-2 border-amber-400/60 shadow-2xl relative overflow-hidden space-y-6">
-                
-                {/* Background holographic glow */}
-                <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-                
-                {/* Top Row: Card Title & Monogram */}
-                <div className="flex items-start justify-between relative z-10">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src="/logo.jpg" 
-                      alt="AL ANSAR" 
-                      className="w-12 h-12 object-contain rounded-xl border border-amber-400/50 shadow-md bg-slate-900" 
-                    />
+              {/* CONDITIONAL LOYALTY CARD DISPLAY (Only for approved users) */}
+              {hasApprovedCard ? (
+                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-slate-100 pb-2">
                     <div>
-                      <h3 className="text-sm font-black tracking-widest text-amber-300 uppercase">
-                        AL ANSAR PRIVILEGE CLUB
-                      </h3>
-                      <p className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold">
-                        Islamic Loyalty Credit Card
+                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        ✓ অনুমোদিত ভিআইপি লয়ালটি কার্ড (Approved)
+                      </span>
+                      <h3 className="text-sm sm:text-base font-black text-slate-900 mt-1">আপনার ডিজিটাল প্রিভিলেজ মেম্বারশিপ কার্ড</h3>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-slate-500">
+                      আইডি: {cardNumber}
+                    </span>
+                  </div>
+                  
+                  {/* Luxury Member Card matching Photo */}
+                  <LuxuryLoyaltyCard user={user} />
+                </div>
+              ) : isPendingCard ? (
+                /* Pending Review Banner */
+                <div className="bg-gradient-to-r from-amber-50 to-amber-100/70 p-6 sm:p-7 rounded-3xl border-2 border-amber-300 shadow-xs space-y-3">
+                  <div className="flex items-center space-x-3 text-amber-900">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-200 text-amber-900 flex items-center justify-center font-bold">
+                      <Sparkles className="w-5 h-5 text-amber-700 animate-spin" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black">আপনার লয়ালটি কার্ড আবেদনটি পর্যালোচনায় রয়েছে</h3>
+                      <p className="text-xs text-amber-800">Application Status: Pending Verification</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    আমাদের কাস্টমার কেয়ার টিম আপনার তথ্য যাচাই করে ২৪ ঘণ্টার মধ্যে ভার্চুয়াল ভিআইপি কার্ডটি সক্রিয় করবে। অনুমোদিত হলে স্বয়ংক্রিয়ভাবে এখানে আপনার ইউনিক বারকোডসহ প্রিমিয়াম কার্ডটি প্রদর্শিত হবে।
+                  </p>
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => setUserLoyaltyStatus('Approved')}
+                      className="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                    >
+                      ★ কার্ডের অনুমোদিত প্রিভিউ দেখুন (Test Preview)
+                    </button>
+                    <button
+                      onClick={() => setUserLoyaltyStatus(null)}
+                      className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-bold rounded-xl border border-slate-200 transition-all cursor-pointer"
+                    >
+                      রিসেট করুন
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* 4-Card Wireframe Layout for Unapplied Users (Matches Image 1) */
+                <div className="space-y-4">
+                  {/* Top Compact Advert Banner */}
+                  <div className="bg-gradient-to-r from-emerald-950 via-[#03241b] to-slate-950 text-white p-5 sm:p-6 rounded-3xl border-2 border-amber-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                    <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                    <div className="relative z-10 space-y-1.5">
+                      <div className="flex items-center space-x-2 text-amber-400">
+                        <Award className="w-4 h-4 text-amber-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                          AL ANSAR PRIVILEGE CLUB
+                        </span>
+                      </div>
+                      <h2 className="text-base sm:text-xl font-black text-white">
+                        আল আনসার ভিআইপি মেম্বারশিপ ও লয়ালটি কার্ড
+                      </h2>
+                      <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                        লয়ালটি কার্ডটি প্রোফাইলে স্বয়ংক্রিয়ভাবে থাকবে না। আবেদনের পর অনুমোদিত হলে ইউনিক বারকোডসহ আপনার নিজস্ব ডিজিটাল লাক্সারি কার্ডটি সক্রিয় হবে।
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-black text-slate-950 bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
-                    {user?.loyalty_tier || 'ROYAL VIP'}
-                  </span>
-                </div>
-
-                {/* EMV Chip & Contactless wave */}
-                <div className="flex items-center space-x-4 pt-1">
-                  <div className="w-11 h-8 rounded-md bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-500 border border-amber-600 shadow-inner flex items-center justify-center">
-                    <div className="w-6 h-5 border border-amber-700/60 rounded-xs" />
-                  </div>
-                  <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
-                </div>
-
-                {/* Card Number & Available Balances */}
-                <div className="space-y-1 relative z-10">
-                  <p className="font-mono text-base sm:text-xl font-bold tracking-widest text-amber-100 drop-shadow-sm">
-                    {cardNumber}
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-amber-500/20 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">রিওয়ার্ড পয়েন্ট</span>
-                      <span className="text-sm font-black text-amber-300">{toBengaliDigits(loyaltyPoints)} Pts</span>
+                  {/* 4 Cards in a Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
+                      <Award className="w-5 h-5 text-emerald-700" />
+                      <h4 className="text-xs font-black text-slate-900">লাইফটাইম ক্যাশ পয়েন্ট</h4>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">প্রতি ১০০ টাকা কেনাকাটায় ক্যাশ পয়েন্ট সংগ্রহ ও ডিসকাউন্ট।</p>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">করযে হাসানা লিমিট</span>
-                      <span className="text-sm font-black text-emerald-400">৳{toBengaliDigits(qardLimit.toLocaleString())} (০% সুদ)</span>
+
+                    <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
+                      <Sparkles className="w-5 h-5 text-amber-700" />
+                      <h4 className="text-xs font-black text-slate-900">স্পেশাল ভিআইপি ছাড়</h4>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">সকল আতর ও পারফিউমে অতিরিক্ত ৫% থেকে ১৫% মূল্যছাড়।</p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
+                      <Truck className="w-5 h-5 text-blue-700" />
+                      <h4 className="text-xs font-black text-slate-900">ফ্রি হোম ডেলিভারি</h4>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">নির্দিষ্ট অর্ডারে ফ্রি ডেলিভারি ও অগ্রাধিকারমূলক ২৪/৭ সাপোর্ট।</p>
+                    </div>
+
+                    <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 shadow-2xs space-y-2">
+                      <FileText className="w-5 h-5 text-amber-800" />
+                      <h4 className="text-xs font-black text-slate-950">মেম্বারশিপ শর্তাবলী</h4>
+                      <p className="text-[11px] text-slate-700 leading-relaxed">কার্ডটি আবেদনকারীর নামে সংরক্ষিত ও সহজে ব্যবহারযোগ্য।</p>
                     </div>
                   </div>
-                </div>
 
-                {/* Cardholder Name & Expiry */}
-                <div className="flex items-end justify-between pt-2 border-t border-amber-500/20 relative z-10 text-xs">
-                  <div>
-                    <span className="text-[9px] text-slate-400 uppercase tracking-wider block">কার্ডহোল্ডার নাম</span>
-                    <span className="font-bold text-white uppercase tracking-wider">{user?.name || 'VALUED PATRON'}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-wider block">মেয়াদ</span>
-                    <span className="font-mono text-amber-300 font-bold">১২/২০২৯</span>
+                  {/* Bottom-Right Dual-Language Apply Button */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <button
+                      onClick={() => setUserLoyaltyStatus('Approved')}
+                      className="text-[11px] font-bold text-amber-800 hover:underline cursor-pointer"
+                    >
+                      ★ প্রিভিউ মোডে কার্ড দেখতে ক্লিক করুন
+                    </button>
+
+                    <div className="flex justify-end w-full sm:w-auto">
+                      <button
+                        onClick={() => setLoyaltyModalOpen(true)}
+                        className="w-full sm:w-auto inline-flex items-center justify-end space-x-3 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-5 py-2.5 rounded-2xl border-2 border-amber-400 shadow-md shadow-amber-500/20 transition-all cursor-pointer group"
+                      >
+                        <CreditCard className="w-4 h-4 text-slate-950 flex-shrink-0" />
+                        <div className="text-right">
+                          <span className="block text-xs font-black text-slate-950 leading-tight">
+                            লয়ালটি কার্ডের জন্য আবেদন করুন
+                          </span>
+                          <span className="block text-[10px] text-slate-900 font-mono font-bold tracking-wide">
+                            Apply for Loyalty Card
+                          </span>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
 
               {/* Quick Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -665,6 +731,19 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
           )}
         </div>
       </div>
+
+      {/* Loyalty Application Popup Modal */}
+      <LoyaltyApplicationModal
+        isOpen={loyaltyModalOpen}
+        onClose={() => setLoyaltyModalOpen(false)}
+        onSuccess={(app) => setUserLoyaltyStatus('Pending')}
+      />
+
+      {/* Qard Application Popup Modal */}
+      <QardApplicationModal
+        isOpen={qardModalOpen}
+        onClose={() => setQardModalOpen(false)}
+      />
     </div>
   );
 }

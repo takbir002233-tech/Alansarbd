@@ -43,10 +43,10 @@ export default function OrderConfirmation({ order, onNavigate, onOpenInvoice }) 
       <div className="flex items-center justify-between pb-2">
         <button
           onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
       </div>
 

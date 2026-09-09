@@ -24,9 +24,10 @@ import {
 
 export default function AdminUsers() {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState('users'); // users, qard, appeals
+  const [activeTab, setActiveTab] = useState('users'); // users, qard, loyalty, appeals
   const [users, setUsers] = useState([]);
   const [qardApps, setQardApps] = useState([]);
+  const [loyaltyApps, setLoyaltyApps] = useState([]);
   const [appeals, setAppeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,19 +56,22 @@ export default function AdminUsers() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, qardRes, appealsRes] = await Promise.all([
+      const [usersRes, qardRes, appealsRes, loyaltyRes] = await Promise.all([
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/qard-applications', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/account-appeals', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/admin/account-appeals', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin/loyalty-applications', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const usersData = await usersRes.json();
       const qardData = await qardRes.json();
       const appealsData = await appealsRes.json();
+      const loyaltyData = await loyaltyRes.json();
 
       if (usersData.success) setUsers(usersData.users || []);
       if (qardData.success) setQardApps(qardData.applications || []);
       if (appealsData.success) setAppeals(appealsData.appeals || []);
+      if (loyaltyData.success) setLoyaltyApps(loyaltyData.applications || []);
     } catch (err) {
       console.error('Error fetching admin users data:', err);
     } finally {
@@ -236,6 +240,34 @@ export default function AdminUsers() {
     }
   };
 
+  // Loyalty Card Status Update (1-click Approve / Reject)
+  const handleLoyaltyStatusUpdate = async (appId, status, applicantName) => {
+    try {
+      const res = await fetch(`/api/admin/loyalty-applications/${appId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          status, 
+          notes: status === 'Approved' 
+            ? 'আবেদন যাচাই সম্পন্ন হয়েছে এবং ডিজিটাল লয়ালটি কার্ড সক্রিয় করা হয়েছে।' 
+            : 'তথ্য অসম্পূর্ণ থাকায় আবেদনটি বাতিল করা হয়েছে।' 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(status === 'Approved' 
+          ? `গ্রাহক "${applicantName}" এর লয়ালটি কার্ড অনুমোদন করা হয়েছে ও সক্রিয় হয়েছে!` 
+          : `আবেদনটি বাতিল করা হয়েছে।`);
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const filteredUsers = users.filter(
     u =>
       (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,6 +277,7 @@ export default function AdminUsers() {
   );
 
   const pendingQardCount = qardApps.filter(a => a.status === 'Pending').length;
+  const pendingLoyaltyCount = loyaltyApps.filter(a => a.status === 'Pending').length;
   const pendingAppealsCount = appeals.filter(a => a.status === 'Under Review').length;
 
   return (
@@ -291,6 +324,21 @@ export default function AdminUsers() {
             {pendingQardCount > 0 && (
               <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
                 {pendingQardCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('loyalty')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+              activeTab === 'loyalty' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>লয়ালটি কার্ড আবেদন ({loyaltyApps.length})</span>
+            {pendingLoyaltyCount > 0 && (
+              <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                {pendingLoyaltyCount}
               </span>
             )}
           </button>
@@ -544,7 +592,98 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* TAB 3: SUSPENDED ACCOUNT APPEALS DESK */}
+      {/* TAB: LOYALTY CARD APPLICATIONS */}
+      {activeTab === 'loyalty' && (
+        <div className="space-y-4 animate-in fade-in">
+          <div className="bg-slate-900 rounded-3xl border border-amber-900/40 p-6 sm:p-8 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center">
+                  <CreditCard className="w-4 h-4 mr-2 text-amber-400" /> আল আনসার ডিজিটাল লয়ালটি কার্ড আবেদন সমূহ ({loyaltyApps.length})
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  গ্রাহকদের জমা দেওয়া আবেদন যাচাই করে অনুমোদন করুন। অনুমোদনের সাথে সাথে গ্রাহকের প্রোফাইলে বারকোডসহ লাক্সারি কার্ড সক্রিয় হয়ে যাবে।
+                </p>
+              </div>
+
+              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 self-start sm:self-auto">
+                অপেক্ষমাণ আবেদন: {pendingLoyaltyCount} টি
+              </span>
+            </div>
+
+            {loyaltyApps.length === 0 ? (
+              <p className="text-xs text-slate-500 py-12 text-center">এখনো কোনো লয়ালটি কার্ড আবেদন জমা পড়েনি।</p>
+            ) : (
+              <div className="space-y-4">
+                {loyaltyApps.map(app => (
+                  <div key={app.id} className="p-5 sm:p-6 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-4 text-xs shadow-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700/80 gap-3">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-bold text-white text-sm">{app.name}</h4>
+                          <span className="text-[10px] text-slate-400 font-mono">({new Date(app.created_at).toLocaleDateString('bn-BD')})</span>
+                        </div>
+                        <p className="text-slate-400 font-mono mt-0.5">
+                          মোবাইল: <strong className="text-slate-200">{app.phone}</strong>
+                          {app.email && <span> • ইমেইল: <strong className="text-slate-200">{app.email}</strong></span>}
+                          {app.nid_number && <span> • NID: <strong className="text-amber-300 font-bold">{app.nid_number}</strong></span>}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center space-x-2.5">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          app.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                          app.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                          'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
+                        }`}>
+                          {app.status === 'Approved' ? '✓ কার্ড সক্রিয় ও অনুমোদিত' : app.status === 'Rejected' ? '✕ প্রত্যাখ্যাত' : '⏳ অনুমোদনের অপেক্ষায়'}
+                        </span>
+
+                        {app.status === 'Pending' && (
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleLoyaltyStatusUpdate(app.id, 'Approved', app.name)}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black rounded-xl shadow-md cursor-pointer transition-all"
+                            >
+                              ✓ অনুমোদন ও কার্ড সক্রিয় করুন
+                            </button>
+                            <button
+                              onClick={() => handleLoyaltyStatusUpdate(app.id, 'Rejected', app.name)}
+                              className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-700/50 cursor-pointer transition-colors"
+                            >
+                              ✕ বাতিল
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
+                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
+                        <span className="text-slate-400 block text-[10px]">ডেলিভারি ঠিকানা:</span>
+                        <span className="font-bold text-slate-200">{app.address || 'ঠিকানা দেওয়া হয়নি'}</span>
+                      </div>
+
+                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
+                        <span className="text-slate-400 block text-[10px]">শহর / জেলা:</span>
+                        <span className="font-bold text-slate-200">{app.city || 'ঢাকা'}</span>
+                      </div>
+
+                      {app.admin_notes && (
+                        <div className="sm:col-span-2 p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-800/40 text-emerald-300">
+                          <strong>অ্যাডমিন নোট:</strong> {app.admin_notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: SUSPENDED ACCOUNT APPEALS DESK */}
       {activeTab === 'appeals' && (
         <div className="space-y-4 animate-in fade-in">
           <div className="bg-slate-900 rounded-3xl border border-rose-900/40 p-6 sm:p-8 space-y-6 shadow-xl">

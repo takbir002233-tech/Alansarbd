@@ -20,10 +20,13 @@ import {
   Plus,
   Trash2,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Layers,
   Phone,
-  HelpCircle
+  HelpCircle,
+  Image as ImageIcon,
+  ExternalLink
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -76,8 +79,24 @@ export default function AdminSettings() {
     qard_pillar_3_title: 'সহজ কিস্তি ও আমানতদারিতা',
     qard_pillar_3_desc: 'আপনার সুবিধা অনুযায়ী নির্ধারিত মেয়াদের মধ্যে ঋণ পরিশোধের সুযোগ। ঈমানী আমানত হিসেবে যথাসময়ে ঋণ পরিশোধ করুন।',
     qard_terms_title: 'করযে হাসানার শর্তাবলী',
-    qard_hasana_terms: '১. করযে হাসানা হলো সম্পূর্ণ সুদমুক্ত এবং কোনো প্রকার প্রসেসিং বা হিডেন চার্জ বিহীন ইসলামী ঋণ সুবিধা।\n২. ক্রেতা অর্ডারের সময় ৯০% পেমেন্ট করবেন এবং বাকি ১০% টাকা নির্ধারিত মেয়াদের মধ্যে কোনো সুদ ছাড়াই পরিশোধ করবেন।\n৩. এই সুবিধা গ্রহণের জন্য জাতীয় পরিচয়পত্র (NID) নম্বর ও বিস্তারিত তথ্য প্রদান করতে হবে।\n৪. অঙ্গীকার অনুযায়ী যথাসময়ে ঋণ পরিশোধ করা ঈমানী দায়িত্ব ও ইসলামী আমানতদারিতার অন্তর্ভুক্ত।',
     qard_special_notice: 'আবেদন অনুমোদিত হলে আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে ক্রেডিট লিমিট যুক্ত হবে এবং যেকোনো অর্ডারে ১-ক্লিকে ব্যবহার করা যাবে।',
+
+    // Loyalty Card / Privilege Club Full CMS
+    loyalty_card_enabled: true,
+    loyalty_hero_badge: 'AL ANSAR PRIVILEGE CLUB',
+    loyalty_hero_title: 'আল আনসার ভিআইপি মেম্বারশিপ ও ডিজিটাল লয়ালটি কার্ড',
+    loyalty_hero_subtitle: 'আল আনসার সুপার শপের সম্মানিত নিয়মিত গ্রাহকদের জন্য বিশেষ সম্মাননা। প্রতি কেনাকাটায় ক্যাশব্যাক, রিওয়ার্ড পয়েন্ট ও বিশেষ ভিআইপি ডিসকাউন্ট সুবিধা।',
+    loyalty_hadith_quote: 'লাইফটাইম ক্যাশ পয়েন্ট • ইউনিক ডিজিটাল বারকোড • বিশেষ মেম্বারশিপ ডিসকাউন্ট',
+    loyalty_pillar_1_title: 'লাইফটাইম রিওয়ার্ড পয়েন্ট',
+    loyalty_pillar_1_desc: 'প্রতি ১০০ টাকা কেনাকাটায় ক্যাশ পয়েন্ট সংগ্রহ করুন। পরবর্তী যেকোনো অর্ডারে পয়েন্ট রিডিম করে সরাসরি মূল্যছাড় পান।',
+    loyalty_pillar_2_title: 'স্পেশাল মেম্বারশিপ ছাড়',
+    loyalty_pillar_2_desc: 'প্রিমিয়াম খাঁটি আতর, ফ্রেঞ্চ পারফিউম ও উপহার সামগ্রীতে অতিরিক্ত ৫% থেকে ১৫% পর্যন্ত বিশেষ ভিআইপি মূল্যছাড়।',
+    loyalty_pillar_3_title: 'ফ্রি ডেলিভারি ও অগ্রাধিকার',
+    loyalty_pillar_3_desc: 'নির্ধারিত অর্ডারে সারা দেশে ফ্রি হোম ডেলিভারি এবং যেকোনো সহযোগিতায় ২৪/৭ ডেডিকেটেড ভিআইপি হেল্পলাইন সাপোর্ট।',
+    loyalty_terms_title: 'কার্ডের শর্তাবলী ও নিয়ম',
+    loyalty_terms_desc: '১. কার্ডটি আবেদনকারীর নিজস্ব নামে সংরক্ষিত ও হস্তান্তরঅযোগ্য।\n২. প্রতিটি সফল ডেলিভারির পর পয়েন্ট স্বয়ংক্রিয় যোগ হবে।\n৩. চেকআউটে কার্ডের বারকোড স্ক্যান বা নম্বর ব্যবহারযোগ্য।',
+    loyalty_button_bn: 'লয়ালটি কার্ডের জন্য আবেদন করুন',
+    loyalty_button_en: 'Apply for Loyalty Card',
 
     // Terms and Conditions Full CMS
     terms_hero_badge: 'অফিসিয়াল পলিসি ও নীতিমালা',
@@ -104,6 +123,50 @@ export default function AdminSettings() {
     hero_metric_2_label: 'স্থায়িত্ব ও লংজিভিটি',
     hero_metric_3_val: 'স্টিভফাস্ট/রেডএক্স',
     hero_metric_3_label: 'লাইভ কুরিয়ার ট্র্যাক',
+
+    // Compact Photo Hero Slider Banners CMS
+    hero_banners: [
+      {
+        id: 'banner_1',
+        title: 'ঘরের নিত্যপ্রয়োজনীয় খাঁটি বাজার ও অর্গানিক পণ্য',
+        badge: '🛒 ১০০% খাঁটি পণ্য',
+        image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
+        link: 'cat_grocery',
+        active: true
+      },
+      {
+        id: 'banner_2',
+        title: 'বিনা সুদে কেনাকাটা করুন ১০% তাৎক্ষণিক করযে হাসানার সুবিধায়',
+        badge: '🤝 করযে হাসানা (১০% ধার)',
+        image_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1400&q=80',
+        link: 'qard-hasana',
+        active: true
+      },
+      {
+        id: 'banner_3',
+        title: 'দৈনন্দিন ফ্রেশ বেকারি আইটেম ও স্পেশাল কুকিজ কালেকশন',
+        badge: '🥐 তাজা বেকারি',
+        image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=80',
+        link: 'cat_bakery',
+        active: true
+      },
+      {
+        id: 'banner_4',
+        title: '১০০% অ্যালকোহলমুক্ত খাঁটি আতর, উদ ও লাক্সারি পারফিউম',
+        badge: '✨ খাঁটি সুবাস',
+        image_url: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=1400&q=80',
+        link: 'cat_attar',
+        active: true
+      },
+      {
+        id: 'banner_5',
+        title: 'সারাদেশে দ্রুততম হোম ডেলিভারি • ২০০০+ অর্ডারে ফ্রি ডেলিভারি',
+        badge: '🚚 ফ্রি ডেলিভারি',
+        image_url: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1400&q=80',
+        link: 'catalog',
+        active: true
+      }
+    ],
 
     // Deals Section CMS
     deals_badge: 'সীমিত সময়ের সুগন্ধি অফার',
@@ -146,7 +209,8 @@ export default function AdminSettings() {
           setForm(prev => ({
             ...prev,
             ...data.settings,
-            invoice_hadith_slogans: Array.isArray(data.settings.invoice_hadith_slogans) ? data.settings.invoice_hadith_slogans : prev.invoice_hadith_slogans
+            invoice_hadith_slogans: Array.isArray(data.settings.invoice_hadith_slogans) ? data.settings.invoice_hadith_slogans : prev.invoice_hadith_slogans,
+            hero_banners: Array.isArray(data.settings.hero_banners) && data.settings.hero_banners.length > 0 ? data.settings.hero_banners : prev.hero_banners
           }));
         }
       } catch (err) {
@@ -186,6 +250,50 @@ export default function AdminSettings() {
     }));
   };
 
+  // Hero Photo Banners Management Helpers
+  const handleAddBanner = () => {
+    const newBanner = {
+      id: 'banner_' + Date.now(),
+      title: 'নতুন অফার বা পণ্যের আকর্ষণীয় ব্যানার',
+      badge: '🛒 বিশেষ অফার',
+      image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
+      link: 'cat_grocery',
+      active: true
+    };
+    setForm(prev => ({
+      ...prev,
+      hero_banners: [...(prev.hero_banners || []), newBanner]
+    }));
+  };
+
+  const handleUpdateBanner = (idx, field, value) => {
+    setForm(prev => {
+      const banners = [...(prev.hero_banners || [])];
+      banners[idx] = { ...banners[idx], [field]: value };
+      return { ...prev, hero_banners: banners };
+    });
+  };
+
+  const handleRemoveBanner = (idx) => {
+    if (!window.confirm('আপনি কি এই ব্যানার স্লাইডটি মুছে ফেলতে চান?')) return;
+    setForm(prev => ({
+      ...prev,
+      hero_banners: prev.hero_banners.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleMoveBanner = (idx, direction) => {
+    setForm(prev => {
+      const banners = [...(prev.hero_banners || [])];
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= banners.length) return prev;
+      const temp = banners[idx];
+      banners[idx] = banners[targetIdx];
+      banners[targetIdx] = temp;
+      return { ...prev, hero_banners: banners };
+    });
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -223,13 +331,14 @@ export default function AdminSettings() {
     { id: 'marquee', label: '২. চলন্ত শিরোনাম', icon: Bell },
     { id: 'invoice', label: '৩. ইনভয়েস হাদিস ও স্লোগান', icon: FileText },
     { id: 'qard', label: '৪. করযে হাসানা পেজ ও শর্তাবলী', icon: HandHeart },
-    { id: 'terms', label: '৫. শর্তাবলী ও পলিসি পেজ', icon: ShieldCheck },
-    { id: 'hero', label: '৬. হিরো ব্যানার ও হেডলাইন', icon: Layout },
-    { id: 'deals', label: '৭. বিশেষ অফার ব্যানার', icon: Flame },
-    { id: 'trust', label: '৮. ৪টি ট্রাস্ট ব্যাজ', icon: Sparkles },
-    { id: 'guarantee', label: '৯. আল আনসার গ্যারান্টি', icon: ShieldCheck },
-    { id: 'footer', label: '১০. ফুটার ও কপিরাইট', icon: Layers },
-    { id: 'payment', label: '১১. পেমেন্ট ও ডেলিভারি ফি', icon: CreditCard },
+    { id: 'loyalty', label: '৫. লয়ালটি কার্ড ও মেম্বারশিপ CMS', icon: Sparkles },
+    { id: 'terms', label: '৬. শর্তাবলী ও পলিসি পেজ', icon: ShieldCheck },
+    { id: 'hero', label: '৭. স্লাইডিং ফটো ব্যানার CMS', icon: Layout },
+    { id: 'deals', label: '৮. বিশেষ অফার ব্যানার', icon: Flame },
+    { id: 'trust', label: '৯. ৪টি ট্রাস্ট ব্যাজ', icon: Sparkles },
+    { id: 'guarantee', label: '১০. আল আনসার গ্যারান্টি', icon: ShieldCheck },
+    { id: 'footer', label: '১১. ফুটার ও কপিরাইট', icon: Layers },
+    { id: 'payment', label: '১২. পেমেন্ট ও ডেলিভারি ফি', icon: CreditCard },
   ];
 
   return (
@@ -624,7 +733,169 @@ export default function AdminSettings() {
               </div>
             )}
 
-            {/* SECTION 5: TERMS & CONDITIONS FULL CMS */}
+            {/* SECTION 5: LOYALTY CARD & PRIVILEGE CLUB FULL CMS */}
+            {activeSection === 'loyalty' && (
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-amber-900/50 space-y-6 shadow-xl animate-in fade-in">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <h3 className="text-sm font-bold text-white flex items-center">
+                    <Sparkles className="w-4 h-4 mr-2 text-amber-400" /> ৫. লয়ালটি কার্ড পেজ, ৪টি সুবিধা ও শর্তাবলী CMS
+                  </h3>
+                  <label className="flex items-center space-x-2 text-xs text-amber-300 font-bold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="loyalty_card_enabled"
+                      checked={form.loyalty_card_enabled !== false}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded text-amber-600"
+                    />
+                    <span>লয়ালটি কার্ড স্কিম সক্রিয় রাখুন</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">লয়ালটি পেজ ব্যাজ টেক্সট</label>
+                    <input
+                      type="text"
+                      name="loyalty_hero_badge"
+                      value={form.loyalty_hero_badge || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">লয়ালটি পেজ মূল শিরোনাম (Title) *</label>
+                    <input
+                      type="text"
+                      name="loyalty_hero_title"
+                      value={form.loyalty_hero_title || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-slate-300 block mb-1">লয়ালটি পেজ সাবটাইটেল বিবরণ</label>
+                    <textarea
+                      rows={2}
+                      name="loyalty_hero_subtitle"
+                      value={form.loyalty_hero_subtitle || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-amber-400 block mb-1">ট্যাগলাইন / স্লোগান কোট</label>
+                    <input
+                      type="text"
+                      name="loyalty_hadith_quote"
+                      value={form.loyalty_hadith_quote || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-200 italic focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  {/* 4 Cards (3 features + 1 terms) */}
+                  <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
+                    <span className="text-[10px] font-bold text-emerald-400">কার্ড ১ (ক্যাশব্যাক ও পয়েন্ট)</span>
+                    <input
+                      type="text"
+                      name="loyalty_pillar_1_title"
+                      value={form.loyalty_pillar_1_title || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                    />
+                    <textarea
+                      rows={2}
+                      name="loyalty_pillar_1_desc"
+                      value={form.loyalty_pillar_1_desc || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
+                    <span className="text-[10px] font-bold text-amber-400">কার্ড ২ (ভিআইপি ছাড়)</span>
+                    <input
+                      type="text"
+                      name="loyalty_pillar_2_title"
+                      value={form.loyalty_pillar_2_title || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                    />
+                    <textarea
+                      rows={2}
+                      name="loyalty_pillar_2_desc"
+                      value={form.loyalty_pillar_2_desc || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400">কার্ড ৩ (ফ্রি ডেলিভারি ও কেয়ার)</span>
+                    <input
+                      type="text"
+                      name="loyalty_pillar_3_title"
+                      value={form.loyalty_pillar_3_title || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                    />
+                    <textarea
+                      rows={2}
+                      name="loyalty_pillar_3_desc"
+                      value={form.loyalty_pillar_3_desc || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
+                    <span className="text-[10px] font-bold text-purple-400">কার্ড ৪ (শর্তাবলী ও নিয়মাবলী)</span>
+                    <input
+                      type="text"
+                      name="loyalty_terms_title"
+                      value={form.loyalty_terms_title || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                    />
+                    <textarea
+                      rows={2}
+                      name="loyalty_terms_desc"
+                      value={form.loyalty_terms_desc || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">আবেদন বাটন বাংলা লেখা</label>
+                    <input
+                      type="text"
+                      name="loyalty_button_bn"
+                      value={form.loyalty_button_bn || 'লয়ালটি কার্ডের জন্য আবেদন করুন'}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">আবেদন বাটন ইংরেজি লেখা</label>
+                    <input
+                      type="text"
+                      name="loyalty_button_en"
+                      value={form.loyalty_button_en || 'Apply for Loyalty Card'}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-300 font-mono focus:outline-none focus:border-amber-500 font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 6: TERMS & CONDITIONS FULL CMS */}
             {activeSection === 'terms' && (
               <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-6 shadow-xl animate-in fade-in">
                 <h3 className="text-sm font-bold text-white flex items-center">
@@ -752,113 +1023,219 @@ export default function AdminSettings() {
               </div>
             )}
 
-            {/* SECTION 6: HERO BANNER CMS */}
+            {/* SECTION 6: HERO BANNER CMS (SLIDING PHOTO BANNERS) */}
             {activeSection === 'hero' && (
-              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-5 shadow-xl animate-in fade-in">
-                <h3 className="text-sm font-bold text-white flex items-center">
-                  <Layout className="w-4 h-4 mr-2 text-amber-400" /> ৬. হিরো ব্যানার হেডলাইন ও ৩টি মেট্রিক্স CMS
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-300 block mb-1">হিরো ছোট ব্যাজ টেক্সট</label>
-                    <input
-                      type="text"
-                      name="hero_badge"
-                      value={form.hero_badge}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-300 block mb-1">হিরো প্রধান বড় হেডলাইন *</label>
-                    <input
-                      type="text"
-                      required
-                      name="hero_title"
-                      value={form.hero_title}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-300 block mb-1">হিরো সাবটাইটেল বিবরণ</label>
-                    <textarea
-                      rows={2}
-                      name="hero_subtitle"
-                      value={form.hero_subtitle}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  {/* Metric 1 */}
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-6 shadow-xl animate-in fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">মেট্রিক ১ (মান / লেবেল)</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center">
+                      <Layout className="w-4 h-4 mr-2 text-amber-400" /> ৬. হোম পেজ স্লাইডিং ফটো ব্যানার CMS (Hero Photo Slider)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      হোম পেজের কম্প্যাক্ট স্লাইডার ব্যানারের ফটো আপলোড করুন, লিংক ও ক্যাপশন সেট করুন, নতুন ব্যানার যোগ করুন বা মুছুন।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddBanner}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center space-x-1.5 cursor-pointer whitespace-nowrap self-start sm:self-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>নতুন ব্যানার যোগ করুন</span>
+                  </button>
+                </div>
+
+                {/* Banner Slides List */}
+                <div className="space-y-4">
+                  {(form.hero_banners || []).map((banner, idx) => (
+                    <div 
+                      key={banner.id || idx}
+                      className="p-4 sm:p-5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-4 relative hover:border-amber-500/50 transition-colors"
+                    >
+                      {/* Slide Item Header */}
+                      <div className="flex items-center justify-between border-b border-slate-700/80 pb-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-black border border-amber-500/30">
+                            স্লাইড #{idx + 1}
+                          </span>
+                          <span className="text-xs font-bold text-slate-300 truncate max-w-[200px] sm:max-w-xs">
+                            {banner.title || 'ব্যানার ছবি'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-1">
+                          {/* Move Up */}
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveBanner(idx, 'up')}
+                            className="p-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="উপরে নিন"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Move Down */}
+                          <button
+                            type="button"
+                            disabled={idx === (form.hero_banners?.length || 0) - 1}
+                            onClick={() => handleMoveBanner(idx, 'down')}
+                            className="p-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="নিচে নিন"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBanner(idx)}
+                            className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/40 cursor-pointer ml-1"
+                            title="ব্যানার মুছুন"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Slide Controls Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                        {/* Left: Image Upload & Preview (5 cols) */}
+                        <div className="md:col-span-5 space-y-3">
+                          <div className="relative aspect-[21/9] rounded-xl overflow-hidden bg-slate-950 border border-slate-700">
+                            {banner.image_url ? (
+                              <img 
+                                src={banner.image_url} 
+                                alt={banner.title || 'Preview'} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-xs font-bold">
+                                <ImageIcon className="w-6 h-6 mb-1 text-slate-600" />
+                                <span>ছবি নির্বাচন করুন</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <ImageUploadField
+                            value={banner.image_url || ''}
+                            onChange={(url) => handleUpdateBanner(idx, 'image_url', url)}
+                            label="ব্যানার ছবি (কম্পিউটার/মোবাইল থেকে আপলোড অথবা লিংক) *"
+                            aspect="wide"
+                            helper="ব্যানারের সুন্দর অনুপাত: ২১:৮ বা ৩:১"
+                          />
+                        </div>
+
+                        {/* Right: Title, Badge, Link (7 cols) */}
+                        <div className="md:col-span-7 space-y-3">
+                          <div>
+                            <label className="text-xs font-bold text-slate-300 block mb-1">
+                              ব্যানার শিরোনাম (Title / Caption)
+                            </label>
+                            <input
+                              type="text"
+                              value={banner.title || ''}
+                              onChange={(e) => handleUpdateBanner(idx, 'title', e.target.value)}
+                              placeholder="যেমন: ঘরের নিত্যপ্রয়োজনীয় খাঁটি বাজার ও অর্গানিক পণ্য"
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-slate-300 block mb-1">
+                                ছোট ব্যাজ (Tag Badge)
+                              </label>
+                              <input
+                                type="text"
+                                value={banner.badge || ''}
+                                onChange={(e) => handleUpdateBanner(idx, 'badge', e.target.value)}
+                                placeholder="যেমন: 🛒 ১০০% খাঁটি পণ্য"
+                                className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-amber-300 font-bold focus:outline-none focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-bold text-slate-300 block mb-1">
+                                ক্লিক লিংক ড্রপডাউন
+                              </label>
+                              <select
+                                value={banner.link || 'catalog'}
+                                onChange={(e) => handleUpdateBanner(idx, 'link', e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
+                              >
+                                <option value="cat_grocery">🛒 ঘরের বাজার (Grocery)</option>
+                                <option value="cat_bakery">🥐 বেকারি আইটেম (Bakery)</option>
+                                <option value="cat_baby_food">👶 শিশু খাদ্য (Baby Food)</option>
+                                <option value="cat_attar">✨ আতর ও সুগন্ধি (Attar & Oud)</option>
+                                <option value="cat_perfume">💎 লাক্সারি পারফিউম (Perfumes)</option>
+                                <option value="cat_gifts">🎁 গিফট কালেকশন (Gifts)</option>
+                                <option value="qard-hasana">🤝 করযে হাসানা পেজ (Qard-e-Hasana)</option>
+                                <option value="loyalty-card">💳 ভিআইপি লয়ালটি কার্ড পেজ (VIP Loyalty Card)</option>
+                                <option value="catalog">📦 সব কালেকশন (All Catalog)</option>
+                                <option value="terms">📜 শর্তাবলী পেজ (Terms & Policy)</option>
+                                <option value="custom">🔗 কাস্টম লিংক</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-400 block mb-1">
+                              নির্দিষ্ট পেজ বা কাস্টম URL (টার্গেট লিংক)
+                            </label>
+                            <input
+                              type="text"
+                              value={banner.link || ''}
+                              onChange={(e) => handleUpdateBanner(idx, 'link', e.target.value)}
+                              placeholder="যেমন: cat_grocery অথবা https://..."
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-slate-300 focus:outline-none focus:border-amber-500 font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!form.hero_banners || form.hero_banners.length === 0) && (
+                    <div className="p-8 text-center bg-slate-800/40 rounded-2xl border border-dashed border-slate-700 text-slate-400 text-xs">
+                      বর্তমানে কোনো ব্যানার নেই। "নতুন ব্যানার যোগ করুন" বাটনে ক্লিক করে স্লাইড যোগ করুন।
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleAddBanner}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold rounded-xl flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>আরেকটি ব্যানার স্লাইড যোগ করুন</span>
+                  </button>
+                </div>
+
+                {/* Additional SEO / Meta Headline Fields */}
+                <div className="border-t border-slate-800 pt-5 space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    অতিরিক্ত টেক্সট ও মেটা হেডলাইন (ঐচ্ছিক)
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-300 block mb-1">ওয়েবসাইটের মূল হেডলাইন</label>
                       <input
                         type="text"
-                        name="hero_metric_1_val"
-                        value={form.hero_metric_1_val}
+                        name="hero_title"
+                        value={form.hero_title || ''}
                         onChange={handleChange}
-                        placeholder="১০০% খাঁটি"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-300 font-bold"
-                      />
-                      <input
-                        type="text"
-                        name="hero_metric_1_label"
-                        value={form.hero_metric_1_label}
-                        onChange={handleChange}
-                        placeholder="অ্যালকোহলমুক্ত আতর"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-slate-300"
+                        className="w-full px-3.5 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500"
                       />
                     </div>
-                  </div>
-
-                  {/* Metric 2 */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">মেট্রিক ২ (মান / লেবেল)</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        name="hero_metric_2_val"
-                        value={form.hero_metric_2_val}
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-300 block mb-1">সাবটাইটেল বিবরণ</label>
+                      <textarea
+                        rows={2}
+                        name="hero_subtitle"
+                        value={form.hero_subtitle || ''}
                         onChange={handleChange}
-                        placeholder="১৬+ ঘণ্টা"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-emerald-300 font-bold"
-                      />
-                      <input
-                        type="text"
-                        name="hero_metric_2_label"
-                        value={form.hero_metric_2_label}
-                        onChange={handleChange}
-                        placeholder="স্থায়িত্ব ও লংজিভিটি"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Metric 3 */}
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-400 block mb-1">মেট্রিক ৩ (মান / লেবেল)</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        name="hero_metric_3_val"
-                        value={form.hero_metric_3_val}
-                        onChange={handleChange}
-                        placeholder="স্টিভফাস্ট/রেডএক্স"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-300 font-bold"
-                      />
-                      <input
-                        type="text"
-                        name="hero_metric_3_label"
-                        value={form.hero_metric_3_label}
-                        onChange={handleChange}
-                        placeholder="লাইভ কুরিয়ার ট্র্যাক"
-                        className="px-3 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-slate-300"
+                        className="w-full px-3.5 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>

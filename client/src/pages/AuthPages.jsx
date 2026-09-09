@@ -16,6 +16,12 @@ import {
   HelpCircle,
   X
 } from 'lucide-react';
+import { 
+  bangladeshDivisions, 
+  getDistrictsForDivision, 
+  getThanasForDistrict, 
+  getPostOfficesForThana 
+} from '../data/bangladeshLocations';
 
 // LOGIN COMPONENT
 export function Login({ onNavigate }) {
@@ -97,21 +103,21 @@ export function Login({ onNavigate }) {
       <div>
         <button
           onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
       </div>
 
       <div className="bg-white p-8 rounded-3xl border border-amber-100 shadow-xl space-y-6">
         
-        {/* Header with Larger Logo & Bengali title */}
-        <div className="text-center space-y-3">
+        {/* Header with Compact Logo & Bengali title */}
+        <div className="text-center space-y-2">
           <img 
             src="/logo.jpg" 
             alt="AL ANSAR" 
-            className="w-16 h-16 object-contain rounded-2xl mx-auto border-2 border-amber-300 shadow-sm" 
+            className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-2xl mx-auto border-2 border-amber-300 shadow-sm" 
           />
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">অ্যাকাউন্টে লগইন করুন</h2>
@@ -187,30 +193,6 @@ export function Login({ onNavigate }) {
             {loading ? <span>প্রবেশ করা হচ্ছে...</span> : <span>লগইন করুন</span>}
           </button>
         </form>
-
-        {/* Quick Demo Login Credentials Bar */}
-        <div className="p-3.5 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-2 text-[11px]">
-          <p className="font-bold text-amber-900 flex items-center">
-            <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-600" />
-            ১-ক্লিক ডেমো লগইন:
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@alansar.com', 'admin123')}
-              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-300 rounded-lg font-bold text-[10px] text-center border border-amber-500/30 cursor-pointer"
-            >
-              🛡️ সুপার অ্যাডমিন
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('tanvir.ahmed@gmail.com', 'user123')}
-              className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg font-bold text-[10px] text-center border border-amber-300 cursor-pointer"
-            >
-              👤 ডেমো কাস্টমার
-            </button>
-          </div>
-        </div>
 
         <div className="text-center pt-2 border-t border-slate-100 text-xs text-slate-500">
           এখনো অ্যাকাউন্ট নেই?{' '}
@@ -323,13 +305,70 @@ export function Register({ onNavigate }) {
     name: '',
     email: '',
     phone: '',
-    address: '',
-    city: 'ঢাকা',
-    postal_code: '',
     password: ''
   });
+
+  // Cascading Bangladesh Location State
+  const [selectedDivision, setSelectedDivision] = useState('dhaka');
+  const [districtsList, setDistrictsList] = useState([]);
+  const [selectedDistrict, setSelectedDistrict] = useState('dhaka_city');
+  const [thanasList, setThanasList] = useState([]);
+  const [selectedThana, setSelectedThana] = useState('');
+  const [postOfficesList, setPostOfficesList] = useState([]);
+  const [selectedPostOffice, setSelectedPostOffice] = useState('');
+  const [postalCode, setPostalCode] = useState('১২১৬');
+  const [streetAddress, setStreetAddress] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Initialize and cascade districts
+  React.useEffect(() => {
+    const districts = getDistrictsForDivision(selectedDivision);
+    setDistrictsList(districts);
+    if (districts.length > 0) {
+      setSelectedDistrict(districts[0].id);
+    }
+  }, [selectedDivision]);
+
+  // Cascade thanas
+  React.useEffect(() => {
+    if (!selectedDistrict) {
+      setThanasList([]);
+      setSelectedThana('');
+      return;
+    }
+    const thanas = getThanasForDistrict(selectedDistrict);
+    setThanasList(thanas);
+    if (thanas.length > 0) {
+      setSelectedThana(thanas[0].id);
+    }
+  }, [selectedDistrict]);
+
+  // Cascade post offices
+  React.useEffect(() => {
+    if (!selectedThana) {
+      setPostOfficesList([]);
+      setSelectedPostOffice('');
+      return;
+    }
+    const thanaObj = thanasList.find(t => t.id === selectedThana);
+    const postOffices = getPostOfficesForThana(selectedThana, thanaObj ? thanaObj.name : '');
+    setPostOfficesList(postOffices);
+    if (postOffices.length > 0) {
+      setSelectedPostOffice(postOffices[0].name);
+      setPostalCode(postOffices[0].code || '');
+    }
+  }, [selectedThana, thanasList]);
+
+  const handlePostOfficeChange = (e) => {
+    const poName = e.target.value;
+    setSelectedPostOffice(poName);
+    const found = postOfficesList.find(p => p.name === poName);
+    if (found && found.code) {
+      setPostalCode(found.code);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -345,7 +384,7 @@ export function Register({ onNavigate }) {
       return;
     }
 
-    if (!formData.address.trim()) {
+    if (!streetAddress.trim()) {
       setError('ডেলিভারি ঠিকানা প্রদান করা বাধ্যতামূলক।');
       return;
     }
@@ -355,9 +394,29 @@ export function Register({ onNavigate }) {
       return;
     }
 
+    const divObj = bangladeshDivisions.find(d => d.id === selectedDivision);
+    const distObj = districtsList.find(d => d.id === selectedDistrict);
+    const thanaObj = thanasList.find(t => t.id === selectedThana);
+
+    const divName = divObj ? divObj.name : '';
+    const distName = distObj ? distObj.name : '';
+    const thanaName = thanaObj ? thanaObj.name : '';
+
+    const formattedFullAddress = `${streetAddress.trim()}, ${selectedPostOffice ? selectedPostOffice + ', ' : ''}${thanaName ? thanaName + ', ' : ''}${distName ? distName + ', ' : ''}${divName}`;
+
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      address: formattedFullAddress,
+      city: distName || 'ঢাকা',
+      postal_code: postalCode || '১০০০'
+    };
+
     setLoading(true);
     try {
-      await register(formData);
+      await register(payload);
       onNavigate('dashboard');
     } catch (err) {
       setError(err.message || 'রেজিস্ট্রেশন সম্পন্ন করা যায়নি।');
@@ -373,20 +432,20 @@ export function Register({ onNavigate }) {
       <div>
         <button
           onClick={() => onNavigate('home')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← মূল পেইজে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
       </div>
 
       <div className="bg-white p-8 rounded-3xl border border-amber-100 shadow-xl space-y-6">
         
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-2">
           <img 
             src="/logo.jpg" 
             alt="AL ANSAR" 
-            className="w-16 h-16 object-contain rounded-2xl mx-auto border-2 border-amber-300 shadow-sm" 
+            className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-2xl mx-auto border-2 border-amber-300 shadow-sm" 
           />
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">নতুন গ্রাহক একাউন্ট তৈরি করুন</h2>
@@ -432,7 +491,7 @@ export function Register({ onNavigate }) {
             <div>
               <label className="font-bold text-slate-700 block mb-1">১১ ডিজিটের মোবাইল নম্বর *</label>
               <input
-                type="text"
+                type="tel"
                 required
                 maxLength={11}
                 placeholder="017XXXXXXXX"
@@ -453,39 +512,86 @@ export function Register({ onNavigate }) {
                 className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
+          </div>
 
-            <div className="sm:col-span-2">
-              <label className="font-bold text-slate-700 block mb-1">ডেলিভারি ঠিকানা (বাসা/রোড নম্বর) *</label>
+          {/* Cascading Location Selector */}
+          <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/90 space-y-3">
+            <div className="flex items-center space-x-2 text-amber-900 font-black text-xs">
+              <MapPin className="w-4 h-4 text-amber-700" />
+              <span>ডেলিভারি এলাকা ও ঠিকানা নির্বাচন</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">বিভাগ (Division) *</label>
+                <select
+                  value={selectedDivision}
+                  onChange={(e) => setSelectedDivision(e.target.value)}
+                  className="w-full px-3 py-2 bg-white rounded-xl border border-amber-300 focus:outline-none focus:border-amber-600 font-medium text-xs cursor-pointer shadow-2xs"
+                >
+                  {bangladeshDivisions.map((div) => (
+                    <option key={div.id} value={div.id}>
+                      {div.name} ({div.nameEn})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">জেলা (District) *</label>
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => setSelectedDistrict(e.target.value)}
+                  className="w-full px-3 py-2 bg-white rounded-xl border border-amber-300 focus:outline-none focus:border-amber-600 font-medium text-xs cursor-pointer shadow-2xs"
+                >
+                  {districtsList.map((dist) => (
+                    <option key={dist.id} value={dist.id}>
+                      {dist.name} ({dist.nameEn})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">থানা / উপজেলা *</label>
+                <select
+                  value={selectedThana}
+                  onChange={(e) => setSelectedThana(e.target.value)}
+                  className="w-full px-3 py-2 bg-white rounded-xl border border-amber-300 focus:outline-none focus:border-amber-600 font-medium text-xs cursor-pointer shadow-2xs"
+                >
+                  {thanasList.map((thana) => (
+                    <option key={thana.id} value={thana.id}>
+                      {thana.name} ({thana.nameEn})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">পোস্ট অফিস / এলাকা *</label>
+                <select
+                  value={selectedPostOffice}
+                  onChange={handlePostOfficeChange}
+                  className="w-full px-3 py-2 bg-white rounded-xl border border-amber-300 focus:outline-none focus:border-amber-600 font-medium text-xs cursor-pointer shadow-2xs"
+                >
+                  {postOfficesList.map((po, idx) => (
+                    <option key={idx} value={po.name}>
+                      {po.name} (পোস্ট কোড: {po.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">বিস্তারিত ডেলিভারি ঠিকানা (বাসা নং, রোড নং, ফ্ল্যাট বা হোল্ডিং) *</label>
               <textarea
                 rows={2}
                 required
-                placeholder="ফ্ল্যাট ৪বি, গ্রিন টাওয়ার, মিরপুর-১০, ঢাকা"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">জেলা / শহর *</label>
-              <input
-                type="text"
-                required
-                placeholder="ঢাকা"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">পোস্টাল কোড</label>
-              <input
-                type="text"
-                placeholder="১২১৬"
-                value={formData.postal_code}
-                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+                placeholder="যেমন: বাসা ১২/এ, রোড ৪, ব্লক সি"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                className="w-full px-3.5 py-2 bg-white rounded-xl border border-amber-300 focus:outline-none focus:border-amber-600 font-medium shadow-2xs"
               />
             </div>
           </div>
@@ -582,10 +688,10 @@ export function ForgotPassword({ onNavigate }) {
       <div>
         <button
           onClick={() => onNavigate('login')}
-          className="flex items-center space-x-2 text-xs font-bold text-slate-700 hover:text-amber-800 transition-colors bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs cursor-pointer"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
-          <ArrowLeft className="w-4 h-4 text-amber-700" />
-          <span>← লগইনে ফিরে যান</span>
+          <ArrowLeft className="w-4 h-4 text-amber-800" />
+          <span>← পিছনে যান (Back)</span>
         </button>
       </div>
 

@@ -5,26 +5,53 @@
       "name": "Al Ansar Admin",
       "email": "admin@alansar.com",
       "phone": "01711000000",
-      "password_hash": "$2b$10$bJS/Bvj8bU3Tm9FyIS1c2OQvoDAz8LREwEudqgmRG1uyBuXJvY/GC",
+      "password_hash": "$2b$10$Q8FQPewSAkmVX0uiPKi7WuwVPPIX8..BuVWx4oyiw/Y1NpITjr83W",
       "address": "House #14, Road #7, Sector 3, Uttara",
       "city": "Dhaka",
       "postal_code": "1230",
       "role": "admin",
       "is_blocked": false,
-      "created_at": "2026-09-04T07:16:32.859Z"
+      "created_at": "2026-09-09T08:34:17.413Z"
     },
     {
       "id": "usr_demo_customer",
       "name": "Tanvir Ahmed",
       "email": "tanvir.ahmed@gmail.com",
       "phone": "01712345678",
-      "password_hash": "$2b$10$j83zZrbXAFADTSTAtfdmLebtD60ZdzMHCyRsqQLamcUG6oMFEYo0y",
+      "password_hash": "$2b$10$E.JLjYCB5mrjvsFhFFMftOfgdnTYY2SKDAvq8nRK5xEjiW1gx8Csq",
       "address": "Flat 4B, Green View Tower, Mirpur-10",
       "city": "Dhaka",
       "postal_code": "1216",
       "role": "user",
       "is_blocked": false,
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "loyalty_card_approved": true,
+      "loyalty_card_status": "Approved",
+      "loyalty_card_number": "ANSAR-VIP-7861-2026",
+      "loyalty_points": 250,
+      "loyalty_tier": "Royal Gold VIP",
+      "qard_credit_limit": 10000,
+      "qard_status": "Approved",
+      "created_at": "2026-09-09T08:34:17.415Z"
+    },
+    {
+      "id": "usr_vip_member",
+      "name": "তানভীর আহমেদ",
+      "email": "vip@alansar.com",
+      "phone": "01700112233",
+      "password_hash": "$2b$10$E.JLjYCB5mrjvsFhFFMftOfgdnTYY2SKDAvq8nRK5xEjiW1gx8Csq",
+      "address": "বাড়ি ১২, রোড ৫, সেক্টর ৩, উত্তরা",
+      "city": "ঢাকা",
+      "postal_code": "1230",
+      "role": "user",
+      "is_blocked": false,
+      "loyalty_card_approved": true,
+      "loyalty_card_status": "Approved",
+      "loyalty_card_number": "ANSAR-VIP-7861-2026",
+      "loyalty_points": 250,
+      "loyalty_tier": "Royal Gold VIP",
+      "qard_credit_limit": 10000,
+      "qard_status": "Approved",
+      "created_at": "2026-09-09T08:34:17.415Z"
     }
   ],
   "categories": [
@@ -174,7 +201,7 @@
       "subcategory_id": "sub_cereal_milk",
       "price": 480,
       "discount_price": 430,
-      "stock": 45,
+      "stock": 39,
       "rating": 5,
       "review_count": 48,
       "is_featured": true,
@@ -196,7 +223,7 @@
         "Baby Food",
         "Cerelac"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_lactogen_1",
@@ -206,7 +233,7 @@
       "subcategory_id": "sub_cereal_milk",
       "price": 890,
       "discount_price": 820,
-      "stock": 35,
+      "stock": 34,
       "rating": 4.9,
       "review_count": 32,
       "is_featured": true,
@@ -228,7 +255,7 @@
         "Baby Formula",
         "Lactogen"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_baby_oats_1",
@@ -260,7 +287,7 @@
         "বেবি ওটস",
         "Organic"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_ghee_1",
@@ -270,7 +297,7 @@
       "subcategory_id": "sub_ghee_honey",
       "price": 1800,
       "discount_price": 1550,
-      "stock": 35,
+      "stock": 27,
       "rating": 5,
       "review_count": 64,
       "is_featured": true,
@@ -293,7 +320,7 @@
         "Pure",
         "Free Delivery"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_honey_1",
@@ -303,7 +330,7 @@
       "subcategory_id": "sub_ghee_honey",
       "price": 950,
       "discount_price": 790,
-      "stock": 40,
+      "stock": 39,
       "rating": 4.9,
       "review_count": 52,
       "is_featured": true,
@@ -325,7 +352,7 @@
         "Honey",
         "Organic"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_oil_1",
@@ -356,7 +383,7 @@
         "সরিষার তেল",
         "Mustard Oil"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_dates_1",
@@ -389,7 +416,7 @@
         "Madinah",
         "Free Delivery"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_bakery_1",
@@ -421,7 +448,7 @@
         "Cookies",
         "Bakery"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_bakery_2",
@@ -454,7 +481,7 @@
         "Bakery",
         "Cake"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_attar_1",
@@ -486,7 +513,7 @@
         "Alcohol Free",
         "আতর"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_attar_2",
@@ -496,7 +523,7 @@
       "subcategory_id": "sub_white_musk",
       "price": 1200,
       "discount_price": 950,
-      "stock": 45,
+      "stock": 44,
       "rating": 4.8,
       "review_count": 41,
       "is_featured": false,
@@ -516,7 +543,7 @@
         "White Musk",
         "আতর"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_perfume_1",
@@ -550,7 +577,7 @@
         "Luxury",
         "Free Delivery"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_perfume_2",
@@ -560,7 +587,7 @@
       "subcategory_id": "sub_women_edp",
       "price": 3800,
       "discount_price": 2950,
-      "stock": 18,
+      "stock": 17,
       "rating": 4.9,
       "review_count": 36,
       "is_featured": true,
@@ -583,7 +610,7 @@
         "Amber",
         "Women"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_gift_1",
@@ -615,7 +642,7 @@
         "Free Delivery",
         "উপহার"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     },
     {
       "id": "prd_gift_2",
@@ -646,7 +673,7 @@
         "Free Delivery",
         "উপহার"
       ],
-      "created_at": "2026-09-04T07:16:32.860Z"
+      "created_at": "2026-09-09T08:34:17.415Z"
     }
   ],
   "reviews": [
@@ -658,7 +685,7 @@
       "comment": "মাশাল্লাহ! আতর এবং সরিষার তেলের কোয়ালিটি অসাধারণ। ডেলিভারিও মাত্র ২৪ ঘণ্টার মধ্যে পেয়েছি।",
       "product_title": "আল আনসার খাঁটি সরিষার তেল ও কম্বোডিয়ান উদ",
       "is_verified": true,
-      "created_at": "2026-09-02T07:16:32.860Z"
+      "created_at": "2026-09-07T08:34:17.415Z"
     },
     {
       "id": "rev_2",
@@ -668,7 +695,7 @@
       "comment": "ঘরের বাজারের গাওয়া ঘি এবং সুন্দরবনের মধু একদম খাঁটি। ১০% করযে হাসানা সুবিধাও পেয়েছি। জাযাকাল্লাহু খাইরান।",
       "product_title": "আল আনসার প্রিমিয়াম খাঁটি গাওয়া ঘি ও মধু",
       "is_verified": true,
-      "created_at": "2026-08-31T07:16:32.860Z"
+      "created_at": "2026-09-05T08:34:17.415Z"
     },
     {
       "id": "rev_3",
@@ -678,7 +705,7 @@
       "comment": "গিফট বক্সটা সত্যি অনেক আকর্ষণীয়। পারফিউমের সুবাস সারাদিন স্থায়ী হয়। প্যাকেজিং অসাধারণ ও রাজকীয়!",
       "product_title": "AL ANSAR Royal Wooden Gift Box",
       "is_verified": true,
-      "created_at": "2026-08-29T07:16:32.860Z"
+      "created_at": "2026-09-03T08:34:17.415Z"
     },
     {
       "id": "rev_4",
@@ -688,7 +715,7 @@
       "comment": "বেকারির ড্যানিশ কুকিজ ও মদিনার আজওয়া খেজুর অত্যন্ত ফ্রেশ ছিল। আল আনসার সুপার শপের সামগ্রিক সার্ভিস দারুণ।",
       "product_title": "ড্যানিশ বাটার কুকিজ ও মদিনার আজওয়া খেজুর",
       "is_verified": true,
-      "created_at": "2026-08-27T07:16:32.860Z"
+      "created_at": "2026-09-01T08:34:17.415Z"
     },
     {
       "id": "rev_5",
@@ -698,7 +725,7 @@
       "comment": "খাঁটি আতর ও নিত্যপ্রয়োজনীয় অর্গানিক পণ্যের জন্য আল আনসার সুপার শপ বিশ্বস্ত প্রতিষ্ঠান। স্টিডফাস্ট কুরিয়ারে খুব দ্রুত ডেলিভারি পেয়েছি।",
       "product_title": "আল আনসার সুপার শপ সার্ভিস ও প্রোডাক্ট",
       "is_verified": true,
-      "created_at": "2026-08-25T07:16:32.860Z"
+      "created_at": "2026-08-30T08:34:17.415Z"
     }
   ],
   "vouchers": [
@@ -721,23 +748,216 @@
       "description": "৳300 flat discount on luxury gift hampers above ৳2,500"
     }
   ],
-  "orders": [],
+  "orders": [
+    {
+      "id": "ord_1788943794179_ds7t",
+      "order_code": "ANSAR-189668",
+      "order_number": "ANSAR-189668",
+      "tracking_code": "STF-HNYKPB",
+      "tracking_url": "https://steadfast.com.bd/t/STF-HNYKPB",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-09T08:49:54.179Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "jisxsa",
+      "customer_phone": "01837363776",
+      "customer_email": "",
+      "shipping_address": "w, মিরপুর-১ (চিড়িয়াখানা রোড) (পোস্ট কোড: ১২১৬), মিরপুর, ঢাকা, ঢাকা",
+      "shipping_city": "ঢাকা",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 0,
+      "items": [
+        {
+          "id": "prd_attar_2",
+          "product_id": "prd_attar_2",
+          "title": "Imperial Musk & White Ambergris Premium Attar (6ml)",
+          "price": 950,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "prd_perfume_2",
+          "product_id": "prd_perfume_2",
+          "title": "Velvet Rose & White Amber French Fragrance (80ml)",
+          "price": 2950,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "prd_ghee_1",
+          "product_id": "prd_ghee_1",
+          "title": "আল আনসার প্রিমিয়াম খাঁটি গাওয়া ঘি (১ কেজি কাচের জার)",
+          "price": 1550,
+          "quantity": 7,
+          "is_free_delivery": true,
+          "thumbnail": "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "prd_lactogen_1",
+          "product_id": "prd_lactogen_1",
+          "title": "ল্যাকটোজেন ১ ইনফ্যান্ট ফর্মুলা গুঁড়ো দুধ (৪০০ গ্রাম)",
+          "price": 820,
+          "quantity": 1,
+          "is_free_delivery": true,
+          "thumbnail": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "prd_cerelac_1",
+          "product_id": "prd_cerelac_1",
+          "title": "নেসলে সেরেলাক হুইট অ্যান্ড ফ্রুটস বেবি ফুড (৪০০ গ্রাম)",
+          "price": 430,
+          "quantity": 4,
+          "is_free_delivery": false,
+          "thumbnail": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "subtotal": 17290,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 17290,
+      "payment_method": "bkash",
+      "sender_number": "0172737363",
+      "transaction_id": "HBSYCXSBAC77",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": ""
+    },
+    {
+      "id": "ord_1788943691855_wd7c",
+      "order_code": "ANSAR-735189",
+      "order_number": "ANSAR-735189",
+      "tracking_code": "STF-XDJWCB",
+      "tracking_url": "https://steadfast.com.bd/t/STF-XDJWCB",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-09T08:48:11.856Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "মাহমুদুল হাসান",
+      "customer_phone": "01912345678",
+      "customer_email": "mahmud@example.com",
+      "shipping_address": "বাসা ২৫, রোড ৭, সেক্টর ৪, উত্তরা মডেল টাউন, ঢাকা",
+      "shipping_city": "ঢাকা",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_honey_1",
+          "product_id": "prd_honey_1",
+          "title": "সুন্দরবনের ১০০% প্রাকৃতিক চাকের খলিসা মধু (৫০০ গ্রাম)",
+          "price": 790,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "subtotal": 790,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 850,
+      "payment_method": "bkash",
+      "sender_number": "01912345678",
+      "transaction_id": "BKASH882211",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": ""
+    },
+    {
+      "id": "ord_1788943090917_njub",
+      "order_code": "ANSAR-519996",
+      "order_number": "ANSAR-519996",
+      "tracking_code": "STF-689SYD",
+      "tracking_url": "https://steadfast.com.bd/t/STF-689SYD",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-09T08:38:10.917Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "Sadia Tasnim",
+      "customer_phone": "01898765432",
+      "customer_email": "",
+      "shipping_address": "Flat 4B, Dhanmondi 27, Dhaka",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_cerelac_1",
+          "product_id": "prd_cerelac_1",
+          "title": "নেসলে সেরেলাক হুইট অ্যান্ড ফ্রুটস বেবি ফুড (৪০০ গ্রাম)",
+          "price": 430,
+          "quantity": 2,
+          "is_free_delivery": false,
+          "thumbnail": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "subtotal": 860,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 920,
+      "payment_method": "nagad",
+      "sender_number": "01898765432",
+      "transaction_id": "NAGAD778899",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": ""
+    },
+    {
+      "id": "ord_1788943003869_zn15",
+      "order_code": "ANSAR-578655",
+      "order_number": "ANSAR-578655",
+      "tracking_code": "STF-WBA1ZG",
+      "tracking_url": "https://steadfast.com.bd/t/STF-WBA1ZG",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-09T08:36:43.869Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "আহমেদ কবির",
+      "customer_phone": "01712345678",
+      "customer_email": "test@example.com",
+      "shipping_address": "বাড়ি ১২, রোড ৩, সেক্টর ৭, উত্তরা",
+      "shipping_city": "ঢাকা",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 0,
+      "items": [
+        {
+          "id": "prd_ghee_1",
+          "product_id": "prd_ghee_1",
+          "title": "আল আনসার প্রিমিয়াম খাঁটি গাওয়া ঘি (১ কেজি কাচের জার)",
+          "price": 1550,
+          "quantity": 1,
+          "is_free_delivery": true,
+          "thumbnail": "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "subtotal": 1550,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 1550,
+      "payment_method": "bkash",
+      "sender_number": "01712345678",
+      "transaction_id": "TRX998877AA",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": ""
+    }
+  ],
   "chat_conversations": [
     {
       "id": "conv_guest_p3mcoat",
       "user_id": null,
       "user_name": "Guest User",
-      "created_at": "2026-09-04T07:16:56.880Z",
+      "created_at": "2026-09-09T08:38:44.082Z",
       "messages": [
         {
-          "id": "msg_1788506216880",
+          "id": "msg_1788943124082",
           "sender": "admin",
           "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
-          "timestamp": "2026-09-04T07:16:56.880Z",
+          "timestamp": "2026-09-09T08:38:44.082Z",
           "is_bot_reply": true
         }
       ],
-      "last_updated": "2026-09-04T07:16:56.880Z",
+      "last_updated": "2026-09-09T08:38:44.083Z",
       "unread_admin_count": 0,
       "unread_user_count": 0
     }
@@ -782,6 +1002,21 @@
     "qard_terms_title": "করযে হাসানার শর্তাবলী",
     "qard_hasana_terms": "১. করযে হাসানা হলো সম্পূর্ণ সুদমুক্ত এবং কোনো প্রকার প্রসেসিং বা হিডেন চার্জ বিহীন ইসলামী ঋণ সুবিধা।\n২. ক্রেতা অর্ডারের সময় ৯০% পেমেন্ট করবেন এবং বাকি ১০% টাকা নির্ধারিত মেয়াদের মধ্যে কোনো সুদ ছাড়াই পরিশোধ করবেন।\n৩. এই সুবিধা গ্রহণের জন্য জাতীয় পরিচয়পত্র (NID) নম্বর ও বিস্তারিত তথ্য প্রদান করতে হবে।\n৪. অঙ্গীকার অনুযায়ী যথাসময়ে ঋণ পরিশোধ করা ঈমানী দায়িত্ব ও ইসলামী আমানতদারিতার অন্তর্ভুক্ত।",
     "qard_special_notice": "আবেদন অনুমোদিত হলে আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে ক্রেডিট লিমিট যুক্ত হবে এবং যেকোনো অর্ডারে ১-ক্লিকে ব্যবহার করা যাবে।",
+    "loyalty_card_enabled": true,
+    "loyalty_hero_badge": "AL ANSAR PRIVILEGE CLUB",
+    "loyalty_hero_title": "আল আনসার ভিআইপি মেম্বারশিপ ও ডিজিটাল লয়ালটি কার্ড",
+    "loyalty_hero_subtitle": "আল আনসার সুপার শপের সম্মানিত নিয়মিত গ্রাহকদের জন্য বিশেষ সম্মাননা। প্রতি কেনাকাটায় ক্যাশব্যাক, রিওয়ার্ড পয়েন্ট ও বিশেষ ভিআইপি ডিসকাউন্ট সুবিধা।",
+    "loyalty_hadith_quote": "লাইফটাইম ক্যাশ পয়েন্ট • ইউনিক ডিজিটাল বারকোড • বিশেষ মেম্বারশিপ ডিসকাউন্ট",
+    "loyalty_pillar_1_title": "লাইফটাইম রিওয়ার্ড পয়েন্ট",
+    "loyalty_pillar_1_desc": "প্রতি ১০০ টাকা কেনাকাটায় ক্যাশ পয়েন্ট সংগ্রহ করুন। পরবর্তী যেকোনো অর্ডারে পয়েন্ট রিডিম করে সরাসরি মূল্যছাড় পান।",
+    "loyalty_pillar_2_title": "স্পেশাল মেম্বারশিপ ছাড়",
+    "loyalty_pillar_2_desc": "প্রিমিয়াম খাঁটি আতর, ফ্রেঞ্চ পারফিউম ও উপহার সামগ্রীতে অতিরিক্ত ৫% থেকে ১৫% পর্যন্ত বিশেষ ভিআইপি মূল্যছাড়।",
+    "loyalty_pillar_3_title": "ফ্রি ডেলিভারি ও অগ্রাধিকার",
+    "loyalty_pillar_3_desc": "নির্ধারিত অর্ডারে সারা দেশে ফ্রি হোম ডেলিভারি এবং যেকোনো সহযোগিতায় ২৪/৭ ডেডিকেটেড ভিআইপি হেল্পলাইন সাপোর্ট।",
+    "loyalty_terms_title": "কার্ডের শর্তাবলী ও নিয়ম",
+    "loyalty_terms_desc": "১. কার্ডটি আবেদনকারীর নিজস্ব নামে সংরক্ষিত ও হস্তান্তরঅযোগ্য।\n২. প্রতিটি সফল ডেলিভারির পর পয়েন্ট স্বয়ংক্রিয় যোগ হবে।\n৩. চেকআউটে কার্ডের বারকোড স্ক্যান বা নম্বর ব্যবহারযোগ্য।",
+    "loyalty_button_bn": "লয়ালটি কার্ডের জন্য আবেদন করুন",
+    "loyalty_button_en": "Apply for Loyalty Card",
     "terms_hero_badge": "অফিসিয়াল পলিসি ও নীতিমালা",
     "terms_hero_title": "শর্তাবলী, ডেলিভারি ও শরিয়াহ নীতিমালা",
     "terms_hero_subtitle": "আল আনসার সুপার শপ (AL ANSAR SUPER SHOP) বিশুদ্ধ পণ্য ও বিশ্বস্ততার সাথে ব্যবসা পরিচালনায় অঙ্গীকারবদ্ধ। ক্রেতা ও গ্রাহকদের সর্বোচ্চ সন্তুষ্টি ও অধিকার সুরক্ষায় আমাদের সুস্পষ্ট নীতিমালা নিচে বর্ণিত হলো।",
@@ -804,6 +1039,48 @@
     "hero_metric_2_label": "দ্রুততম হোম ডেলিভারি",
     "hero_metric_3_val": "স্টিভফাস্ট/রেডএক্স",
     "hero_metric_3_label": "লাইভ কুরিয়ার ট্র্যাক",
+    "hero_banners": [
+      {
+        "id": "banner_1",
+        "title": "ঘরের নিত্যপ্রয়োজনীয় খাঁটি বাজার ও অর্গানিক পণ্য",
+        "badge": "🛒 ১০০% খাঁটি পণ্য",
+        "image_url": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80",
+        "link": "cat_grocery",
+        "active": true
+      },
+      {
+        "id": "banner_2",
+        "title": "বিনা সুদে কেনাকাটা করুন ১০% তাৎক্ষণিক করযে হাসানার সুবিধায়",
+        "badge": "🤝 করযে হাসানা (১০% ধার)",
+        "image_url": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1400&q=80",
+        "link": "qard-hasana",
+        "active": true
+      },
+      {
+        "id": "banner_3",
+        "title": "দৈনন্দিন ফ্রেশ বেকারি আইটেম ও স্পেশাল কুকিজ কালেকশন",
+        "badge": "🥐 তাজা বেকারি",
+        "image_url": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=80",
+        "link": "cat_bakery",
+        "active": true
+      },
+      {
+        "id": "banner_4",
+        "title": "১০০% অ্যালকোহলমুক্ত খাঁটি আতর, উদ ও লাক্সারি পারফিউম",
+        "badge": "✨ খাঁটি সুবাস",
+        "image_url": "https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=1400&q=80",
+        "link": "cat_attar",
+        "active": true
+      },
+      {
+        "id": "banner_5",
+        "title": "সারাদেশে দ্রুততম হোম ডেলিভারি • ২০০০+ অর্ডারে ফ্রি ডেলিভারি",
+        "badge": "🚚 ফ্রি ডেলিভারি",
+        "image_url": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1400&q=80",
+        "link": "catalog",
+        "active": true
+      }
+    ],
     "deals_badge": "সীমিত সময়ের বিশেষ অফার",
     "deals_title": "⚡ বিশেষ ডিসকাউন্ট ডিল",
     "deals_subtitle": "ভাউচার কোড ব্যবহার করে পান ২৫% পর্যন্ত বিশেষ ছাড়",

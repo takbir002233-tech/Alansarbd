@@ -133,15 +133,15 @@ export default function LiveChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
       {/* Floating Launcher Button */}
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="relative group p-4 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-full shadow-2xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 flex items-center justify-center ring-4 ring-white"
+          className="relative group p-3 sm:p-4 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-full shadow-2xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 flex items-center justify-center ring-4 ring-white"
           title="Open Live Chat & Instant AI Support"
         >
-          <MessageSquare className="w-6 h-6" />
+          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
           
           {/* Pulsing online indicator */}
           <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4">
@@ -164,7 +164,7 @@ export default function LiveChatWidget() {
 
       {/* Expanded Live Chat Panel */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[580px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="w-[calc(100vw-32px)] sm:w-[400px] max-w-[380px] sm:max-w-none h-[520px] sm:h-[580px] max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shadow-md">

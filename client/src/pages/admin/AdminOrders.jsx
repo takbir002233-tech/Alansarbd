@@ -191,6 +191,9 @@ export default function AdminOrders({ onOpenInvoice }) {
               <option value="bkash" className="bg-slate-800 text-white">bKash</option>
               <option value="nagad" className="bg-slate-800 text-white">Nagad</option>
               <option value="rocket" className="bg-slate-800 text-white">Rocket</option>
+              <option value="upay" className="bg-slate-800 text-white">Upay</option>
+              <option value="cellfin" className="bg-slate-800 text-white">Cellfin</option>
+              <option value="bank" className="bg-slate-800 text-white">Bank Transfer</option>
               <option value="cod" className="bg-slate-800 text-white">Cash on Delivery</option>
             </select>
           </div>
@@ -258,10 +261,22 @@ export default function AdminOrders({ onOpenInvoice }) {
                             ? 'bg-amber-950 text-amber-400 border border-amber-800'
                             : order.payment_method === 'rocket'
                             ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                            : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                            : order.payment_method === 'upay'
+                            ? 'bg-sky-950 text-sky-400 border border-sky-800'
+                            : order.payment_method === 'cellfin'
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                            : order.payment_method === 'bank'
+                            ? 'bg-blue-950 text-blue-400 border border-blue-800'
+                            : 'bg-slate-800 text-slate-300 border border-slate-700'
                         }`}>
                           {order.payment_method}
                         </span>
+
+                        {order.sender_number ? (
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            From: <span className="text-slate-200 font-bold">{order.sender_number}</span>
+                          </p>
+                        ) : null}
 
                         {order.transaction_id ? (
                           <div className="flex items-center space-x-1.5 mt-1">
