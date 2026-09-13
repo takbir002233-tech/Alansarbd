@@ -179,7 +179,7 @@ export default function InvoiceModal({ order, onClose }) {
             <table className="w-full text-left text-xs">
               <thead className="bg-amber-50/70 text-slate-700 uppercase font-semibold border-b border-amber-100">
                 <tr>
-                  <th className="p-3">সুগন্ধি / আইটেমের বিবরণ</th>
+                  <th className="p-3">পণ্যের বিবরণ</th>
                   <th className="p-3 text-center">পরিমাণ</th>
                   <th className="p-3 text-right">একক মূল্য</th>
                   <th className="p-3 text-right">মোট (টাকা)</th>

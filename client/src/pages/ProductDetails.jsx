@@ -18,6 +18,7 @@ import {
   Tag,
   HandHeart,
   Clock,
+  Crown,
   X
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -155,17 +156,54 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
               className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 ${isOutOfStock ? 'grayscale-20' : ''}`}
             />
 
-            {/* Badges Overlay */}
-            <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-              {hasDiscount && (
-                <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10.5px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
-                  <Flame className="w-3 h-3" />
-                  <span>{toBengaliDigits(discountPercent)}% ছাড়</span>
+            {/* TOP-LEFT: Emerald Sawtooth Ribbon Discount Tag (Matching ProductCard) */}
+            {hasDiscount && (
+              <div className="absolute top-0 left-2.5 sm:left-3 z-20 pointer-events-none drop-shadow-md">
+                <div className="bg-emerald-800 text-amber-300 font-black text-[10px] sm:text-[12px] leading-tight px-2 sm:px-2.5 pt-1 pb-1.5 text-center relative flex flex-col items-center">
+                  <span className="font-extrabold tracking-tight">৳{toBengaliDigits(savings.toLocaleString())}</span>
+                  <span className="text-[7.5px] sm:text-[9px] font-black uppercase tracking-wider -mt-0.5 text-white">
+                    {discountPercent ? `${toBengaliDigits(discountPercent)}% OFF` : 'OFF'}
+                  </span>
+                  
+                  {/* Sawtooth / Zigzag bottom edge */}
+                  <div 
+                    className="absolute -bottom-1.5 left-0 right-0 h-1.5 bg-emerald-800"
+                    style={{
+                      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 85% 30%, 70% 100%, 55% 30%, 40% 100%, 25% 30%, 10% 100%, 0% 30%)'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Featured Tag (Royal Choice) if applicable */}
+            {product.is_featured && (
+              <div className={`absolute ${hasDiscount ? 'top-10 sm:top-12 left-2.5' : 'top-2.5 left-2.5'} z-20 pointer-events-none`}>
+                <span className="bg-gradient-to-r from-[#032318] to-[#063b2a] text-amber-300 text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs border border-amber-400/80 flex items-center space-x-1">
+                  <Crown className="w-2.5 h-2.5 text-amber-300 flex-shrink-0" />
+                  <span>রয়্যাল</span>
                 </span>
-              )}
+              </div>
+            )}
+
+            {/* TOP-RIGHT: Stock status & Free delivery tags (Matching ProductCard) */}
+            <div className="absolute top-2 right-2 z-20 flex flex-col gap-1 pointer-events-none items-end">
+              {isOutOfStock ? (
+                <span className="bg-rose-700 text-white text-[8px] sm:text-[9.5px] font-black px-2 sm:px-2.5 py-0.5 rounded-full shadow-md border border-rose-300/40 flex items-center space-x-1">
+                  <XCircle className="w-2.5 h-2.5 text-rose-200" />
+                  <span>স্টক শেষ</span>
+                </span>
+              ) : isLowStock ? (
+                <span className="bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[8px] sm:text-[9.5px] font-black px-2 sm:px-2.5 py-0.5 rounded-full shadow-md border border-amber-300/60 flex items-center space-x-1 animate-bounce">
+                  <AlertTriangle className="w-2.5 h-2.5 text-amber-100" />
+                  <span>মাত্র {toBengaliDigits(stockNum)}টি বাকি!</span>
+                </span>
+              ) : null}
+
               {product.is_free_delivery && (
-                <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center">
-                  <Truck className="w-2.5 h-2.5 mr-1" /> ফ্রি ডেলিভারি
+                <span className="bg-teal-700 text-white text-[7.5px] sm:text-[9px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center space-x-1">
+                  <Truck className="w-2.5 h-2.5 text-teal-200" />
+                  <span>ফ্রি ডেলিভারি</span>
                 </span>
               )}
             </div>
@@ -378,12 +416,12 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className={`w-full py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer border ${
+                  className={`w-full py-2 rounded-xl text-xs font-black transition-all duration-200 flex items-center justify-center space-x-1.5 cursor-pointer border ${
                     isOutOfStock
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed border-slate-300'
                       : added
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-white hover:bg-amber-50 text-amber-950 border-amber-300 shadow-2xs'
+                      ? 'bg-emerald-800 text-white border border-emerald-700 shadow-md shadow-emerald-900/20'
+                      : 'bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-amber-500 hover:to-amber-600 active:from-amber-600 active:to-amber-700 text-white hover:text-slate-950 active:text-slate-950 border border-emerald-600 hover:border-amber-400 active:border-amber-500 shadow-xs hover:shadow-md hover:shadow-amber-500/30'
                   }`}
                 >
                   {added ? (
@@ -422,7 +460,7 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
       {relatedProducts.length > 0 && (
         <div className="pt-4 border-t border-slate-200 space-y-2">
           <h3 className="text-sm font-black text-slate-800">আপনার আরও পছন্দ হতে পারে</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
             {relatedProducts.map(p => (
               <ProductCard key={p.id} product={p} onNavigate={onNavigate} />
             ))}

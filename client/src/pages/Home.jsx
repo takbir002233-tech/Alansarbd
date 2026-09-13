@@ -194,7 +194,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
           </div>
 
           {searchResults.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
               {searchResults.map(product => (
                 <ProductCard
                   key={product.id}
@@ -423,7 +423,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
             </button>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5 mt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mt-5">
             {flashDeals.slice(0, 5).map(product => (
               <ProductCard
                 key={product.id}
@@ -471,7 +471,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
           </div>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
           {filteredProducts.map(product => (
             <ProductCard
               key={product.id}
@@ -500,7 +500,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
             </button>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5 mt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mt-5">
             {groceryItems.slice(0, 5).map(product => (
               <ProductCard
                 key={product.id}
@@ -530,7 +530,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
             </button>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5 mt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mt-5">
             {bakeryItems.slice(0, 5).map(product => (
               <ProductCard
                 key={product.id}
@@ -560,7 +560,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
             </button>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5 mt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mt-5">
             {babyFoodItems.slice(0, 5).map(product => (
               <ProductCard
                 key={product.id}
@@ -589,7 +589,7 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
           </button>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 md:gap-3.5 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mt-5">
           {(attarItems.length > 0 ? attarItems : products).slice(0, 5).map(product => (
             <ProductCard
               key={product.id}

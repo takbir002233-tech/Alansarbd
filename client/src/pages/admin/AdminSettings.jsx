@@ -53,6 +53,10 @@ export default function AdminSettings() {
     dhaka_delivery_fee: 60,
     outside_dhaka_delivery_fee: 120,
     free_delivery_threshold: 2000,
+    loyalty_card_initial_points: 100,
+    reward_points_spend_amount: 100,
+    reward_points_earned: 1,
+    reward_point_value_bdt: 1,
     
     // Top Dynamic Marquee Ticker
     marquee_text: '✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨',
@@ -75,6 +79,7 @@ export default function AdminSettings() {
     // Qard-e-Hasana Full CMS
     qard_hasana_enabled: true,
     qard_hasana_percentage: 10,
+    qard_application_fee: 50,
     qard_hero_badge: 'আল আনসার করযে হাসানা স্কিম',
     qard_hero_title: 'সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা',
     qard_hero_subtitle: 'ইসলামী শরীয়াহ অনুযায়ী পারস্পরিক সহযোগিতার উদ্দেশ্যে ‘আল আনসার’ নিয়ে এসেছে ১০০% সুদমুক্ত করযে হাসানা সুবিধা। আপনি কোনো প্রকার অতিরিক্ত ফি, প্রসেসিং চার্জ বা সুদ ছাড়াই পণ্য ক্রয় করে পরবর্তীতে সুবিধা অনুযায়ী মূল্য পরিশোধ করতে পারবেন।',
@@ -243,13 +248,19 @@ export default function AdminSettings() {
     loadSettings();
   }, []);
 
+  const toBengaliDigits = (str) => {
+    if (str === null || str === undefined || str === '') return '০';
+    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return str.toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm(prev => ({
       ...prev,
       [name]: type === 'checkbox'
         ? checked
-        : ['dhaka_delivery_fee', 'outside_dhaka_delivery_fee', 'free_delivery_threshold', 'qard_hasana_percentage'].includes(name)
+        : ['dhaka_delivery_fee', 'outside_dhaka_delivery_fee', 'free_delivery_threshold', 'qard_hasana_percentage', 'qard_application_fee', 'loyalty_card_initial_points', 'reward_points_new_user', 'reward_points_spend_amount', 'reward_points_earned', 'reward_point_value_bdt'].includes(name)
         ? Number(value)
         : value
     }));
@@ -344,7 +355,7 @@ export default function AdminSettings() {
   };
 
   if (loading) {
-    return <div className="py-16 text-center text-slate-400 text-xs font-sans">লোড হচ্ছে...</div>;
+    return null;
   }
 
   const sections = [
@@ -713,7 +724,7 @@ export default function AdminSettings() {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-bold text-emerald-400 block mb-1">চেকআউটে তাৎক্ষণিক করযে হাসানা ছাড়/বাকি (%) *</label>
                     <input
@@ -723,6 +734,18 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-amber-400 block mb-1">করযে হাসানা আবেদন ফি (টাকা) *</label>
+                    <input
+                      type="number"
+                      name="qard_application_fee"
+                      value={form.qard_application_fee !== undefined ? form.qard_application_fee : 50}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">০ বসালে পেমেন্ট ছাড়াই সরাসরি জমা হবে</p>
                   </div>
 
                   <div>
@@ -908,6 +931,115 @@ export default function AdminSettings() {
                     />
                     <span>লয়ালটি কার্ড স্কিম সক্রিয় রাখুন</span>
                   </label>
+                </div>
+
+                {/* 🎁 LOYALTY CARD REWARD POINTS & EARNING RULES CMS */}
+                <div className="p-5 bg-gradient-to-br from-amber-950/40 via-slate-800/80 to-amber-950/20 rounded-2xl border-2 border-amber-500/40 space-y-4 shadow-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
+                    <div>
+                      <span className="text-xs font-black text-amber-300 flex items-center">
+                        <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
+                        লয়ালটি কার্ড পয়েন্ট ও কেনাকাটার আর্নিং রুলস কনফিগারেশন (Loyalty Card Points Rules)
+                      </span>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        লয়ালটি কার্ড অনুমোদন হলে গ্রাহকের কার্ডে কত বোনাস পয়েন্ট যাবে এবং কেনাকাটায় কার্ডে কত পয়েন্ট জমা হবে তা এখান থেকে নিয়ন্ত্রণ করুন (সাধারণ ব্যবহারকারীরা পয়েন্ট পাবেন না, শুধুমাত্র কার্ডধারীদের জন্য প্রযোজ্য)
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-2.5 py-1 rounded-full border border-amber-500/30 self-start sm:self-auto">
+                      ডিজিটাল লয়ালটি কার্ড ও অর্ডারে সক্রিয়
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {/* 1. Loyalty Card Approval Bonus Points */}
+                    <div className="p-3.5 bg-slate-800 rounded-xl border border-slate-700 space-y-1.5">
+                      <label className="text-xs font-bold text-amber-300 block">
+                        লয়ালটি কার্ড অনুমোদন বোনাস (Card Approval Bonus Points) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          name="loyalty_card_initial_points"
+                          value={form.loyalty_card_initial_points !== undefined ? form.loyalty_card_initial_points : (form.reward_points_new_user !== undefined ? form.reward_points_new_user : 100)}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 bg-slate-900 text-xs rounded-lg border border-amber-500/40 text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400 pr-12"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-bold">পয়েন্ট</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        লয়ালটি কার্ড আবেদন অনুমোদিত হলে ব্যবহারকারীর ডিজিটাল কার্ডে এই প্রারম্ভিক পয়েন্ট যুক্ত হবে।
+                      </p>
+                    </div>
+
+                    {/* 2. Spend Amount Threshold */}
+                    <div className="p-3.5 bg-slate-800 rounded-xl border border-slate-700 space-y-1.5">
+                      <label className="text-xs font-bold text-emerald-300 block">
+                        কত টাকা কেনাকাটায় কার্ডে পয়েন্ট (Spend Amount) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          name="reward_points_spend_amount"
+                          value={form.reward_points_spend_amount || 100}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 bg-slate-900 text-xs rounded-lg border border-emerald-500/40 text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-400 pr-12"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-bold">টাকা (৳)</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        কার্ডধারী গ্রাহকের প্রতি কত টাকার কেনাকাটায় কার্ডে পয়েন্ট জমা হবে।
+                      </p>
+                    </div>
+
+                    {/* 3. Points Earned per Spend */}
+                    <div className="p-3.5 bg-slate-800 rounded-xl border border-slate-700 space-y-1.5">
+                      <label className="text-xs font-bold text-cyan-300 block">
+                        প্রতি ধাপে কার্ডে অর্জিত পয়েন্ট (Points Earned) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          name="reward_points_earned"
+                          value={form.reward_points_earned !== undefined ? form.reward_points_earned : 1}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 bg-slate-900 text-xs rounded-lg border border-cyan-500/40 text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-400 pr-12"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-bold">পয়েন্ট</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        যেমন: কার্ডধারীদের প্রতি ১০০ টাকার কেনাকাটায় কার্ডে ১ পয়েন্ট যোগ।
+                      </p>
+                    </div>
+
+                    {/* 4. Cash Value per Point */}
+                    <div className="p-3.5 bg-slate-800 rounded-xl border border-slate-700 space-y-1.5">
+                      <label className="text-xs font-bold text-purple-300 block">
+                        ১ পয়েন্টের নগদ মান (Point Value) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          name="reward_point_value_bdt"
+                          value={form.reward_point_value_bdt !== undefined ? form.reward_point_value_bdt : 1}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 bg-slate-900 text-xs rounded-lg border border-purple-500/40 text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400 pr-12"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-bold">টাকা (৳)</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        পরবর্তী কেনাকাটায় কার্ডের ১ পয়েন্ট সমান কত টাকা ছাড় বিবেচিত হবে।
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-xs text-amber-200">
+                    💡 <strong>সক্রিয় রুল সারাংশ:</strong> লয়ালটি কার্ড অনুমোদনে স্বয়ংক্রিয় বোনাস <strong>{toBengaliDigits(form.loyalty_card_initial_points !== undefined ? form.loyalty_card_initial_points : (form.reward_points_new_user || 100))}</strong> পয়েন্ট • কার্ডধারীদের প্রতি <strong>৳{toBengaliDigits(form.reward_points_spend_amount || 100)}</strong> কেনাকাটায় <strong>{toBengaliDigits(form.reward_points_earned || 1)}</strong> পয়েন্ট কার্ডে জমা হবে (সাধারণ গ্রাহকরা পয়েন্ট পাবেন না, শুধুমাত্র কার্ডধারীরা পাবেন)।
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

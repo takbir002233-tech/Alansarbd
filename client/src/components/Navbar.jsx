@@ -200,7 +200,7 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
           <div className="flex items-center justify-end space-x-2 text-[11px] lg:text-xs font-bold text-amber-100 whitespace-nowrap flex-shrink-0 ml-auto z-10">
             <div className="flex items-center space-x-1 font-mono tabular-nums whitespace-nowrap">
               <Calendar className="w-3 h-3 text-amber-400 flex-shrink-0" />
-              <span>{currentDateTimeStr || 'লোড হচ্ছে...'}</span>
+              <span>{currentDateTimeStr || ''}</span>
             </div>
             <span className="text-amber-500/40 hidden lg:inline">|</span>
             <button 

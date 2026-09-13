@@ -93,10 +93,25 @@ router.post('/', (req, res) => {
     const finalDeliveryFee = (hasFreeDeliveryProduct || isThresholdFree) ? 0 : standardDeliveryFee;
     const total_amount = Math.max(0, subtotal - discount) + finalDeliveryFee;
 
+    let finalUserId = user_id || null;
+    if (!finalUserId && req.headers.authorization) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'al_ansar_super_shop_secret_key_2026');
+        if (decoded && decoded.id) finalUserId = decoded.id;
+      } catch (e) {}
+    }
+    if (!finalUserId && customer_phone) {
+      const cleanP = customer_phone.trim().replace(/^(\+88|88)/, '');
+      const u = db.getUserByPhone(cleanP);
+      if (u) finalUserId = u.id;
+    }
+
     const orderCode = 'ANSAR-' + Math.floor(100000 + Math.random() * 900000);
 
     const newOrder = db.createOrder({
-      user_id: user_id || null,
+      user_id: finalUserId,
       order_code: orderCode,
       order_number: orderCode,
       customer_name: customer_name.trim(),
@@ -118,15 +133,6 @@ router.post('/', (req, res) => {
       qard_deferred_amount: Number(req.body.qard_deferred_amount || req.body.payment_details?.qard_discount_amount) || 0,
       notes: (notes || '').trim()
     });
-
-    // If user is logged in, award loyalty points (1 point per 100 BDT)
-    if (user_id) {
-      const u = db.getUserById(user_id);
-      if (u) {
-        const earnedPoints = Math.floor(total_amount / 100);
-        u.loyalty_points = (u.loyalty_points || 0) + earnedPoints;
-      }
-    }
 
     // Notify connected admins via socket
     if (req.app.get('io')) {

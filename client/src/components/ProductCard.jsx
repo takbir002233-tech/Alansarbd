@@ -62,8 +62,8 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
       {/* Top subtle emerald accent line on card */}
       <div className="h-0.5 w-full bg-gradient-to-r from-emerald-600 via-amber-400 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      {/* Product Image Box (Compact proportion on mobile so cards aren't overly tall) */}
-      <div className={`relative w-full ${compact ? 'pt-[68%] sm:pt-[78%]' : 'pt-[70%] sm:pt-[82%] md:pt-[90%]'} bg-gradient-to-b from-slate-50/80 via-white to-amber-50/20 overflow-hidden flex items-center justify-center`}>
+      {/* Product Image Box (Optimal 2-column mobile proportions) */}
+      <div className={`relative w-full ${compact ? 'pt-[78%] sm:pt-[82%]' : 'pt-[82%] sm:pt-[85%] md:pt-[90%]'} bg-gradient-to-b from-slate-50/80 via-white to-amber-50/20 overflow-hidden flex items-center justify-center`}>
         
         {/* Background / Product Image */}
         <img
@@ -141,20 +141,20 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
       <div className="p-1.5 sm:p-2.5 flex-1 flex flex-col justify-between space-y-1 sm:space-y-1.5">
         <div>
           {/* Dynamic Delivery Time Line (Customizable per product) */}
-          <p className="text-[8.5px] sm:text-[10px] text-slate-500 italic text-center font-medium tracking-tight truncate">
+          <p className="text-[9px] sm:text-[10.5px] text-slate-500 italic text-center font-medium tracking-tight">
             {product.is_free_delivery 
               ? `Delivery ${product.delivery_time || '1-2 hours'} • ফ্রি ডেলিভারি` 
               : `Delivery ${product.delivery_time || '1-2 hours'} • দ্রুত ডেলিভারি`}
           </p>
 
-          {/* Product Title */}
-          <h3 className="text-[11px] sm:text-xs md:text-[13px] font-black text-slate-800 text-center line-clamp-2 leading-snug group-hover:text-emerald-800 transition-colors mt-0.5 min-h-[1.5rem] sm:min-h-[1.9rem]">
+          {/* Product Title - Complete full display without truncation */}
+          <h3 className="text-xs sm:text-[13px] font-black text-slate-800 text-center leading-snug group-hover:text-amber-700 transition-colors mt-0.5 break-words">
             {product.title}
           </h3>
         </div>
 
         {/* Pricing & Add to Bag Button Stack */}
-        <div className="space-y-1 sm:space-y-1.5 pt-0.5">
+        <div className="space-y-1.5 sm:space-y-2 pt-0.5">
           {/* Price Row: Strikethrough Regular Price + Bold Emerald Selling Price + Per Piece */}
           <div className="flex items-center justify-center space-x-1 sm:space-x-1.5 flex-wrap">
             {hasDiscount && (
@@ -170,16 +170,16 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
             </span>
           </div>
 
-          {/* Emerald Pill "+ Add to Bag" Button (Website brand color) */}
+          {/* Category-active Golden Amber "+ Add to Bag" Button */}
           <button
             onClick={handleAdd}
             disabled={isOutOfStock}
-            className={`w-full py-1 sm:py-1.5 px-2 sm:px-3 rounded-full font-black text-[10.5px] sm:text-xs transition-all duration-200 flex items-center justify-center space-x-1 shadow-xs active:scale-95 cursor-pointer ${
+            className={`w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-full font-black text-[11px] sm:text-xs transition-all duration-200 flex items-center justify-center space-x-1 shadow-xs active:scale-95 cursor-pointer ${
               added
-                ? 'bg-emerald-600 text-white shadow-emerald-500/30'
+                ? 'bg-emerald-800 text-white border border-emerald-700 shadow-md shadow-emerald-900/20'
                 : isOutOfStock
                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                : 'bg-emerald-800 hover:bg-emerald-700 text-white shadow-emerald-900/20 hover:shadow-md hover:shadow-emerald-900/30 border border-emerald-700'
+                : 'bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-amber-500 hover:to-amber-600 active:from-amber-600 active:to-amber-700 text-white hover:text-slate-950 active:text-slate-950 border border-emerald-600 hover:border-amber-400 active:border-amber-500 shadow-xs hover:shadow-md hover:shadow-amber-500/30'
             }`}
             title={isOutOfStock ? 'স্টক শেষ' : added ? 'ব্যাগে যুক্ত হয়েছে!' : 'ব্যাগে যোগ করুন'}
           >

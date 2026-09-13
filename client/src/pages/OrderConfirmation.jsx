@@ -75,7 +75,7 @@ export default function OrderConfirmation({ order, onNavigate, onOpenInvoice }) 
             ধন্যবাদ, {order.customer_name}!
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-            আপনার আল আনসার সুগন্ধি অর্ডারটি সিস্টেমে সংরক্ষিত হয়েছে। আমাদের ওয়্যারহাউস টিম পার্সেলটি প্রস্তুত করছে।
+            আপনার আল আনসার অর্ডারটি সিস্টেমে সংরক্ষিত হয়েছে। আমাদের টিম পার্সেলটি প্রস্তুত করছে।
           </p>
         </div>
 

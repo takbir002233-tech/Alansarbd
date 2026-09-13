@@ -626,6 +626,12 @@ function getInitialData() {
       outside_dhaka_delivery_fee: 120,
       free_delivery_threshold: 2000,
       
+      // Loyalty Card / Reward Points Settings
+      loyalty_card_initial_points: 100,
+      reward_points_spend_amount: 100,
+      reward_points_earned: 1,
+      reward_point_value_bdt: 1,
+      
       // Top Dynamic Marquee Ticker
       marquee_text: '✨ আসসালামু আলাইকুম! আল আনসার সুপার শপ-এ আপনাকে স্বাগতম • ঘরের বাজার, বেকারি, খাঁটি আতর ও উপহার সামগ্রী • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨',
       marquee_enabled: true,
@@ -647,6 +653,7 @@ function getInitialData() {
       // Qard-e-Hasana Full CMS
       qard_hasana_enabled: true,
       qard_hasana_percentage: 10,
+      qard_application_fee: 50,
       qard_hero_badge: 'আল আনসার করযে হাসানা স্কিম',
       qard_hero_title: 'সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা',
       qard_hero_subtitle: 'ইসলামী শরীয়াহ অনুযায়ী পারস্পরিক সহযোগিতার উদ্দেশ্যে ‘আল আনসার’ নিয়ে এসেছে ১০০% সুদমুক্ত করযে হাসানা সুবিধা। আপনি কোনো প্রকার অতিরিক্ত ফি, প্রসেসিং চার্জ বা সুদ ছাড়াই পণ্য ক্রয় করে পরবর্তীতে সুবিধা অনুযায়ী মূল্য পরিশোধ করতে পারবেন।',
@@ -840,14 +847,15 @@ class Database {
   getUserByPhone(phone) { return this.data.users.find(u => u.phone === phone); }
   
   createUser(userData) {
-    const cardNumberSuffix = Math.floor(1000 + Math.random() * 9000);
     const newUser = {
       id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       is_blocked: false,
       role: 'user',
-      loyalty_points: 100,
-      loyalty_tier: 'Gold VIP',
-      loyalty_card_number: `ANSAR-VIP-${cardNumberSuffix}-2026`,
+      loyalty_points: 0,
+      loyalty_card_status: null,
+      loyalty_card_approved: false,
+      loyalty_card_number: null,
+      loyalty_tier: null,
       qard_credit_limit: 5000,
       qard_available_credit: 5000,
       qard_status: 'Eligible',
@@ -1069,14 +1077,19 @@ class Database {
       });
     }
 
-    // Award loyalty points if user exists
+    // Award loyalty points ONLY if user exists AND has an approved loyalty card
+    let pointsEarned = 0;
     if (orderData.user_id) {
       const user = this.getUserById(orderData.user_id);
-      if (user) {
-        const pointsEarned = Math.floor((orderData.total_amount || 0) / 100);
-        user.loyalty_points = (user.loyalty_points || 0) + pointsEarned;
+      const hasLoyaltyCard = user && (user.loyalty_card_status === 'Approved' || user.loyalty_card_approved === true);
+      if (hasLoyaltyCard) {
+        const spendStep = Math.max(1, Number(this.data.site_settings?.reward_points_spend_amount) || 100);
+        const pointStep = Math.max(0, Number(this.data.site_settings?.reward_points_earned) || 1);
+        pointsEarned = Math.floor((Number(orderData.total_amount) || 0) / spendStep) * pointStep;
+        user.loyalty_points = (Number(user.loyalty_points) || 0) + pointsEarned;
       }
     }
+    newOrder.points_earned = pointsEarned;
 
     this.save();
     return newOrder;
@@ -1297,6 +1310,13 @@ class Database {
         user.loyalty_decline_reason = null;
         if (!user.loyalty_card_number) {
           user.loyalty_card_number = `ANSAR-VIP-${Math.floor(1000 + Math.random() * 9000)}-2026`;
+        }
+        const initialCardPoints = Math.max(0, Number(this.data.site_settings?.loyalty_card_initial_points ?? 100));
+        if (!user.loyalty_bonus_awarded) {
+          user.loyalty_points = (Number(user.loyalty_points) || 0) + initialCardPoints;
+          user.loyalty_bonus_awarded = true;
+        } else if ((Number(user.loyalty_points) || 0) === 0 && initialCardPoints > 0) {
+          user.loyalty_points = initialCardPoints;
         }
       } else if (status === 'Rejected' || status === 'Declined') {
         user.loyalty_card_status = 'Declined';

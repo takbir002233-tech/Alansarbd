@@ -21,12 +21,7 @@
   }
   body {
     font-weight: 500;
-    @apply text-slate-900 antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950;
-    background-color: #ffffff;
-    background-image: url('/bg-pattern.jpg');
-    background-repeat: repeat;
-    background-attachment: fixed;
-    background-size: 180px;
+    @apply text-slate-900 antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950 bg-white;
   }
 }
 

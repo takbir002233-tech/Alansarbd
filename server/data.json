@@ -11,7 +11,11 @@
       "postal_code": "1230",
       "role": "admin",
       "is_blocked": false,
-      "created_at": "2026-09-09T17:14:17.129Z"
+      "created_at": "2026-09-09T17:14:17.129Z",
+      "qard_status": "Pending",
+      "qard_decline_reason": null,
+      "loyalty_card_status": "Pending",
+      "loyalty_decline_reason": null
     },
     {
       "id": "usr_demo_customer",
@@ -215,6 +219,220 @@
       "address": "Banani",
       "city": "Dhaka",
       "postal_code": ""
+    },
+    {
+      "id": "usr_1789329738105_y0zmk",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 220,
+      "loyalty_tier": "Gold VIP",
+      "loyalty_card_number": "ANSAR-VIP-4364-2026",
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Pending",
+      "created_at": "2026-09-13T20:02:18.105Z",
+      "name": "gvg",
+      "email": "u@gmail.com",
+      "phone": "01567469847",
+      "password_hash": "$2b$10$qAhsqJanGmOMsdaL.tm.deuS1l52qPyI7MH9/IYQAcHpcjeXi9O0e",
+      "address": "g, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "city": "ঢাকা",
+      "postal_code": "১২১৬",
+      "qard_decline_reason": null
+    },
+    {
+      "id": "usr_1789330531203_k7as8",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 100,
+      "loyalty_tier": "Gold VIP",
+      "loyalty_card_number": "ANSAR-VIP-3945-2026",
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Pending",
+      "created_at": "2026-09-13T20:15:31.203Z",
+      "name": "vgvgv",
+      "email": "l@gmail.com",
+      "phone": "01676456567",
+      "password_hash": "$2b$10$oMPswPsKINRqNh8G1odqZe/cWr.UpRbxgRVL9ScAN/Yf6mpa9BCXO",
+      "address": "gcf, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "city": "ঢাকা",
+      "postal_code": "১২১৬",
+      "qard_decline_reason": null,
+      "loyalty_card_status": "Pending",
+      "loyalty_decline_reason": null
+    },
+    {
+      "id": "usr_1789331411037_4rokf",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 265,
+      "loyalty_tier": "Gold VIP",
+      "loyalty_card_number": "ANSAR-VIP-4606-2026",
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:30:11.037Z",
+      "name": "Reward User 9631",
+      "email": "rewarduser_9631@test.com",
+      "phone": "01758115691",
+      "password_hash": "$2b$10$BeMhEc.kfoQzGZsJ1FOVzeKl.v0mzyfh52FZwzW9FRTbjFxaBX4uW",
+      "address": "Gulshan 2, Dhaka",
+      "city": "Dhaka",
+      "postal_code": ""
+    },
+    {
+      "id": "usr_1789332179316_p7yn9",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 0,
+      "loyalty_card_status": null,
+      "loyalty_card_approved": false,
+      "loyalty_card_number": null,
+      "loyalty_tier": null,
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:42:59.316Z",
+      "name": "Reward Test User",
+      "email": "testreward_1789332179178@example.com",
+      "phone": "01799592086",
+      "password_hash": "$2b$10$3QcpwT1I.DICS8ayL0mDsuFNV6BYjS4HpNiTNxvKyVwaTn1Izd9fe",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "postal_code": "1200"
+    },
+    {
+      "id": "usr_1789332190300_9bq3k",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 0,
+      "loyalty_card_status": null,
+      "loyalty_card_approved": false,
+      "loyalty_card_number": null,
+      "loyalty_tier": null,
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:43:10.300Z",
+      "name": "Reward Test User",
+      "email": "testreward_1789332190134@example.com",
+      "phone": "01799628940",
+      "password_hash": "$2b$10$plc6aNqaWmrZRn/nX0tlye6SjpJOLqBrso1EPIVfwNWANm.8hTOra",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "postal_code": "1200"
+    },
+    {
+      "id": "usr_1789332206166_hoeye",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 0,
+      "loyalty_card_status": null,
+      "loyalty_card_approved": false,
+      "loyalty_card_number": null,
+      "loyalty_tier": null,
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:43:26.166Z",
+      "name": "Reward Test User",
+      "email": "testreward_1789332205951@example.com",
+      "phone": "01799595620",
+      "password_hash": "$2b$10$BEXtAISHsgw5Yx0nA3vX8e2/axHvHmn785b6OicYQnclpKzXWYdYG",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "postal_code": "1200"
+    },
+    {
+      "id": "usr_1789332223226_smxc9",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 120,
+      "loyalty_card_status": "Approved",
+      "loyalty_card_approved": true,
+      "loyalty_card_number": "ANSAR-VIP-7564-2026",
+      "loyalty_tier": "Royal Gold VIP",
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:43:43.226Z",
+      "name": "Reward Test User",
+      "email": "testreward_1789332222978@example.com",
+      "phone": "01799558006",
+      "password_hash": "$2b$10$AbJtVZwDtkzq9tyAA20Nk.iiLcDbEocy0GPp2UJlRaeK.SDSy38WC",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "postal_code": "1200",
+      "loyalty_decline_reason": null,
+      "loyalty_bonus_awarded": true
+    },
+    {
+      "id": "usr_1789332259296_l7ukw",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 0,
+      "loyalty_card_status": "Pending",
+      "loyalty_card_approved": false,
+      "loyalty_card_number": null,
+      "loyalty_tier": null,
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Pending",
+      "created_at": "2026-09-13T20:44:19.296Z",
+      "name": "WDJUHFE",
+      "email": "ejh@gmail.com",
+      "phone": "01838743646",
+      "password_hash": "$2b$10$1urnEvKkhI8pxI61lSh2QeaCVXb6P/gKGyPt4759XvlPVD5OGsq8C",
+      "address": "djq, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "city": "ঢাকা",
+      "postal_code": "১২১৬",
+      "loyalty_decline_reason": null,
+      "qard_decline_reason": null
+    },
+    {
+      "id": "usr_1789332261208_3bdvz",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 125,
+      "loyalty_card_status": "Approved",
+      "loyalty_card_approved": true,
+      "loyalty_card_number": "ANSAR-VIP-7665-2026",
+      "loyalty_tier": "Royal Gold VIP",
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:44:21.208Z",
+      "name": "Reward Test User",
+      "email": "testreward_1789332260967@example.com",
+      "phone": "01799842502",
+      "password_hash": "$2b$10$MRLXyU03kWtejtMJbrsX7O4V./pON5i17uSoi8hXOGqGWAFphsaWW",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "postal_code": "1200",
+      "loyalty_decline_reason": null,
+      "loyalty_bonus_awarded": true
+    },
+    {
+      "id": "usr_1789332290095_j1zbl",
+      "is_blocked": false,
+      "role": "user",
+      "loyalty_points": 0,
+      "loyalty_card_status": null,
+      "loyalty_card_approved": false,
+      "loyalty_card_number": null,
+      "loyalty_tier": null,
+      "qard_credit_limit": 5000,
+      "qard_available_credit": 5000,
+      "qard_status": "Eligible",
+      "created_at": "2026-09-13T20:44:50.095Z",
+      "name": "রাশেদ খান",
+      "email": "regular_1789332289965@example.com",
+      "phone": "01712631623",
+      "password_hash": "$2b$10$BKycEWJU.DsaOVXVbWSZW.I9pJwQ0aKtRLcL70UED.p2WqpYf1Zai",
+      "address": "House 10, Road 4, Sector 7, Uttara",
+      "city": "Dhaka",
+      "postal_code": "1230"
     }
   ],
   "categories": [
@@ -460,7 +678,7 @@
       "subcategory_id": "sub_ghee_honey",
       "price": 1800,
       "discount_price": 1550,
-      "stock": 31,
+      "stock": 28,
       "rating": 5,
       "review_count": 64,
       "is_featured": true,
@@ -556,7 +774,7 @@
       "subcategory_id": "sub_dates_dryfruits",
       "price": 1600,
       "discount_price": 1350,
-      "stock": 25,
+      "stock": 24,
       "rating": 5,
       "review_count": 43,
       "is_featured": true,
@@ -913,6 +1131,370 @@
   ],
   "orders": [
     {
+      "id": "ord_1789332261283_xx2e",
+      "order_code": "ANSAR-988603",
+      "order_number": "ANSAR-988603",
+      "tracking_code": "STF-5RII0E",
+      "tracking_url": "https://steadfast.com.bd/t/STF-5RII0E",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:44:21.283Z",
+      "status": "Pending",
+      "user_id": "usr_1789332261208_3bdvz",
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799842502",
+      "customer_email": "testreward_1789332260967@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 500,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 500,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 560,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 5
+    },
+    {
+      "id": "ord_1789332261227_ofrl",
+      "order_code": "ANSAR-300041",
+      "order_number": "ANSAR-300041",
+      "tracking_code": "STF-TO50Q7",
+      "tracking_url": "https://steadfast.com.bd/t/STF-TO50Q7",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:44:21.227Z",
+      "status": "Pending",
+      "user_id": "usr_1789332261208_3bdvz",
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799842502",
+      "customer_email": "testreward_1789332260967@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 1000,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 1000,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 1060,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 0
+    },
+    {
+      "id": "ord_1789332223294_xofc",
+      "order_code": "ANSAR-948748",
+      "order_number": "ANSAR-948748",
+      "tracking_code": "STF-QNOFDQ",
+      "tracking_url": "https://steadfast.com.bd/t/STF-QNOFDQ",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:43:43.294Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799558006",
+      "customer_email": "testreward_1789332222978@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 500,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 500,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 560,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 0
+    },
+    {
+      "id": "ord_1789332223237_du00",
+      "order_code": "ANSAR-960148",
+      "order_number": "ANSAR-960148",
+      "tracking_code": "STF-31XCWZ",
+      "tracking_url": "https://steadfast.com.bd/t/STF-31XCWZ",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:43:43.237Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799558006",
+      "customer_email": "testreward_1789332222978@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 1000,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 1000,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 1060,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 0
+    },
+    {
+      "id": "ord_1789332206182_pq2y",
+      "order_code": "ANSAR-158587",
+      "order_number": "ANSAR-158587",
+      "tracking_code": "STF-WOUUCK",
+      "tracking_url": "https://steadfast.com.bd/t/STF-WOUUCK",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:43:26.182Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799595620",
+      "customer_email": "testreward_1789332205951@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 1000,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 1000,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 1060,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 0
+    },
+    {
+      "id": "ord_1789332190311_er5c",
+      "order_code": "ANSAR-845368",
+      "order_number": "ANSAR-845368",
+      "tracking_code": "STF-MWELWC",
+      "tracking_url": "https://steadfast.com.bd/t/STF-MWELWC",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:43:10.311Z",
+      "status": "Pending",
+      "user_id": null,
+      "customer_name": "Reward Test User",
+      "customer_phone": "01799628940",
+      "customer_email": "testreward_1789332190134@example.com",
+      "shipping_address": "Test Address",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "prd_1",
+          "product_id": "prd_1",
+          "title": "Test Product",
+          "price": 1000,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 1000,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 1060,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 0
+    },
+    {
+      "id": "ord_1789331411046_13t0",
+      "order_code": "ANSAR-408730",
+      "order_number": "ANSAR-408730",
+      "tracking_code": "STF-H501AT",
+      "tracking_url": "https://steadfast.com.bd/t/STF-H501AT",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:30:11.046Z",
+      "status": "Pending",
+      "user_id": "usr_1789331411037_4rokf",
+      "customer_name": "Reward User 9631",
+      "customer_phone": "01758115691",
+      "customer_email": "",
+      "shipping_address": "Gulshan 2, Dhaka",
+      "shipping_city": "Dhaka",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 60,
+      "items": [
+        {
+          "id": "p1",
+          "product_id": "p1",
+          "title": "Royal Cambodian Oudh 6ml",
+          "price": 600,
+          "quantity": 1,
+          "is_free_delivery": false,
+          "thumbnail": ""
+        }
+      ],
+      "subtotal": 600,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 660,
+      "payment_method": "cod",
+      "sender_number": "",
+      "transaction_id": "",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": "",
+      "points_earned": 15
+    },
+    {
+      "id": "ord_1789330454865_a2qx",
+      "order_code": "ANSAR-412540",
+      "order_number": "ANSAR-412540",
+      "tracking_code": "STF-JQLZ0K",
+      "tracking_url": "https://steadfast.com.bd/t/STF-JQLZ0K",
+      "courier_status": "Processing at Uttara Hub",
+      "created_at": "2026-09-13T20:14:14.865Z",
+      "status": "Pending",
+      "user_id": "usr_1789329738105_y0zmk",
+      "customer_name": "gvg",
+      "customer_phone": "01567469847",
+      "customer_email": "u@gmail.com",
+      "shipping_address": "g, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা, মিরপুর-১ (চিড়িয়াখানা রোড) (পোস্ট কোড: ১২১৬), মিরপুর, ঢাকা, ঢাকা",
+      "shipping_city": "ঢাকা",
+      "delivery_zone": "inside_dhaka",
+      "delivery_fee": 0,
+      "items": [
+        {
+          "id": "prd_ghee_1",
+          "product_id": "prd_ghee_1",
+          "title": "আল আনসার প্রিমিয়াম খাঁটি গাওয়া ঘি (১ কেজি কাচের জার)",
+          "price": 1550,
+          "quantity": 3,
+          "is_free_delivery": true,
+          "thumbnail": "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "prd_dates_1",
+          "product_id": "prd_dates_1",
+          "title": "মদিনার প্রিমিয়াম আজওয়া খেজুর ভিআইপি বক্স (১ কেজি)",
+          "price": 1350,
+          "quantity": 1,
+          "is_free_delivery": true,
+          "thumbnail": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "subtotal": 6000,
+      "discount_amount": 0,
+      "applied_voucher_code": "",
+      "total_amount": 6000,
+      "payment_method": "cod",
+      "sender_number": "01567469847",
+      "transaction_id": "FREE-DELIVERY-COD",
+      "qard_nid": "",
+      "qard_deferred_amount": 0,
+      "notes": ""
+    },
+    {
+      "0": "S",
+      "1": "t",
+      "2": "a",
+      "3": "t",
+      "4": "u",
+      "5": "s",
+      "6": " ",
+      "7": "u",
+      "8": "p",
+      "9": "d",
+      "10": "a",
+      "11": "t",
+      "12": "e",
+      "13": "d",
+      "14": " ",
+      "15": "t",
+      "16": "o",
+      "17": " ",
+      "18": "P",
+      "19": "e",
+      "20": "n",
+      "21": "d",
+      "22": "i",
+      "23": "n",
+      "24": "g",
+      "25": " ",
+      "26": "b",
+      "27": "y",
+      "28": " ",
+      "29": "A",
+      "30": "d",
+      "31": "m",
+      "32": "i",
+      "33": "n",
+      "34": "i",
+      "35": "n",
       "id": "ord_1789313184017_su37",
       "order_code": "ANSAR-502866",
       "order_number": "ANSAR-502866",
@@ -949,9 +1531,44 @@
       "transaction_id": "SC",
       "qard_nid": "",
       "qard_deferred_amount": 0,
-      "notes": ""
+      "notes": "",
+      "updated_at": "2026-09-13T19:46:30.495Z"
     },
     {
+      "0": "S",
+      "1": "t",
+      "2": "a",
+      "3": "t",
+      "4": "u",
+      "5": "s",
+      "6": " ",
+      "7": "u",
+      "8": "p",
+      "9": "d",
+      "10": "a",
+      "11": "t",
+      "12": "e",
+      "13": "d",
+      "14": " ",
+      "15": "t",
+      "16": "o",
+      "17": " ",
+      "18": "S",
+      "19": "h",
+      "20": "i",
+      "21": "p",
+      "22": "p",
+      "23": "e",
+      "24": "d",
+      "25": " ",
+      "26": "b",
+      "27": "y",
+      "28": " ",
+      "29": "A",
+      "30": "d",
+      "31": "m",
+      "32": "i",
+      "33": "n",
       "id": "ord_1789312196756_nx7u",
       "order_code": "ANSAR-944567",
       "order_number": "ANSAR-944567",
@@ -959,7 +1576,7 @@
       "tracking_url": "https://steadfast.com.bd/t/STF-2B9LAF",
       "courier_status": "Processing at Uttara Hub",
       "created_at": "2026-09-13T15:09:56.756Z",
-      "status": "Pending",
+      "status": "Shipped",
       "user_id": "usr_1789312141457_0c9hd",
       "customer_name": "djjcnjwdj",
       "customer_phone": "01726282524",
@@ -997,7 +1614,8 @@
       "transaction_id": "KJ",
       "qard_nid": "",
       "qard_deferred_amount": 0,
-      "notes": ""
+      "notes": "",
+      "updated_at": "2026-09-13T19:46:33.387Z"
     },
     {
       "id": "ord_1789035129534_omau",
@@ -1840,9 +2458,615 @@
       "last_updated": "2026-09-13T15:23:08.777Z",
       "unread_admin_count": 0,
       "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_dcqa79y",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:12:34.250Z",
+      "messages": [
+        {
+          "id": "msg_1789326754250",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:12:34.250Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:12:34.250Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_zwq15uc",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:12:58.459Z",
+      "messages": [
+        {
+          "id": "msg_1789326778459",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:12:58.459Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:12:58.460Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_vtrk1hy",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:27:36.378Z",
+      "messages": [
+        {
+          "id": "msg_1789327656378",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:27:36.378Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:27:36.378Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_d4tlarg",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:34:30.431Z",
+      "messages": [
+        {
+          "id": "msg_1789328070431",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:34:30.431Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:34:30.431Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_kj8l4qi",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:35:25.713Z",
+      "messages": [
+        {
+          "id": "msg_1789328125713",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:35:25.713Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:35:25.713Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_4pvg0xs",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:35:51.622Z",
+      "messages": [
+        {
+          "id": "msg_1789328151622",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:35:51.622Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:35:51.623Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_7zt7o0i",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:36:02.292Z",
+      "messages": [
+        {
+          "id": "msg_1789328162292",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:36:02.292Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:36:02.292Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_b454y07",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:57:54.653Z",
+      "messages": [
+        {
+          "id": "msg_1789329474653",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:57:54.653Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:57:54.653Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_1sm8k0v",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:58:56.957Z",
+      "messages": [
+        {
+          "id": "msg_1789329536957",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:58:56.957Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:58:56.957Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_r6t4xuw",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T19:59:44.511Z",
+      "messages": [
+        {
+          "id": "msg_1789329584511",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T19:59:44.511Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T19:59:44.511Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_j9j8pha",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:08:13.236Z",
+      "messages": [
+        {
+          "id": "msg_1789330093236",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:08:13.236Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:08:13.236Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_iryufc0",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:08:49.898Z",
+      "messages": [
+        {
+          "id": "msg_1789330129898",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:08:49.898Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:08:49.898Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_lc7e1uy",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:13:23.859Z",
+      "messages": [
+        {
+          "id": "msg_1789330403859",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:13:23.859Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:13:23.859Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_h2q1vfp",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:14:01.660Z",
+      "messages": [
+        {
+          "id": "msg_1789330441660",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:14:01.660Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:14:01.660Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_8emv49r",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:14:34.175Z",
+      "messages": [
+        {
+          "id": "msg_1789330474175",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:14:34.175Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:14:34.175Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_kz7ph6r",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:15:12.873Z",
+      "messages": [
+        {
+          "id": "msg_1789330512873",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:15:12.873Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:15:12.873Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_w9e1oud",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:15:31.952Z",
+      "messages": [
+        {
+          "id": "msg_1789330531952",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:15:31.952Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:15:31.952Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_pcekt3w",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:15:50.892Z",
+      "messages": [
+        {
+          "id": "msg_1789330550892",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:15:50.892Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:15:50.892Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_8osb4sw",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:16:10.791Z",
+      "messages": [
+        {
+          "id": "msg_1789330570791",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:16:10.791Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:16:10.791Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_s3fqzel",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:16:35.656Z",
+      "messages": [
+        {
+          "id": "msg_1789330595656",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:16:35.656Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:16:35.656Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_p15dw9m",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:21:28.771Z",
+      "messages": [
+        {
+          "id": "msg_1789330888771",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:21:28.771Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:21:28.772Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_xrn274d",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:31:03.718Z",
+      "messages": [
+        {
+          "id": "msg_1789331463718",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:31:03.718Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:31:03.718Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_izymgh3",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:31:32.791Z",
+      "messages": [
+        {
+          "id": "msg_1789331492791",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:31:32.791Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:31:32.791Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_usr_admin",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:32:25.167Z",
+      "messages": [
+        {
+          "id": "msg_1789331545167",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:32:25.167Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:32:25.167Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_nodhwf4",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:32:52.634Z",
+      "messages": [
+        {
+          "id": "msg_1789331572634",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:32:52.634Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:32:52.634Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_1791tip",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:33:20.020Z",
+      "messages": [
+        {
+          "id": "msg_1789331600020",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:33:20.020Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:33:20.021Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_zh263sm",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:33:50.298Z",
+      "messages": [
+        {
+          "id": "msg_1789331630298",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:33:50.298Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:33:50.298Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_vfkru0r",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:34:20.922Z",
+      "messages": [
+        {
+          "id": "msg_1789331660922",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:34:20.922Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:34:20.922Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_gasz1gi",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:35:04.031Z",
+      "messages": [
+        {
+          "id": "msg_1789331704031",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:35:04.031Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:35:04.031Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
+    },
+    {
+      "id": "conv_guest_q5tealq",
+      "user_id": null,
+      "user_name": "Guest User",
+      "created_at": "2026-09-13T20:44:53.560Z",
+      "messages": [
+        {
+          "id": "msg_1789332293560",
+          "sender": "admin",
+          "text": "আসসালামু আলাইকুম! আল আনসার সুপার শপে স্বাগতম। ঘরের বাজার, বেকারি, খাঁটি আতর বা অর্ডার সংক্রান্ত যেকোনো তথ্য জানতে মেসেজ দিন।",
+          "timestamp": "2026-09-13T20:44:53.560Z",
+          "is_bot_reply": true
+        }
+      ],
+      "last_updated": "2026-09-13T20:44:53.560Z",
+      "unread_admin_count": 0,
+      "unread_user_count": 0
     }
   ],
   "qard_applications": [
+    {
+      "id": "qrd_1789332463655_zguf",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:47:43.655Z",
+      "user_id": "usr_1789332259296_l7ukw",
+      "name": "WDJUHFE",
+      "phone": "01838743646",
+      "email": "ejh@gmail.com",
+      "nid_number": "8373637373",
+      "address": "djq, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "monthly_income": 0,
+      "requested_limit": 5000,
+      "notes": "",
+      "payment_method": "bkash",
+      "payment_amount": 50,
+      "transaction_id": "KJJ",
+      "sender_number": "01838743646",
+      "sender_bank_name": ""
+    },
+    {
+      "id": "qrd_1789330755850_fwks",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:19:15.851Z",
+      "user_id": "usr_1789330531203_k7as8",
+      "name": "vgvgv",
+      "phone": "01754675424",
+      "email": "l@gmail.com",
+      "nid_number": "7365478907",
+      "address": "gcf, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "monthly_income": 0,
+      "requested_limit": 5000,
+      "notes": "",
+      "payment_method": "bkash",
+      "payment_amount": 50,
+      "transaction_id": "GC",
+      "sender_number": "01676456567",
+      "sender_bank_name": ""
+    },
+    {
+      "id": "qrd_1789329754984_v3q9",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:02:34.984Z",
+      "user_id": "usr_1789329738105_y0zmk",
+      "name": "gvg",
+      "phone": "01567469847",
+      "email": "u@gmail.com",
+      "nid_number": "6776553467",
+      "address": "g, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "monthly_income": 0,
+      "requested_limit": 5000,
+      "notes": ""
+    },
+    {
+      "id": "qrd_1789329118423_hml1",
+      "status": "Pending",
+      "created_at": "2026-09-13T19:51:58.423Z",
+      "user_id": "usr_admin",
+      "name": "Al Ansar Admin",
+      "phone": "01711000000",
+      "email": "admin@alansar.com",
+      "nid_number": "5668754565",
+      "address": "House #14, Road #7, Sector 3, Uttara",
+      "monthly_income": 0,
+      "requested_limit": 5000,
+      "notes": "nj"
+    },
     {
       "id": "qrd_1789312762762_nodk",
       "status": "Rejected",
@@ -1919,6 +3143,10 @@
     "dhaka_delivery_fee": 60,
     "outside_dhaka_delivery_fee": 120,
     "free_delivery_threshold": 2000,
+    "loyalty_card_initial_points": 100,
+    "reward_points_spend_amount": 100,
+    "reward_points_earned": 1,
+    "reward_point_value_bdt": 1,
     "marquee_text": "✨ আসসালামু আলাইকুম! আল আনসার সুপার শপ-এ আপনাকে স্বাগতম • ঘরের বাজার, বেকারি, খাঁটি আতর ও উপহার সামগ্রী • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨",
     "marquee_enabled": true,
     "hadith_product_details": "🌸 হাদিস: সৎ ও বিশ্বস্ত ব্যবসায়ী কিয়ামতের দিন নবী, সত্যবাদী ও শহীদদের সাথে থাকবেন। (তিরমিজি)",
@@ -1933,6 +3161,7 @@
     ],
     "qard_hasana_enabled": true,
     "qard_hasana_percentage": 10,
+    "qard_application_fee": 50,
     "qard_hero_badge": "আল আনসার করযে হাসানা স্কিম",
     "qard_hero_title": "সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা",
     "qard_hero_subtitle": "ইসলামী শরীয়াহ অনুযায়ী পারস্পরিক সহযোগিতার উদ্দেশ্যে ‘আল আনসার’ নিয়ে এসেছে ১০০% সুদমুক্ত করযে হাসানা সুবিধা। আপনি কোনো প্রকার অতিরিক্ত ফি, প্রসেসিং চার্জ বা সুদ ছাড়াই পণ্য ক্রয় করে পরবর্তীতে সুবিধা অনুযায়ী মূল্য পরিশোধ করতে পারবেন।",
@@ -2045,9 +3274,85 @@
     "trust_4_desc": "লাইভ এআই ও কাস্টমার সাপোর্ট",
     "footer_about": "বাংলাদেশে খাঁটি ঘরের বাজার, প্রিমিয়াম বেকারি সামগ্রী, অ্যালকোহলমুক্ত আতর এবং রাজকীয় উপহার সামগ্রীর বিশ্বস্ত প্রতিষ্ঠান।",
     "footer_copyright": "© ২০২৬ AL ANSAR SUPER SHOP (আল আনসার সুপার শপ) বাংলাদেশ। সর্বস্বত্ব সংরক্ষিত।",
-    "footer_tagline": "বিশুদ্ধ খাদ্য • আভিজাত্য সুবাস • সুদমুক্ত সেবা"
+    "footer_tagline": "বিশুদ্ধ খাদ্য • আভিজাত্য সুবাস • সুদমুক্ত সেবা",
+    "qard_modal_badge": "আল আনসার করযে হাসানা সম্পূর্ণ সুদমুক্ত ও ইসলামী শরীয়াহ অনুযায়ী পরিচালিত।",
+    "qard_modal_terms": "সুদমুক্ত ঋণ: করযে হাসানার অধীনে গৃহীত কোনো অর্ডারে কোনো প্রকার অতিরিক্ত ফি, সুদ বা সার্ভিস চার্জ নেই। যতটুকু মূল্য ঠিক ততটুকুই পরিশোধ করতে হবে。\nসঠিক তথ্যের নিশ্চয়তা: আবেদনকারীকে অবশ্যই সঠিক জাতীয় পরিচয়পত্র (NID) নম্বর ও স্থায়ী ঠিকানা প্রদান করতে হবে। অসত্য তথ্য দিলে আবেদন তাৎক্ষণিক বাতিল হবে。\nপরিশোধ পদ্ধতি: অর্ডারের সময় ৯০% মূল্য পরিশোধযোগ্য এবং অবশিষ্ট ১০% বা অনুমোদিত লিমিট নির্ধারিত সময়ের মধ্যে পরিশোধ করতে হবে。\nলিমিট বৃদ্ধি: সময়মতো করযে হাসানা পরিশোধ করলে পরবর্তীতে সর্বোচ্চ ৳১০,০০০ পর্যন্ত ক্রেডিট লিমিট স্বয়ংক্রিয়ভাবে বৃদ্ধি পাবে。\nঈমানী আমানত: করযে হাসানা পরিশোধ করা একটি ঈমানী দায়িত্ব। যথাসময়ে ঋণ পরিশোধের মাধ্যমে এই মহৎ খেদমত চালু রাখতে সাহায্য করুন।",
+    "loyalty_modal_badge": "আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ সম্পূর্ণ বিনামূল্যে প্রদান করা হয়।",
+    "loyalty_modal_terms": "পয়েন্ট ও রিওয়ার্ড: প্রতিটি কেনাকাটায় স্বয়ংক্রিয়ভাবে ক্যাশব্যাক ও রিওয়ার্ড পয়েন্ট অর্জিত হবে যা পরবর্তী কেনাকাটায় ব্যবহার করা যাবে。\nডিজিটাল কার্ড ও বারকোড: অনুমোদিত কার্ডটি আপনার প্রোফাইলে ইউনিক বারকোডসহ সংরক্ষিত থাকবে এবং শোরুম বা অনলাইনে প্রদর্শনে বিশেষ সুবিধা পাবেন。\nপ্রায়োরিটি ডেলিভারি: ভিআইপি মেম্বারদের অর্ডার যেকোনো সাধারণ অর্ডারের চেয়ে সর্বোচ্চ অগ্রাধিকার ও দ্রুততম সময়ে ডেলিভারি করা হবে。\nকার্ড হস্তান্তরযোগ্য নয়: মেম্বারশিপ কার্ড ও অর্জিত পয়েন্ট ব্যক্তিগত এবং অন্য কারো নিকট হস্তান্তরযোগ্য নয়।",
+    "badge_1_title": "১০০% খাঁটি ও নির্ভেজাল",
+    "badge_1_desc": "উন্নত মানের গ্যারান্টি",
+    "badge_2_title": "দ্রুততম হোম ডেলিভারি",
+    "badge_2_desc": "সারাদেশে হোম ডেলিভারি",
+    "badge_3_title": "বিনা সুদে করযে হাসানা",
+    "badge_3_desc": "১০% তাৎক্ষণিক হালাল ধার",
+    "badge_4_title": "ভিআইপি ক্যাশব্যাক পয়েন্ট",
+    "badge_4_desc": "প্রতি কেনাকাটায় রিওয়ার্ড"
   },
   "loyalty_applications": [
+    {
+      "id": "lyt_1789332376906_yqlw",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:46:16.906Z",
+      "user_id": "usr_1789332259296_l7ukw",
+      "name": "WDJUHFE",
+      "phone": "01838743646",
+      "email": "ejh@gmail.com",
+      "address": "djq, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "city": "ঢাকা",
+      "nid_number": ""
+    },
+    {
+      "id": "lyt_1789332261251_zks8",
+      "status": "Approved",
+      "created_at": "2026-09-13T20:44:21.251Z",
+      "user_id": "usr_1789332261208_3bdvz",
+      "name": "Reward Test User",
+      "phone": "01799842502",
+      "email": "testreward_1789332260967@example.com",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "nid_number": "",
+      "admin_notes": "Verified and approved VIP membership",
+      "reviewed_at": "2026-09-13T20:44:21.264Z"
+    },
+    {
+      "id": "lyt_1789332223255_gwqf",
+      "status": "Approved",
+      "created_at": "2026-09-13T20:43:43.255Z",
+      "user_id": "usr_1789332223226_smxc9",
+      "name": "Reward Test User",
+      "phone": "01799558006",
+      "email": "testreward_1789332222978@example.com",
+      "address": "Test Address",
+      "city": "Dhaka",
+      "nid_number": "",
+      "admin_notes": "Verified and approved VIP membership",
+      "reviewed_at": "2026-09-13T20:43:43.271Z"
+    },
+    {
+      "id": "lyt_1789331286409_h2jb",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:28:06.409Z",
+      "user_id": "usr_admin",
+      "name": "Al Ansar Admin",
+      "phone": "01711000000",
+      "email": "admin@alansar.com",
+      "address": "House #14, Road #7, Sector 3, Uttara",
+      "city": "Dhaka",
+      "nid_number": ""
+    },
+    {
+      "id": "lyt_1789330855074_q453",
+      "status": "Pending",
+      "created_at": "2026-09-13T20:20:55.074Z",
+      "user_id": "usr_1789330531203_k7as8",
+      "name": "vgvgv",
+      "phone": "01676456567",
+      "email": "l@gmail.com",
+      "address": "gcf, মিরপুর-১ (চিড়িয়াখানা রোড), মিরপুর, ঢাকা, ঢাকা",
+      "city": "ঢাকা",
+      "nid_number": ""
+    },
     {
       "id": "lyt_1789313140940_xe9c",
       "status": "Pending",

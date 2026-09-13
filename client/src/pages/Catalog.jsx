@@ -303,7 +303,7 @@ export default function Catalog({
               <ProductCard
                 key={product.id}
                 product={product}
-                compact={true}
+                compact={false}
                 onNavigate={onNavigate}
                 onSelect={(id) => onNavigate('product-details', { productId: id })}
               />

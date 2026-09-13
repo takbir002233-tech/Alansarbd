@@ -12,22 +12,24 @@ import NotificationToasts from './components/NotificationToasts';
 import InvoiceModal from './components/InvoiceModal';
 import AuthModal from './components/AuthModal';
 
-// Customer Pages
+// Customer Pages - Home is loaded directly for instant initial render
 import Home from './pages/Home';
-import Catalog from './pages/Catalog';
-import ProductDetails from './pages/ProductDetails';
-import Checkout from './pages/Checkout';
-import OrderConfirmation from './pages/OrderConfirmation';
-import OrderTrack from './pages/OrderTrack';
-import UserDashboard from './pages/UserDashboard';
-import ContactUs from './pages/ContactUs';
-import QardHasana from './pages/QardHasana';
-import LoyaltyCard from './pages/LoyaltyCard';
-import TermsAndConditions from './pages/TermsAndConditions';
-import Reviews from './pages/Reviews';
-import { Login, Register, ForgotPassword } from './pages/AuthPages';
+const Catalog = React.lazy(() => import('./pages/Catalog'));
+const ProductDetails = React.lazy(() => import('./pages/ProductDetails'));
+const Checkout = React.lazy(() => import('./pages/Checkout'));
+const OrderConfirmation = React.lazy(() => import('./pages/OrderConfirmation'));
+const OrderTrack = React.lazy(() => import('./pages/OrderTrack'));
+const UserDashboard = React.lazy(() => import('./pages/UserDashboard'));
+const ContactUs = React.lazy(() => import('./pages/ContactUs'));
+const QardHasana = React.lazy(() => import('./pages/QardHasana'));
+const LoyaltyCard = React.lazy(() => import('./pages/LoyaltyCard'));
+const TermsAndConditions = React.lazy(() => import('./pages/TermsAndConditions'));
+const Reviews = React.lazy(() => import('./pages/Reviews'));
+const Login = React.lazy(() => import('./pages/AuthPages').then(m => ({ default: m.Login })));
+const Register = React.lazy(() => import('./pages/AuthPages').then(m => ({ default: m.Register })));
+const ForgotPassword = React.lazy(() => import('./pages/AuthPages').then(m => ({ default: m.ForgotPassword })));
 
-// Admin Pages
+// Admin Pages - Loaded directly for zero-delay instant tab switching
 import SecretAdminLogin from './pages/SecretAdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -38,6 +40,9 @@ import AdminVouchers from './pages/admin/AdminVouchers';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminChatDesk from './pages/admin/AdminChatDesk';
 import AdminSettings from './pages/admin/AdminSettings';
+
+// Zero loading spinners or delay indicators as requested by user
+
 
 // Parse current page and params from window.location.hash or localStorage so refresh never loses state!
 function parseInitialRoute() {
@@ -206,16 +211,12 @@ function MainApp() {
 
   // Render Hidden Admin Portal
   if (currentPage === 'al-ansar-admin' || currentPage === 'admin') {
-    if (!isAdmin) {
-      return (
-        <SecretAdminLogin
-          onLoginSuccess={() => navigate('al-ansar-admin')}
-          onNavigate={navigate}
-        />
-      );
-    }
-
-    return (
+    return !isAdmin ? (
+      <SecretAdminLogin
+        onLoginSuccess={() => navigate('al-ansar-admin')}
+        onNavigate={navigate}
+      />
+    ) : (
       <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onNavigate={navigate}>
         {adminTab === 'dashboard' && <AdminDashboard onNavigateTab={setAdminTab} onOpenInvoice={handleOpenInvoice} />}
         {adminTab === 'orders' && <AdminOrders onOpenInvoice={handleOpenInvoice} />}
@@ -247,111 +248,113 @@ function MainApp() {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {currentPage === 'home' && (
-          <Home 
-            onNavigate={navigate} 
-            searchKeyword={searchKeyword} 
-            setSearchKeyword={setSearchKeyword} 
-          />
-        )}
+        <React.Suspense fallback={null}>
+          {currentPage === 'home' && (
+            <Home 
+              onNavigate={navigate} 
+              searchKeyword={searchKeyword} 
+              setSearchKeyword={setSearchKeyword} 
+            />
+          )}
 
-        {currentPage === 'catalog' && (
-          <Catalog
-            onNavigate={navigate}
-            onBack={handleBack}
-            initialCategory={pageParams.category}
-            initialSubcategory={pageParams.subcategory}
-            initialSearch={pageParams.search !== undefined ? pageParams.search : searchKeyword}
-            searchQuery={pageParams.search !== undefined ? pageParams.search : searchKeyword}
-            freeDeliveryOnly={pageParams.freeDelivery}
-          />
-        )}
+          {currentPage === 'catalog' && (
+            <Catalog
+              onNavigate={navigate}
+              onBack={handleBack}
+              initialCategory={pageParams.category}
+              initialSubcategory={pageParams.subcategory}
+              initialSearch={pageParams.search !== undefined ? pageParams.search : searchKeyword}
+              searchQuery={pageParams.search !== undefined ? pageParams.search : searchKeyword}
+              freeDeliveryOnly={pageParams.freeDelivery}
+            />
+          )}
 
-        {currentPage === 'product-details' && (
-          <ProductDetails
-            productId={pageParams.productId}
-            onNavigate={navigate}
-            onBack={handleBack}
-          />
-        )}
+          {currentPage === 'product-details' && (
+            <ProductDetails
+              productId={pageParams.productId}
+              onNavigate={navigate}
+              onBack={handleBack}
+            />
+          )}
 
-        {currentPage === 'checkout' && (
-          <Checkout
-            onNavigate={navigate}
-            onBack={handleBack}
-            onOrderSuccess={(order) => navigate('order-confirmation', { order })}
-          />
-        )}
+          {currentPage === 'checkout' && (
+            <Checkout
+              onNavigate={navigate}
+              onBack={handleBack}
+              onOrderSuccess={(order) => navigate('order-confirmation', { order })}
+            />
+          )}
 
-        {currentPage === 'order-confirmation' && (
-          <OrderConfirmation
-            order={pageParams.order}
-            onNavigate={navigate}
-            onBack={handleBack}
-            onOpenInvoice={handleOpenInvoice}
-          />
-        )}
+          {currentPage === 'order-confirmation' && (
+            <OrderConfirmation
+              order={pageParams.order}
+              onNavigate={navigate}
+              onBack={handleBack}
+              onOpenInvoice={handleOpenInvoice}
+            />
+          )}
 
-        {currentPage === 'track-order' && (
-          <OrderTrack
-            onNavigate={navigate}
-            onBack={handleBack}
-            initialCode={pageParams.code || pageParams.orderNumber || ''}
-            initialOrderNumber={pageParams.code || pageParams.orderNumber || ''}
-            initialOrder={pageParams.order || null}
-            onOpenInvoice={handleOpenInvoice}
-          />
-        )}
+          {currentPage === 'track-order' && (
+            <OrderTrack
+              onNavigate={navigate}
+              onBack={handleBack}
+              initialCode={pageParams.code || pageParams.orderNumber || ''}
+              initialOrderNumber={pageParams.code || pageParams.orderNumber || ''}
+              initialOrder={pageParams.order || null}
+              onOpenInvoice={handleOpenInvoice}
+            />
+          )}
 
-        {currentPage === 'dashboard' && (
-          <UserDashboard
-            onNavigate={navigate}
-            onBack={handleBack}
-            initialTab={pageParams.tab}
-            onOpenInvoice={handleOpenInvoice}
-          />
-        )}
+          {currentPage === 'dashboard' && (
+            <UserDashboard
+              onNavigate={navigate}
+              onBack={handleBack}
+              initialTab={pageParams.tab}
+              onOpenInvoice={handleOpenInvoice}
+            />
+          )}
 
-        {currentPage === 'contact' && (
-          <ContactUs onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'contact' && (
+            <ContactUs onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {(currentPage === 'qard-hasana' || currentPage === 'qard') && (
-          <QardHasana onNavigate={navigate} onBack={handleBack} />
-        )}
+          {(currentPage === 'qard-hasana' || currentPage === 'qard') && (
+            <QardHasana onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {(currentPage === 'loyalty-card' || currentPage === 'loyalty' || currentPage === 'vip' || currentPage === 'vip-card') && (
-          <LoyaltyCard onNavigate={navigate} onBack={handleBack} />
-        )}
+          {(currentPage === 'loyalty-card' || currentPage === 'loyalty' || currentPage === 'vip' || currentPage === 'vip-card') && (
+            <LoyaltyCard onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {currentPage === 'terms' && (
-          <TermsAndConditions onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'terms' && (
+            <TermsAndConditions onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {currentPage === 'reviews' && (
-          <Reviews onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'reviews' && (
+            <Reviews onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {currentPage === 'login' && (
-          <Login onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'login' && (
+            <Login onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {currentPage === 'register' && (
-          <Register onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'register' && (
+            <Register onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {currentPage === 'forgot-password' && (
-          <ForgotPassword onNavigate={navigate} onBack={handleBack} />
-        )}
+          {currentPage === 'forgot-password' && (
+            <ForgotPassword onNavigate={navigate} onBack={handleBack} />
+          )}
 
-        {/* Safety Fallback: Render Home if unknown route is given so background is never empty */}
-        {![
-          'home', 'catalog', 'product', 'cart', 'checkout', 'dashboard', 'contact',
-          'qard-hasana', 'qard', 'loyalty-card', 'loyalty', 'vip', 'vip-card',
-          'terms', 'reviews', 'login', 'register', 'forgot-password', 'al-ansar-admin'
-        ].includes(currentPage) && (
-          <Home onNavigate={navigate} />
-        )}
+          {/* Safety Fallback: Render Home if unknown route is given so background is never empty */}
+          {![
+            'home', 'catalog', 'product', 'cart', 'checkout', 'dashboard', 'contact',
+            'qard-hasana', 'qard', 'loyalty-card', 'loyalty', 'vip', 'vip-card',
+            'terms', 'reviews', 'login', 'register', 'forgot-password', 'al-ansar-admin'
+          ].includes(currentPage) && (
+            <Home onNavigate={navigate} />
+          )}
+        </React.Suspense>
       </main>
 
       {/* Global In-App Live Chat Widget */}
@@ -362,7 +365,9 @@ function MainApp() {
 
       {/* Global Invoice Modal */}
       {invoiceOrder && (
-        <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />
+        <React.Suspense fallback={null}>
+          <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />
+        </React.Suspense>
       )}
 
       {/* Global Auth Modal (Login / Register Popup with Bikroy.com Cascading Location) */}

@@ -13,11 +13,15 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import useScrollLock from '../hooks/useScrollLock';
+import PaymentGatewayModal from './PaymentGatewayModal';
 
 export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
   const { user, refreshUser } = useAuth();
   const { siteSettings } = useCart();
   useScrollLock(isOpen);
+
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -36,6 +40,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [reapplyMode, setReapplyMode] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Sync user details to form
   useEffect(() => {
@@ -86,7 +91,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -112,12 +117,26 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
       return;
     }
 
+    const applicationFee = (siteSettings?.qard_application_fee !== undefined && siteSettings?.qard_application_fee !== null && siteSettings?.qard_application_fee !== '')
+      ? Number(siteSettings.qard_application_fee)
+      : 50;
+
+    setShowPaymentModal(true);
+  };
+
+  const executeApplicationSubmit = async (paymentData = {}) => {
     setSubmitting(true);
+    setErrorMsg(null);
 
     try {
       const payload = {
         ...formData,
-        user_id: user?.id || null
+        user_id: user?.id || null,
+        payment_method: paymentData.payment_method || 'mfs',
+        payment_amount: Number(paymentData.payment_amount) || Number(siteSettings?.qard_application_fee || 0),
+        transaction_id: paymentData.transaction_id || '',
+        sender_number: paymentData.sender_number || '',
+        sender_bank_name: paymentData.sender_bank_name || ''
       };
 
       const res = await fetch('/api/admin/qard-applications', {
@@ -139,9 +158,10 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
         localStorage.removeItem('alansar_qard_applied_global');
       } catch (e) {}
 
+      setShowPaymentModal(false);
       setIsSubmitted(true);
       setReapplyMode(false);
-      setSuccessMsg('আপনার আবেদনটি সফলভাবে গ্রহণ করা হয়েছে!');
+      setSuccessMsg('আপনার আবেদন ও পেমেন্ট সফলভাবে গ্রহণ করা হয়েছে! অ্যাডমিন টিম যাচাই করে লিমিট অনুমোদন করবে।');
       if (refreshUser) refreshUser();
       if (onSuccess) onSuccess(data.application);
     } catch (err) {
@@ -482,7 +502,11 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
                     }`}
                   >
                     <HandHeart className={`w-4 h-4 ${agreedToTerms ? 'text-amber-300' : 'text-slate-400'}`} />
-                    <span>{submitting ? 'আবেদন জমা হচ্ছে...' : 'আবেদন সাবমিট করুন (Submit Application)'}</span>
+                    <span>
+                      {submitting 
+                        ? 'আবেদন প্রসেস হচ্ছে...' 
+                        : `পরবর্তী ধাপ: আবেদন ফি পরিশোধ (৳${toBn(siteSettings?.qard_application_fee ?? 50)}) →`}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -593,6 +617,22 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
             </div>
           </div>
         </div>
+      )}
+
+      {/* Payment Gateway Modal (Synchronized directly with checkout payment gateway) */}
+      {showPaymentModal && (
+        <PaymentGatewayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          totalAmount={Number(siteSettings?.qard_application_fee ?? 50)}
+          deliveryFee={0}
+          siteSettings={siteSettings}
+          user={user}
+          hideCod={true}
+          title="করযে হাসানা আবেদন ফি পরিশোধ"
+          subtitle="সুদমুক্ত ঋণ সুবিধার অফিসিয়াল ভেরিফিকেশন চার্জ"
+          onConfirmPayment={executeApplicationSubmit}
+        />
       )}
     </>
   );

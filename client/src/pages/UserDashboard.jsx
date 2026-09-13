@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { 
   User, 
   Package, 
@@ -29,6 +30,7 @@ import QardApplicationModal from '../components/QardApplicationModal';
 
 export default function UserDashboard({ initialTab = 'overview', onNavigate, onBack, onOpenInvoice }) {
   const { user, token, updateProfile, changePassword } = useAuth();
+  const { siteSettings } = useCart();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -36,10 +38,11 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   const [qardModalOpen, setQardModalOpen] = useState(false);
   const [userLoyaltyStatus, setUserLoyaltyStatus] = useState(user?.loyalty_card_status || null);
 
-  // Bengali digits converter helper
+  // Bengali digits converter helper - correctly handles 0 and empty values
   const toBengaliDigits = (str) => {
+    if (str === null || str === undefined || str === '') return '০';
     const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return (str || '').toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
+    return str.toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
   };
 
   // Profile Form State
@@ -145,7 +148,11 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   const isQardDeclined = user?.qard_status === 'Declined' || user?.qard_status === 'Rejected';
   const isQardApproved = user?.qard_status === 'Approved';
   const isQardPending = user?.qard_status === 'Pending';
-  const loyaltyPoints = user?.loyalty_points !== undefined ? user.loyalty_points : (isLoyaltyApproved ? 250 : 0);
+  const initialCardBonus = Number(siteSettings?.loyalty_card_initial_points ?? siteSettings?.reward_points_new_user ?? 100);
+  const loyaltyPoints = isLoyaltyApproved 
+    ? (user?.loyalty_points !== undefined ? Number(user.loyalty_points) : initialCardBonus) 
+    : 0;
+  const pointCashValue = loyaltyPoints * (Number(siteSettings?.reward_point_value_bdt) || 1);
   const qardLimit = isQardApproved ? (user?.qard_credit_limit || 5000) : 0;
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
 
@@ -214,79 +221,90 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
         {/* Stat 1: Total Orders */}
         <div 
           onClick={() => setActiveTab('orders')}
-          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group flex flex-col justify-between min-h-[112px] sm:min-h-[122px]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">মোট অর্ডার</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">মোট অর্ডার</span>
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Package className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline space-x-1.5">
-            <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+          <div className="mt-2.5 flex items-baseline space-x-1.5">
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono leading-none">
               {toBengaliDigits(orders.length)}
             </span>
-            <span className="text-[11px] font-bold text-slate-500">টি পার্সেল</span>
+            <span className="text-xs font-bold text-slate-500">টি পার্সেল</span>
           </div>
-          <p className="text-[10px] text-amber-700 font-semibold mt-0.5 flex items-center">
+          <p className="text-[10px] text-amber-700 font-semibold mt-1 flex items-center">
             <span>{activeOrders.length > 0 ? `${toBengaliDigits(activeOrders.length)}টি কুরিয়ারে চলমান` : 'সব অর্ডার সম্পন্ন'}</span>
             <ChevronRight className="w-3 h-3 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
         {/* Stat 2: Total Spent */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[112px] sm:min-h-[122px]">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">মোট কেনাকাটা</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">মোট কেনাকাটা</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
               <CreditCard className="w-4 h-4 text-emerald-700" />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline space-x-1">
-            <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-              ৳{toBengaliDigits(totalSpent.toLocaleString())}
+          <div className="mt-2.5 flex items-baseline space-x-1 overflow-hidden">
+            <span className="text-lg sm:text-xl font-bold text-slate-700 mr-0.5 font-mono leading-none">৳</span>
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono leading-none truncate">
+              {toBengaliDigits(totalSpent.toLocaleString())}
             </span>
           </div>
-          <p className="text-[10px] text-emerald-700 font-bold mt-0.5">১০০% ক্যাশ অন / ডিজিটাল</p>
+          <p className="text-[10px] text-emerald-700 font-bold mt-1">১০০% ক্যাশ অন / ডিজিটাল</p>
         </div>
 
         {/* Stat 3: Loyalty Points */}
         <div 
           onClick={() => setActiveTab('overview')}
-          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group flex flex-col justify-between min-h-[112px] sm:min-h-[122px]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">রিওয়ার্ড পয়েন্ট</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">লয়ালটি কার্ড পয়েন্ট</span>
             <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Sparkles className="w-4 h-4 text-purple-700" />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline space-x-1.5">
-            <span className="text-xl sm:text-2xl font-black text-purple-900 font-mono">
+          <div className="mt-2.5 flex items-baseline space-x-1.5 overflow-hidden">
+            <span className="text-2xl sm:text-3xl font-black text-purple-900 font-mono leading-none">
               {toBengaliDigits(loyaltyPoints)}
             </span>
-            <span className="text-[11px] font-bold text-purple-600">পয়েন্ট</span>
+            <span className="text-xs font-bold text-purple-600">পয়েন্ট</span>
+            {isLoyaltyApproved && loyaltyPoints > 0 && (
+              <span className="text-[10px] font-bold text-slate-400 truncate">
+                (≈ ৳{toBengaliDigits(pointCashValue)})
+              </span>
+            )}
           </div>
-          <p className="text-[10px] text-purple-700 font-semibold mt-0.5">পরবর্তী কেনাকাটায় ছাড়</p>
+          <p className="text-[10px] text-purple-700 font-semibold mt-1 truncate">
+            {isLoyaltyApproved
+              ? `প্রতি ৳${toBengaliDigits(siteSettings?.reward_points_spend_amount || 100)} এ ${toBengaliDigits(siteSettings?.reward_points_earned || 1)} পয়েন্ট কার্ডে জমা`
+              : 'লয়ালটি কার্ড অনুমোদনে পয়েন্ট সুবিধা'}
+          </p>
         </div>
 
         {/* Stat 4: Qard Limit */}
         <div 
           onClick={() => isQardApproved ? null : setQardModalOpen(true)}
-          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group flex flex-col justify-between min-h-[112px] sm:min-h-[122px]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">করযে হাসানা লিমিট</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">করযে হাসানা লিমিট</span>
             <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <HandHeart className="w-4 h-4 text-teal-700" />
             </div>
           </div>
-          <div className="mt-2 flex items-baseline space-x-1">
-            <span className="text-xl sm:text-2xl font-black text-teal-950 font-mono">
-              ৳{toBengaliDigits(qardLimit.toLocaleString())}
+          <div className="mt-2.5 flex items-baseline space-x-1 overflow-hidden">
+            <span className="text-lg sm:text-xl font-bold text-teal-800 mr-0.5 font-mono leading-none">৳</span>
+            <span className="text-2xl sm:text-3xl font-black text-teal-950 font-mono leading-none truncate">
+              {toBengaliDigits(qardLimit.toLocaleString())}
             </span>
           </div>
-          <p className="text-[10px] text-teal-700 font-bold mt-0.5">
+          <p className="text-[10px] text-teal-700 font-bold mt-1">
             {isQardApproved ? '✓ সক্রিয় ক্রেডিট লিমিট' : isQardPending ? '⏳ আবেদন পর্যালোচনায়' : 'বিনা সুদে কেনাকাটা'}
           </p>
         </div>
@@ -405,6 +423,64 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
           {activeTab === 'overview' && (
             <div className="space-y-6">
               
+              {/* 🎁 DYNAMIC REWARD POINTS BALANCE & RULES CARD (ONLY FOR APPROVED LOYALTY CARDHOLDERS) */}
+              {isLoyaltyApproved && (
+                <div className="bg-gradient-to-br from-[#1e1435] via-[#16122b] to-[#0f172a] text-white p-5 sm:p-6 rounded-3xl border border-purple-500/30 shadow-xl space-y-4 relative overflow-hidden">
+                  <div className="absolute -right-8 -bottom-8 w-44 h-44 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+                  
+                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-500/20 pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center text-purple-300 shadow-inner">
+                        <Sparkles className="w-5 h-5 text-amber-300" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-purple-300 uppercase tracking-wider bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/30">
+                          লয়ালটি কার্ড রিওয়ার্ড ব্যালেন্স
+                        </span>
+                        <h3 className="text-sm sm:text-base font-black text-white mt-1">আপনার ডিজিটাল লয়ালটি কার্ডের অর্জিত পয়েন্ট</h3>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <span className="text-[10px] text-purple-200 block font-bold uppercase">পয়েন্টের ক্যাশ ভ্যালু</span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
+                        ৳{toBengaliDigits(pointCashValue.toLocaleString())}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="bg-purple-950/40 p-3.5 rounded-2xl border border-purple-500/20 space-y-1">
+                      <span className="text-purple-300 font-bold block text-[11px]">বর্তমান কার্ড পয়েন্ট</span>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-2xl font-black text-amber-300 font-mono">{toBengaliDigits(loyaltyPoints)}</span>
+                        <span className="text-xs text-purple-200 font-bold">পয়েন্ট</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-950/40 p-3.5 rounded-2xl border border-purple-500/20 space-y-1">
+                      <span className="text-purple-300 font-bold block text-[11px]">কার্ড অনুমোদন বোনাস</span>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-2xl font-black text-emerald-400 font-mono">+{toBengaliDigits(siteSettings?.loyalty_card_initial_points ?? siteSettings?.reward_points_new_user ?? 100)}</span>
+                        <span className="text-xs text-emerald-300 font-bold">পয়েন্ট উপহার</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-950/40 p-3.5 rounded-2xl border border-purple-500/20 space-y-1">
+                      <span className="text-purple-300 font-bold block text-[11px]">কেনাকাটায় কার্ডে অর্জনের হার</span>
+                      <div className="flex items-baseline space-x-1 pt-0.5">
+                        <span className="text-xs font-black text-cyan-300">
+                          প্রতি ৳{toBengaliDigits(siteSettings?.reward_points_spend_amount || 100)} এ {toBengaliDigits(siteSettings?.reward_points_earned || 1)} পয়েন্ট
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 p-3 bg-purple-900/30 rounded-xl border border-purple-500/20 text-[11px] text-purple-200/90 flex items-center space-x-2">
+                    <span>💡 আপনার ভিআইপি লয়ালটি কার্ডে এই পয়েন্ট জমা হচ্ছে। প্রতি কেনাকাটায় পয়েন্ট যোগ হবে এবং যেকোনো অর্ডারে ১ পয়েন্ট = ৳{toBengaliDigits(siteSettings?.reward_point_value_bdt || 1)} সমমূল্যের ক্যাশ ছাড় পাওয়া যাবে।</span>
+                  </div>
+                </div>
+              )}
+
               {/* 1. CONDITIONAL VIP LOYALTY CARD DISPLAY */}
               {isLoyaltyApproved ? (
                 <div className="bg-white p-4 sm:p-5 rounded-3xl border border-amber-200 shadow-sm space-y-3">
@@ -463,7 +539,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100/70 p-6 sm:p-7 rounded-3xl border-2 border-amber-300 shadow-xs space-y-3">
                   <div className="flex items-center space-x-3 text-amber-900">
                     <div className="w-10 h-10 rounded-2xl bg-amber-200 text-amber-900 flex items-center justify-center font-bold">
-                      <Sparkles className="w-5 h-5 text-amber-700 animate-spin" />
+                      <Sparkles className="w-5 h-5 text-amber-700" />
                     </div>
                     <div>
                       <h3 className="text-sm font-black">আপনার লয়ালটি কার্ড আবেদনটি পর্যালোচনায় রয়েছে</h3>
@@ -515,7 +591,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                     <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
                       <Award className="w-5 h-5 text-emerald-700" />
                       <h4 className="text-xs font-black text-slate-900">লাইফটাইম ক্যাশ পয়েন্ট</h4>
-                      <p className="text-[11px] text-slate-600 leading-relaxed">প্রতি ১০০ টাকা কেনাকাটায় ক্যাশ পয়েন্ট সংগ্রহ ও ডিসকাউন্ট।</p>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">কার্ড অনুমোদন হলেই পাবেন +{toBengaliDigits(siteSettings?.loyalty_card_initial_points ?? siteSettings?.reward_points_new_user ?? 100)} প্রারম্ভিক পয়েন্ট এবং প্রতি ৳{toBengaliDigits(siteSettings?.reward_points_spend_amount || 100)} কেনাকাটায় {toBengaliDigits(siteSettings?.reward_points_earned || 1)} পয়েন্ট কার্ডে জমা।</p>
                     </div>
 
                     <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
@@ -681,30 +757,53 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
 
 
               {/* Quick Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase">মোট অর্ডার</span>
-                  <p className="text-xl sm:text-2xl font-black text-slate-900">{toBengaliDigits(orders.length)}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/60 shadow-xs flex flex-col justify-between min-h-[96px] sm:min-h-[106px] transition-all hover:border-amber-300">
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-500 tracking-wide uppercase">মোট অর্ডার</span>
+                  <div className="flex items-baseline mt-2">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-mono leading-none">
+                      {toBengaliDigits(orders.length)}
+                    </span>
+                    <span className="text-[11px] text-slate-400 ml-1.5 font-semibold">টি</span>
+                  </div>
                 </div>
-                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase">চলমান ডেলিভারি</span>
-                  <p className="text-xl sm:text-2xl font-black text-amber-700">{toBengaliDigits(activeOrders.length)}</p>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/60 shadow-xs flex flex-col justify-between min-h-[96px] sm:min-h-[106px] transition-all hover:border-amber-300">
+                  <span className="text-[11px] sm:text-xs font-bold text-amber-800 tracking-wide uppercase">চলমান ডেলিভারি</span>
+                  <div className="flex items-baseline mt-2">
+                    <span className="text-2xl sm:text-3xl font-black text-amber-700 tracking-tight font-mono leading-none">
+                      {toBengaliDigits(activeOrders.length)}
+                    </span>
+                    <span className="text-[11px] text-amber-600/70 ml-1.5 font-semibold">টি</span>
+                  </div>
                 </div>
-                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase">মোট কেনাকাটা</span>
-                  <p className="text-xl sm:text-2xl font-black text-emerald-700">৳{toBengaliDigits(totalSpent.toLocaleString())}</p>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/60 shadow-xs flex flex-col justify-between min-h-[96px] sm:min-h-[106px] transition-all hover:border-amber-300">
+                  <span className="text-[11px] sm:text-xs font-bold text-emerald-800 tracking-wide uppercase">মোট কেনাকাটা</span>
+                  <div className="flex items-baseline mt-2 overflow-hidden">
+                    <span className="text-base sm:text-lg font-bold text-emerald-700 mr-1 font-mono leading-none">৳</span>
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 tracking-tight font-mono leading-none truncate">
+                      {toBengaliDigits(totalSpent.toLocaleString('en-US'))}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-white p-4.5 rounded-3xl border border-amber-100 shadow-2xs space-y-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-600 uppercase">ক্যাশ পয়েন্ট</span>
-                  <p className="text-xl sm:text-2xl font-black text-amber-600">{toBengaliDigits(loyaltyPoints)}</p>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/60 shadow-xs flex flex-col justify-between min-h-[96px] sm:min-h-[106px] transition-all hover:border-amber-300">
+                  <span className="text-[11px] sm:text-xs font-bold text-amber-800 tracking-wide uppercase">ক্যাশ পয়েন্ট</span>
+                  <div className="flex items-baseline mt-2">
+                    <span className="text-2xl sm:text-3xl font-black text-amber-600 tracking-tight font-mono leading-none">
+                      {toBengaliDigits(loyaltyPoints)}
+                    </span>
+                    <span className="text-[11px] text-amber-600/70 ml-1.5 font-semibold">পয়েন্ট</span>
+                  </div>
                 </div>
               </div>
 
               {/* Recent Orders Overview */}
-              <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-2xs space-y-4">
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-amber-200/60 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    সাম্প্রতিক সুগন্ধি অর্ডার
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+                    সাম্প্রতিক অর্ডারসমূহ
                   </h3>
                   <button
                     onClick={() => setActiveTab('orders')}
@@ -725,9 +824,16 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                           <span className="text-slate-400">•</span>
                           <span className="text-slate-600">{new Date(order.created_at).toLocaleDateString('bn-BD')}</span>
                         </div>
-                        <p className="font-bold text-slate-800 mt-1">
-                          ৳{toBengaliDigits(order.total_amount?.toLocaleString())} ({order.payment_method === 'qard' ? 'করযে হাসানা' : order.payment_method.toUpperCase()})
-                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <p className="font-bold text-slate-800">
+                            ৳{toBengaliDigits(order.total_amount?.toLocaleString())} ({order.payment_method === 'qard' ? 'করযে হাসানা' : order.payment_method.toUpperCase()})
+                          </p>
+                          {Number(order.points_earned) > 0 && (
+                            <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200">
+                              +{toBengaliDigits(order.points_earned)} লয়ালটি পয়েন্ট কার্ডে অর্জিত
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
@@ -766,9 +872,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                 </span>
               </div>
 
-              {loadingOrders ? (
-                <div className="py-12 text-center text-slate-400 text-xs">অর্ডার লোড হচ্ছে...</div>
-              ) : orders.length === 0 ? (
+              {loadingOrders ? null : orders.length === 0 ? (
                 <div className="py-12 text-center space-y-3">
                   <Package className="w-12 h-12 text-slate-300 mx-auto" />
                   <p className="text-xs text-slate-500 font-medium">আপনি এখনো কোনো অর্ডার করেননি।</p>
@@ -848,8 +952,16 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                       )}
 
                       {/* Footer Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
-                        <span className="font-black text-slate-900 text-sm">মোট টাকা: ৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-slate-200 text-xs gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-black text-slate-900 text-sm">মোট টাকা: ৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
+                          {Number(order.points_earned) > 0 && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center space-x-1">
+                              <Sparkles className="w-3 h-3 text-purple-600" />
+                              <span>+{toBengaliDigits(order.points_earned)} লয়ালটি পয়েন্ট কার্ডে অর্জিত</span>
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
                           className="px-4 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all"

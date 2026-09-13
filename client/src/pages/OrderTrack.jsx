@@ -123,7 +123,7 @@ export default function OrderTrack({
           <span>{order ? 'লাইভ ট্র্যাকিং টাইমলাইন' : 'আল আনসার লাইভ কুরিয়ার ও অর্ডার ট্র্যাকার'}</span>
         </span>
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-          {order ? `অর্ডার #${order.order_code} এর ডেলিভারি স্ট্যাটাস` : 'আপনার সুগন্ধি পার্সেল ট্র্যাক করুন'}
+          {order ? `অর্ডার #${order.order_code} এর ডেলিভারি স্ট্যাটাস` : 'আপনার পার্সেল ট্র্যাক করুন'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
           {order 

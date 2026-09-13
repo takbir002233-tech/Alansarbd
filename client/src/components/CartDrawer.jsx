@@ -34,6 +34,11 @@ export default function CartDrawer({ onNavigate }) {
   const [promoInput, setPromoInput] = useState('');
   const [promoMessage, setPromoMessage] = useState(null);
 
+  const toBengaliDigits = (str) => {
+    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return (str ?? '').toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
+  };
+
   // Lock body scroll when cart popup is open
   useScrollLock(isCartOpen);
 
@@ -76,7 +81,7 @@ export default function CartDrawer({ onNavigate }) {
               <h2 className="text-xs sm:text-sm font-black text-white flex items-center space-x-2 leading-none">
                 <span>আপনার শপিং ব্যাগ</span>
                 <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
-                  {totalItemCount} টি পণ্য
+                  {toBengaliDigits(totalItemCount)} টি পণ্য
                 </span>
               </h2>
               <p className="text-[10px] text-amber-200/80 font-mono mt-0.5">
@@ -99,9 +104,9 @@ export default function CartDrawer({ onNavigate }) {
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-800 mb-1">
             <span className="flex items-center text-amber-950 font-bold">
               <Truck className="w-3.5 h-3.5 mr-1 text-amber-600 flex-shrink-0" />
-              {isFreeDelivery ? '🎉 ফ্রি হোম ডেলিভারি আনলক হয়েছে!' : `আর মাত্র ৳${diffToFree.toLocaleString()} কেনাকাটায় ফ্রি ডেলিভারি!`}
+              {isFreeDelivery ? '🎉 ফ্রি হোম ডেলিভারি আনলক হয়েছে!' : `আর মাত্র ৳${toBengaliDigits(diffToFree.toLocaleString())} কেনাকাটায় ফ্রি ডেলিভারি!`}
             </span>
-            <span className="text-amber-900 font-black font-mono">{progressPercent}%</span>
+            <span className="text-amber-900 font-black font-mono">{toBengaliDigits(progressPercent)}%</span>
           </div>
           <div className="w-full bg-amber-200/80 rounded-full h-1.5 overflow-hidden">
             <div
@@ -153,11 +158,11 @@ export default function CartDrawer({ onNavigate }) {
                     </h4>
                     <div className="flex items-center space-x-1.5 mt-0.5 text-[10px] sm:text-[11px]">
                       <span className="font-bold text-amber-900 font-mono">
-                        ৳{item.price.toLocaleString()}
+                        ৳{toBengaliDigits(item.price.toLocaleString())}
                       </span>
                       {item.regular_price && item.regular_price > item.price && (
                         <span className="text-slate-400 line-through font-mono">
-                          ৳{item.regular_price.toLocaleString()}
+                          ৳{toBengaliDigits(item.regular_price.toLocaleString())}
                         </span>
                       )}
                       {item.variant && (
@@ -181,7 +186,7 @@ export default function CartDrawer({ onNavigate }) {
                       <Minus className="w-2.5 h-2.5" />
                     </button>
                     <span className="text-[10px] sm:text-[11px] font-black text-slate-900 px-1 min-w-[18px] text-center font-mono">
-                      {item.quantity}
+                      {toBengaliDigits(item.quantity)}
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1, item.variant)}
@@ -195,7 +200,7 @@ export default function CartDrawer({ onNavigate }) {
                   {/* Subtotal */}
                   <div className="text-right min-w-[50px] sm:min-w-[62px]">
                     <span className="text-[11px] sm:text-xs font-black text-amber-900 font-mono block leading-tight">
-                      ৳{(item.price * item.quantity).toLocaleString()}
+                      ৳{toBengaliDigits((item.price * item.quantity).toLocaleString())}
                     </span>
                   </div>
 
@@ -220,12 +225,12 @@ export default function CartDrawer({ onNavigate }) {
             <div className="space-y-0.5 text-[11px] text-slate-600">
               <div className="flex justify-between">
                 <span>পণ্যের মোট মূল্য (Subtotal)</span>
-                <span className="font-bold text-slate-800 font-mono">৳{subtotal.toLocaleString()}</span>
+                <span className="font-bold text-slate-800 font-mono">৳{toBengaliDigits(subtotal.toLocaleString())}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>ছাড় (Discount)</span>
-                  <span className="font-mono">-৳{discountAmount.toLocaleString()}</span>
+                  <span className="font-mono">-৳{toBengaliDigits(discountAmount.toLocaleString())}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -237,7 +242,7 @@ export default function CartDrawer({ onNavigate }) {
               <div className="flex justify-between text-xs sm:text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
                 <span>সর্বমোট প্রদেয়</span>
                 <span className="text-sm sm:text-base text-amber-900 font-black font-mono">
-                  ৳{(Math.max(0, subtotal - discountAmount)).toLocaleString()}
+                  ৳{toBengaliDigits((Math.max(0, subtotal - discountAmount)).toLocaleString())}
                 </span>
               </div>
             </div>

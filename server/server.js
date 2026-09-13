@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const compression = require('compression');
 
 dotenv.config();
 
@@ -23,11 +24,19 @@ app.set('io', io);
 
 // Middlewares - Increased limit for base64 photo uploads
 app.use(cors());
+
+// Enable GZIP/Deflate compression for fast loading and reduced data usage
+app.use(compression({
+  threshold: 1024
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static uploaded photos
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static uploaded photos with caching
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d'
+}));
 
 // Log requests
 app.use((req, res, next) => {
@@ -123,8 +132,17 @@ app.use((req, res, next) => {
   }
 });
 
-// Production fallback: Serve client static build
-app.use(express.static(clientDistPath));
+// Production fallback: Serve client static build with aggressive caching for hashed assets
+app.use(express.static(clientDistPath, {
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    if (filePath.includes(`${path.sep}assets${path.sep}`) || filePath.includes('/assets/')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  }
+}));
 
 app.use((req, res, next) => {
   if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {
@@ -132,6 +150,7 @@ app.use((req, res, next) => {
   }
   const indexHtml = path.join(clientDistPath, 'index.html');
   if (fs.existsSync(indexHtml)) {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     res.sendFile(indexHtml);
   } else {
     res.send('AL ANSAR API Server is running.');

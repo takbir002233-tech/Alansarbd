@@ -163,7 +163,22 @@ router.get('/qard-applications', requireAdmin, (req, res) => {
 
 router.post('/qard-applications', (req, res) => {
   try {
-    const { name, phone, email, nid_number, address, monthly_income, requested_limit, notes, user_id } = req.body;
+    const { 
+      name, 
+      phone, 
+      email, 
+      nid_number, 
+      address, 
+      monthly_income, 
+      requested_limit, 
+      notes, 
+      user_id,
+      payment_method,
+      payment_amount,
+      transaction_id,
+      sender_number,
+      sender_bank_name
+    } = req.body;
     if (!name || !phone || !nid_number) {
       return res.status(400).json({ success: false, message: 'নাম, মোবাইল নম্বর ও জাতীয় পরিচয়পত্র (NID) নম্বর আবশ্যক।' });
     }
@@ -177,7 +192,12 @@ router.post('/qard-applications', (req, res) => {
       address: (address || '').trim(),
       monthly_income: Number(monthly_income) || 0,
       requested_limit: Number(requested_limit) || 5000,
-      notes: (notes || '').trim()
+      notes: (notes || '').trim(),
+      payment_method: (payment_method || 'mfs').trim(),
+      payment_amount: Number(payment_amount) || 0,
+      transaction_id: (transaction_id || '').trim().toUpperCase(),
+      sender_number: (sender_number || '').trim(),
+      sender_bank_name: (sender_bank_name || '').trim()
     });
 
     return res.status(201).json({

@@ -10,25 +10,30 @@ import {
   Building2, 
   Truck, 
   QrCode, 
-  AlertCircle
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
 
 export default function PaymentGatewayModal({
   isOpen,
   onClose,
-  totalAmount,
+  totalAmount = 0,
   deliveryFee = 60,
   siteSettings,
   user,
-  onConfirmPayment
+  onConfirmPayment,
+  title,
+  subtitle,
+  hideCod = false
 }) {
   useScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('mfs'); // 'mfs', 'bank', 'cod'
-  const [selectedMethod, setSelectedMethod] = useState(null); // null = method selector, 'bkash', 'nagad', 'rocket', etc.
-  const [codMfsProvider, setCodMfsProvider] = useState('bkash_personal');
-  const advanceFee = Number(deliveryFee) || 60;
-  const remainingCodAmount = Math.max(0, totalAmount - advanceFee);
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const safeTotal = Number(totalAmount) || 0;
+  const isFreeDelivery = Number(deliveryFee) === 0;
+  const advanceFee = isFreeDelivery ? 0 : (Number(deliveryFee) || 60);
+  const remainingCodAmount = Math.max(0, safeTotal - advanceFee);
   const [senderNumber, setSenderNumber] = useState(user?.phone || '');
   const [senderBankName, setSenderBankName] = useState('');
   const [senderAccountName, setSenderAccountName] = useState(user?.name || '');
@@ -38,15 +43,19 @@ export default function PaymentGatewayModal({
   const [validationError, setValidationError] = useState('');
   const [invoiceId] = useState(() => 'INV-' + Math.random().toString(36).substr(2, 7).toUpperCase());
 
-  // Countdown timer
+  // Reset and countdown timer
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setSelectedMethod(null);
+      setValidationError('');
+      return;
+    }
     setTimeLeft(300);
     const interval = setInterval(() => {
       setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [isOpen, selectedMethod]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -229,6 +238,18 @@ export default function PaymentGatewayModal({
     }
 
     if (selectedMethod.key === 'cod') {
+      if (advanceFee === 0) {
+        onConfirmPayment({
+          payment_method: 'cod',
+          advance_delivery_fee_paid: false,
+          delivery_fee_amount: 0,
+          delivery_fee_method: 'cod_free',
+          sender_number: senderNumber.trim() || user?.phone || 'N/A',
+          transaction_id: 'FREE-DELIVERY-COD',
+          payment_amount: 0
+        });
+        return;
+      }
       if (!senderNumber.trim()) {
         setValidationError('যে নম্বর থেকে ডেলিভারি ফি পাঠিয়েছেন তা উল্লেখ করুন।');
         return;
@@ -243,7 +264,8 @@ export default function PaymentGatewayModal({
         delivery_fee_amount: advanceFee,
         delivery_fee_method: codMfsProvider,
         sender_number: senderNumber.trim(),
-        transaction_id: transactionId.trim().toUpperCase()
+        transaction_id: transactionId.trim().toUpperCase(),
+        payment_amount: advanceFee
       });
       return;
     }
@@ -264,8 +286,11 @@ export default function PaymentGatewayModal({
 
       onConfirmPayment({
         payment_method: 'bank',
+        sender_bank_name: senderBankName.trim(),
         sender_number: `${senderBankName.trim()} (${senderAccountName ? senderAccountName.trim() + ' - ' : ''}${senderNumber.trim()})`,
-        transaction_id: transactionId.trim().toUpperCase()
+        transaction_id: transactionId.trim().toUpperCase(),
+        payment_amount: totalAmount,
+        delivery_fee_amount: advanceFee
       });
       return;
     }
@@ -284,7 +309,9 @@ export default function PaymentGatewayModal({
     onConfirmPayment({
       payment_method: selectedMethod.key,
       sender_number: senderNumber.trim(),
-      transaction_id: transactionId.trim().toUpperCase()
+      transaction_id: transactionId.trim().toUpperCase(),
+      payment_amount: totalAmount,
+      delivery_fee_amount: advanceFee
     });
   };
 
@@ -343,7 +370,7 @@ export default function PaymentGatewayModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200 font-sans"
       onClick={onClose}
     >
       <div 
@@ -369,10 +396,10 @@ export default function PaymentGatewayModal({
             )}
             <div>
               <h3 className="text-sm font-black text-slate-900 leading-none">
-                AL ANSAR SUPER SHOP
+                {title || 'AL ANSAR SUPER SHOP'}
               </h3>
               <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                Invoice: <span className="font-bold text-slate-700">{invoiceId}</span>
+                {subtitle || <>Invoice: <span className="font-bold text-slate-700">{invoiceId}</span></>}
               </p>
             </div>
           </div>
@@ -381,7 +408,7 @@ export default function PaymentGatewayModal({
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-600 block">মোট প্রদেয়</span>
               <span className="text-lg font-black text-slate-950 font-mono">
-                ৳{toBengaliDigits(totalAmount.toLocaleString())}
+                ৳{toBengaliDigits(safeTotal.toLocaleString())}
               </span>
             </div>
             <button
@@ -423,20 +450,22 @@ export default function PaymentGatewayModal({
                 >
                   🏦 ব্যাংক ট্রান্সফার
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('cod');
-                    handleSelectMethod('cod');
-                  }}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'cod'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  🚚 ক্যাশ অন ডেলিভারি
-                </button>
+                {!hideCod && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('cod');
+                      handleSelectMethod('cod');
+                    }}
+                    className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                      activeTab === 'cod'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🚚 ক্যাশ অন ডেলিভারি
+                  </button>
+                )}
               </div>
 
               {/* MFS Provider Grid */}
@@ -573,181 +602,228 @@ export default function PaymentGatewayModal({
                 
                 <div className="text-center space-y-1">
                   <h3 className="text-sm sm:text-base font-black tracking-wide">
-                    Complete payment from your {selectedMethod.shortName} app
+                    {selectedMethod.key === 'cod' && advanceFee === 0
+                      ? 'ক্যাশ অন ডেলিভারি (সম্পূর্ণ ফ্রি ডেলিভারি)'
+                      : `Complete payment from your ${selectedMethod.shortName} app`}
                   </h3>
                   <p className="text-[11px] opacity-90">
-                    নিচের নম্বরে নির্ধারিত টাকা সেন্ড করে TrxID দিয়ে নিশ্চিত করুন
+                    {selectedMethod.key === 'cod' && advanceFee === 0
+                      ? 'কোনো অগ্রিম পেমেন্টের ঝামেলা নেই। নিচে সরাসরি অর্ডার নিশ্চিত করুন।'
+                      : 'নিচের নম্বরে নির্ধারিত টাকা সেন্ড করে TrxID দিয়ে নিশ্চিত করুন'}
                   </p>
                 </div>
 
                 {/* Inner White Box with Amount, Number, QR (Matching Photo 1 & 2) */}
                 <div className="bg-white text-slate-800 p-4 rounded-2xl shadow-inner border border-slate-100">
-                  <div className="flex items-start justify-between gap-3">
-                    
-                    {/* Left details */}
-                    <div className="space-y-3 flex-1">
+                  {selectedMethod.key === 'cod' && advanceFee === 0 ? (
+                    <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-100">
                         <div>
                           <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
-                            {selectedMethod.key === 'cod' ? 'এখন প্রদেয় (ডেলিভারি ফি)' : 'AMOUNT'}
+                            অগ্রিম প্রদেয় ফি
                           </span>
-                          <span className="text-base sm:text-lg font-black text-slate-900 font-mono">
-                            ৳{toBengaliDigits((selectedMethod.key === 'cod' ? advanceFee : totalAmount).toLocaleString())}
+                          <span className="text-base sm:text-lg font-black text-emerald-700 font-mono">
+                            ৳০ (ফ্রি ডেলিভারি)
                           </span>
                         </div>
                         <div>
                           <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
-                            {selectedMethod.key === 'cod' ? 'বাকি মূল্য (ক্যাশ)' : 'METHOD'}
+                            পণ্য পেয়ে প্রদেয় (ক্যাশ)
                           </span>
-                          <span className="text-xs font-black text-slate-800">
-                            {selectedMethod.key === 'cod' ? `৳${toBengaliDigits(remainingCodAmount.toLocaleString())}` : selectedMethod.methodType}
+                          <span className="text-base sm:text-lg font-black text-slate-900 font-mono">
+                            ৳{toBengaliDigits(safeTotal.toLocaleString())}
                           </span>
                         </div>
                       </div>
-
-                      {/* If COD, show MFS selection pills for advance delivery fee */}
-                      {selectedMethod.key === 'cod' && (
-                        <div className="space-y-1.5 pb-2 border-b border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-700 block">
-                            ডেলিভারি ফি পরিশোধের মাধ্যম নির্বাচন করুন:
-                          </span>
-                          <div className="grid grid-cols-4 gap-1.5">
-                            {[
-                              { key: 'bkash_personal', name: 'bKash', color: 'bg-[#E2136E]' },
-                              { key: 'nagad_personal', name: 'Nagad', color: 'bg-[#F7941D]' },
-                              { key: 'rocket_personal', name: 'Rocket', color: 'bg-[#8C3494]' },
-                              { key: 'upay', name: 'Upay', color: 'bg-[#005C8A]' }
-                            ].map((m) => (
-                              <button
-                                key={m.key}
-                                type="button"
-                                onClick={() => setCodMfsProvider(m.key)}
-                                className={`py-1 px-1 text-[11px] font-black rounded-lg border transition-all cursor-pointer ${
-                                  codMfsProvider === m.key
-                                    ? `${m.color} text-white shadow-xs ring-2 ring-amber-400/40`
-                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
-                                }`}
-                              >
-                                {m.name}
-                              </button>
-                            ))}
+                      <div className="flex items-start space-x-2.5 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                        <Truck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-xs text-emerald-950 leading-relaxed">
+                          <strong className="block font-black text-emerald-900 mb-0.5">🎉 ১০০% ফ্রি হোম ডেলিভারি অফার!</strong>
+                          আপনার পণ্যে ফ্রি ডেলিভারি থাকায় কোনো প্রকার অগ্রিম ক্যাশআউট ফি দিতে হবে না। ডেলিভারিম্যান থেকে পণ্য বুঝে নিয়ে সম্পূর্ণ ক্যাশ পরিশোধ করবেন।
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      {/* Left details */}
+                      <div className="space-y-3 flex-1">
+                        <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-100">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                              {selectedMethod.key === 'cod' ? 'এখন প্রদেয় (ডেলিভারি ফি)' : 'AMOUNT'}
+                            </span>
+                            <span className="text-base sm:text-lg font-black text-slate-900 font-mono">
+                              ৳{toBengaliDigits((selectedMethod.key === 'cod' ? advanceFee : safeTotal).toLocaleString())}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                              {selectedMethod.key === 'cod' ? 'বাকি মূল্য (ক্যাশ)' : 'METHOD'}
+                            </span>
+                            <span className="text-xs font-black text-slate-800">
+                              {selectedMethod.key === 'cod' ? `৳${toBengaliDigits(remainingCodAmount.toLocaleString())}` : selectedMethod.methodType}
+                            </span>
                           </div>
                         </div>
-                      )}
 
-                      {/* Number Row with Copy Button */}
-                      <div>
-                        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
-                          {selectedMethod.key === 'bank' 
-                            ? 'ACCOUNT NUMBER' 
-                            : selectedMethod.key === 'cod'
-                            ? `ডেলিভারি ফি পাঠানোর ${codMfsProvider.toUpperCase().replace('_PERSONAL', '')} নম্বর (SEND MONEY)`
-                            : `NUMBER (${selectedMethod.methodType.toUpperCase()})`}
-                        </span>
-                        <div className="flex items-center space-x-2 mt-0.5">
-                          <span className="text-sm sm:text-base font-mono font-black text-slate-900 tracking-wider select-all">
-                            {selectedMethod.key === 'cod'
-                              ? (codMfsProvider.includes('nagad') 
-                                  ? (siteSettings?.nagad_number || '01811223344') 
-                                  : codMfsProvider.includes('rocket')
-                                  ? (siteSettings?.rocket_number || '01911223344')
-                                  : (siteSettings?.bkash_number || '01715712941'))
-                              : selectedMethod.number}
+                        {/* If COD, show MFS selection pills for advance delivery fee */}
+                        {selectedMethod.key === 'cod' && (
+                          <div className="space-y-1.5 pb-2 border-b border-slate-100">
+                            <span className="text-[10px] font-bold text-slate-700 block">
+                              ডেলিভারি ফি পরিশোধের মাধ্যম নির্বাচন করুন:
+                            </span>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {[
+                                { key: 'bkash_personal', name: 'bKash', color: 'bg-[#E2136E]' },
+                                { key: 'nagad_personal', name: 'Nagad', color: 'bg-[#F7941D]' },
+                                { key: 'rocket_personal', name: 'Rocket', color: 'bg-[#8C3494]' },
+                                { key: 'upay', name: 'Upay', color: 'bg-[#005C8A]' }
+                              ].map((m) => (
+                                <button
+                                  key={m.key}
+                                  type="button"
+                                  onClick={() => setCodMfsProvider(m.key)}
+                                  className={`py-1 px-1 text-[11px] font-black rounded-lg border transition-all cursor-pointer ${
+                                    codMfsProvider === m.key
+                                      ? `${m.color} text-white shadow-xs ring-2 ring-amber-400/40`
+                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
+                                  }`}
+                                >
+                                  {m.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Number Row with Copy Button */}
+                        <div>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                            {selectedMethod.key === 'bank' 
+                              ? 'ACCOUNT NUMBER' 
+                              : selectedMethod.key === 'cod'
+                              ? `ডেলিভারি ফি পাঠানোর ${codMfsProvider.toUpperCase().replace('_PERSONAL', '')} নম্বর (SEND MONEY)`
+                              : `NUMBER (${selectedMethod.methodType.toUpperCase()})`}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(
-                              selectedMethod.key === 'cod'
+                          <div className="flex items-center space-x-2 mt-0.5">
+                            <span className="text-sm sm:text-base font-mono font-black text-slate-900 tracking-wider select-all">
+                              {selectedMethod.key === 'cod'
                                 ? (codMfsProvider.includes('nagad') 
                                     ? (siteSettings?.nagad_number || '01811223344') 
                                     : codMfsProvider.includes('rocket')
                                     ? (siteSettings?.rocket_number || '01911223344')
                                     : (siteSettings?.bkash_number || '01715712941'))
-                                : selectedMethod.number, 
-                              'number'
-                            )}
-                            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
-                              copiedField === 'number'
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                            }`}
-                          >
-                            {copiedField === 'number' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                            <span>{copiedField === 'number' ? 'কপি হয়েছে' : 'Copy'}</span>
-                          </button>
+                                : selectedMethod.number}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(
+                                selectedMethod.key === 'cod'
+                                  ? (codMfsProvider.includes('nagad') 
+                                      ? (siteSettings?.nagad_number || '01811223344') 
+                                      : codMfsProvider.includes('rocket')
+                                      ? (siteSettings?.rocket_number || '01911223344')
+                                      : (siteSettings?.bkash_number || '01715712941'))
+                                  : selectedMethod.number, 
+                                'number'
+                              )}
+                              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
+                                copiedField === 'number'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}
+                            >
+                              {copiedField === 'number' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedField === 'number' ? 'কপি হয়েছে' : 'Copy'}</span>
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Extra Bank Details if Bank */}
+                        {selectedMethod.key === 'bank' && (
+                          <div className="text-[10px] text-slate-500 pt-1 space-y-0.5">
+                            <div><span className="font-bold text-slate-700">Account Name:</span> {selectedMethod.accountName}</div>
+                            <div><span className="font-bold text-slate-700">Branch:</span> {selectedMethod.branch}</div>
+                            <div><span className="font-bold text-slate-700">Routing:</span> {selectedMethod.routing}</div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Extra Bank Details if Bank */}
-                      {selectedMethod.key === 'bank' && (
-                        <div className="text-[10px] text-slate-500 pt-1 space-y-0.5">
-                          <div><span className="font-bold text-slate-700">Account Name:</span> {selectedMethod.accountName}</div>
-                          <div><span className="font-bold text-slate-700">Branch:</span> {selectedMethod.branch}</div>
-                          <div><span className="font-bold text-slate-700">Routing:</span> {selectedMethod.routing}</div>
+                      {/* Right QR Code Section (Photo 1) */}
+                      <div className="flex flex-col items-center justify-center p-2 bg-slate-50 rounded-xl border border-slate-200 flex-shrink-0">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white p-1 rounded-lg border border-slate-200 flex items-center justify-center">
+                          <QrCode className="w-full h-full text-slate-800" />
                         </div>
+                        <span className="text-[9px] font-mono font-bold uppercase text-slate-500 mt-1 tracking-wider">
+                          SCAN QR
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Copy Amount & Copy Number Action Buttons (Photo 1) - Only when not free COD */}
+                {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy((selectedMethod.key === 'cod' ? advanceFee : totalAmount).toString(), 'amount')}
+                      className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                    >
+                      {copiedField === 'amount' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedField === 'amount' ? 'টাকা কপি হয়েছে' : 'Copy Amount'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(
+                        selectedMethod.key === 'cod'
+                          ? (codMfsProvider.includes('nagad') 
+                              ? (siteSettings?.nagad_number || '01811223344') 
+                              : codMfsProvider.includes('rocket')
+                              ? (siteSettings?.rocket_number || '01911223344')
+                              : (siteSettings?.bkash_number || '01715712941'))
+                          : selectedMethod.number, 
+                        'number_quick'
                       )}
-                    </div>
-
-                    {/* Right QR Code Section (Photo 1) */}
-                    <div className="flex flex-col items-center justify-center p-2 bg-slate-50 rounded-xl border border-slate-200 flex-shrink-0">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white p-1 rounded-lg border border-slate-200 flex items-center justify-center">
-                        <QrCode className="w-full h-full text-slate-800" />
-                      </div>
-                      <span className="text-[9px] font-mono font-bold uppercase text-slate-500 mt-1 tracking-wider">
-                        SCAN QR
-                      </span>
-                    </div>
-
+                      className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                    >
+                      {copiedField === 'number_quick' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedField === 'number_quick' ? 'নম্বর কপি হয়েছে' : 'Copy Number'}</span>
+                    </button>
                   </div>
-                </div>
+                )}
 
-                {/* Copy Amount & Copy Number Action Buttons (Photo 1) */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(totalAmount.toString(), 'amount')}
-                    className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
-                  >
-                    {copiedField === 'amount' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedField === 'amount' ? 'টাকা কপি হয়েছে' : 'Copy Amount'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(selectedMethod.number, 'number_quick')}
-                    className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
-                  >
-                    {copiedField === 'number_quick' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedField === 'number_quick' ? 'নম্বর কপি হয়েছে' : 'Copy Number'}</span>
-                  </button>
-                </div>
-
-                {/* Countdown Timer Box (Photo 2 Right) */}
-                <div className="bg-black/20 backdrop-blur-xs py-2 px-3 rounded-xl flex items-center justify-between text-xs">
-                  <span className="text-[11px] opacity-90">পেমেন্ট সম্পন্ন করার জন্য সময় বাকি:</span>
-                  <div className="flex items-center space-x-1 font-mono font-black text-amber-300">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{formatTimer(timeLeft)}</span>
+                {/* Countdown Timer Box (Photo 2 Right) - Only when not free COD */}
+                {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+                  <div className="bg-black/20 backdrop-blur-xs py-2 px-3 rounded-xl flex items-center justify-between text-xs">
+                    <span className="text-[11px] opacity-90">পেমেন্ট সম্পন্ন করার জন্য সময় বাকি:</span>
+                    <div className="flex items-center space-x-1 font-mono font-black text-amber-300">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{formatTimer(timeLeft)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
 
               {/* Quick Step Instructions */}
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
-                <span className="font-bold text-slate-800 block text-[11px]">সহজ নির্দেশনা:</span>
-                {selectedMethod.instructions.map((step, idx) => (
-                  <div key={idx} className="flex items-start space-x-2 text-slate-600 text-[11px]">
-                    <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[9px] flex-shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
+              {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+                  <span className="font-bold text-slate-800 block text-[11px]">সহজ নির্দেশনা:</span>
+                  {selectedMethod.instructions.map((step, idx) => (
+                    <div key={idx} className="flex items-start space-x-2 text-slate-600 text-[11px]">
+                      <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[9px] flex-shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <span>{step}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Cash On Delivery Guidance Box */}
-              {selectedMethod.key === 'cod' && (
+              {/* Cash On Delivery Guidance Box (When advance fee > 0) */}
+              {selectedMethod.key === 'cod' && advanceFee > 0 && (
                 <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-300 text-emerald-950 space-y-1.5 shadow-2xs">
                   <div className="flex items-center space-x-2">
                     <Truck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
@@ -812,8 +888,18 @@ export default function PaymentGatewayModal({
                 </div>
               )}
 
-              {/* Verification Inputs for Mobile Banking & COD advance delivery fee */}
-              {selectedMethod.key !== 'bank' && (
+              {/* Free Delivery COD Banner (No inputs needed) */}
+              {selectedMethod.key === 'cod' && advanceFee === 0 ? (
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-300 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xs font-black text-emerald-900">ডেলিভারি ঠিকানায় সরাসরি পণ্য পাঠানো হবে</h4>
+                  <p className="text-[11px] text-emerald-800">
+                    কোনো প্রকার অগ্রিম ফি নেই। নিচের <strong>"অর্ডার নিশ্চিত করুন"</strong> বাটনে ক্লিক করলেই সরাসরি অর্ডার চূড়ান্ত হবে।
+                  </p>
+                </div>
+              ) : selectedMethod.key !== 'bank' && (
                 <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-amber-950 uppercase tracking-wider">

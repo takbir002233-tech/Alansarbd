@@ -29,7 +29,10 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row selection:bg-amber-500 selection:text-slate-950 font-sans">
+    <div 
+      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row selection:bg-amber-500 selection:text-slate-950 font-sans"
+      style={{ backgroundColor: '#020617' }}
+    >
       
       {/* Sidebar */}
       <aside className="w-full md:w-72 bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between p-6 shrink-0">
@@ -111,7 +114,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl bg-slate-950" style={{ backgroundColor: '#020617' }}>
         {children}
       </main>
     </div>

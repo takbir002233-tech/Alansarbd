@@ -581,6 +581,22 @@ export default function AdminUsers() {
                         <span className="text-slate-200">{app.address || 'N/A'}</span>
                       </div>
 
+                      {app.payment_amount > 0 && (
+                        <div className="p-3 bg-amber-950/40 rounded-xl border border-amber-700/60 sm:col-span-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-amber-400 font-bold text-[11px]">
+                              💳 আবেদন ফি: ৳{app.payment_amount} ({app.payment_method?.toUpperCase() || 'MFS'})
+                            </span>
+                            <span className="text-slate-300 font-mono text-[11px]">
+                              প্রেরক: <strong className="text-white">{app.sender_number || 'N/A'}</strong>
+                            </span>
+                            <span className="text-slate-300 font-mono text-[11px]">
+                              TrxID: <strong className="text-amber-300 bg-black/40 px-2 py-0.5 rounded font-mono font-bold">{app.transaction_id || 'N/A'}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
                       {app.notes && (
                         <div className="sm:col-span-3 p-3 bg-slate-900 rounded-xl border border-slate-700 text-amber-200 leading-relaxed">
                           <strong>অঙ্গীকার ও আবেদনকারীর বার্তা:</strong> {app.notes}
