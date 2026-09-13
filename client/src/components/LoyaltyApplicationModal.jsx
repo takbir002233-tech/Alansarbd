@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   CreditCard, 
@@ -11,10 +11,12 @@ import {
   Check 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import useScrollLock from '../hooks/useScrollLock';
 
 export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
+  const { siteSettings } = useCart();
   useScrollLock(isOpen);
 
   const [formData, setFormData] = useState({
@@ -32,18 +34,36 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [reapplyMode, setReapplyMode] = useState(false);
 
-  // Check if already applied (single application per user)
-  const userKey = user?.id ? `user_${user.id}` : user?.phone ? `phone_${user.phone}` : 'guest';
+  // Sync user details to form
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+        address: prev.address || user.address || '',
+        city: prev.city || user.city || 'ঢাকা'
+      }));
+    }
+    try {
+      localStorage.removeItem('alansar_vip_applied_global');
+    } catch (e) {}
+  }, [user, isOpen]);
+
+  const isDeclined = user?.loyalty_card_status === 'Declined' || user?.loyalty_card_status === 'Rejected';
+  const isPending = user?.loyalty_card_status === 'Pending';
+  const isApproved = user?.loyalty_card_status === 'Approved' || user?.loyalty_card_approved === true;
+
+  // Check if already applied (scoped to logged-in user only, NOT global across accounts)
   const hasAlreadyApplied = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      localStorage.getItem(`alansar_vip_applied_${userKey}`) === 'true' ||
-      localStorage.getItem('alansar_vip_applied_global') === 'true' ||
-      user?.loyalty_card_status === 'Pending' ||
-      user?.loyalty_card_status === 'Approved'
-    );
-  }, [isOpen, user, userKey]);
+    if (reapplyMode) return false;
+    if (isPending || isApproved) return true;
+    if (user?.id && localStorage.getItem(`alansar_vip_applied_user_${user.id}`) === 'true') return true;
+    return false;
+  }, [isOpen, user, isPending, isApproved, reapplyMode]);
 
   if (!isOpen) return null;
 
@@ -58,7 +78,7 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
   };
 
   const handleGeneralClose = () => {
-    if (isSubmitted || hasAlreadyApplied) {
+    if (isSubmitted || hasAlreadyApplied || (isDeclined && !reapplyMode)) {
       handleCloseAndRedirectHome();
     } else {
       onClose();
@@ -107,12 +127,18 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
       }
 
       // Persist that user applied once
-      localStorage.setItem(`alansar_vip_applied_${userKey}`, 'true');
-      localStorage.setItem('alansar_vip_applied_global', 'true');
+      if (user?.id) {
+        localStorage.setItem(`alansar_vip_applied_user_${user.id}`, 'true');
+      }
+      try {
+        localStorage.removeItem('alansar_vip_applied_global');
+      } catch (e) {}
 
       setIsSubmitted(true);
+      setReapplyMode(false);
       setSuccessMsg('আপনার লয়ালটি মেম্বারশিপ আবেদন সফলভাবে জমা হয়েছে!');
       
+      if (refreshUser) refreshUser();
       if (onSuccess) {
         onSuccess(data.application || { ...formData, status: 'Pending' });
       }
@@ -205,7 +231,49 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
             </div>
           )}
 
-          {isSubmitted || hasAlreadyApplied ? (
+          {isDeclined && !reapplyMode && !isSubmitted ? (
+            /* Declined Status Screen */
+            <div className="py-6 px-3 sm:px-6 text-center space-y-4 flex flex-col items-center justify-center animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-rose-100 border-2 border-rose-500 text-rose-600 flex items-center justify-center shadow-lg">
+                <AlertCircle className="w-10 h-10" />
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[11px] font-black text-rose-700 bg-rose-50 px-3.5 py-1 rounded-full border border-rose-200 uppercase tracking-wide">
+                  আবেদন স্ট্যাটাস: প্রত্যাখ্যাত (Declined)
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 mt-1">
+                  আপনার ভিআইপি মেম্বারশিপ আবেদনটি অনুমোদিত হয়নি
+                </h3>
+                <div className="p-3.5 bg-rose-50/80 border border-rose-200 rounded-2xl max-w-sm mx-auto text-left space-y-1 shadow-2xs">
+                  <span className="text-[11px] font-black text-rose-900 block">প্রত্যাখ্যানের কারণ (Admin Note):</span>
+                  <p className="text-xs text-rose-800 leading-relaxed font-medium">
+                    {user?.loyalty_decline_reason || 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।'}
+                  </p>
+                </div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  সঠিক ও পূর্ণাঙ্গ তথ্য দিয়ে আপনি এখনই পুনরায় আবেদন করতে পারেন।
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => { setReapplyMode(true); setErrorMsg(null); }}
+                  className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center space-x-2 transition-all active:scale-95"
+                >
+                  <span>🔄 সংশোধিত তথ্য দিয়ে পুনরায় আবেদন করুন</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseAndRedirectHome}
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-all"
+                >
+                  <span>হোম পেজে ফিরে যান</span>
+                </button>
+              </div>
+            </div>
+          ) : isSubmitted || hasAlreadyApplied ? (
             /* Success / Already Submitted Confirmation Screen */
             <div className="py-6 px-3 sm:px-6 text-center space-y-4 flex flex-col items-center justify-center animate-in zoom-in-95">
               <div className="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-500 text-amber-800 flex items-center justify-center shadow-lg animate-bounce">
@@ -439,26 +507,47 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
             <div className="p-4 sm:p-5 overflow-y-auto space-y-3 text-xs text-slate-700 leading-relaxed font-sans">
               <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-950 font-bold text-[11px] flex items-center space-x-2">
                 <CreditCard className="w-4 h-4 text-amber-700 flex-shrink-0" />
-                <span>আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ সম্পূর্ণ বিনামূল্যে প্রদান করা হয়।</span>
+                <span>{siteSettings?.loyalty_modal_badge || 'আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ সম্পূর্ণ বিনামূল্যে প্রদান করা হয়।'}</span>
               </div>
 
               <div className="space-y-2.5 text-[11.5px]">
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">১</span>
-                  <p><strong>পয়েন্ট ও রিওয়ার্ড:</strong> প্রতিটি কেনাকাটায় স্বয়ংক্রিয়ভাবে ক্যাশব্যাক ও রিওয়ার্ড পয়েন্ট অর্জিত হবে যা পরবর্তী কেনাকাটায় ব্যবহার করা যাবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">২</span>
-                  <p><strong>ডিজিটাল কার্ড ও বারকোড:</strong> অনুমোদিত কার্ডটি আপনার প্রোফাইলে ইউনিক বারকোডসহ সংরক্ষিত থাকবে এবং শোরুম বা অনলাইনে প্রদর্শনে বিশেষ সুবিধা পাবেন।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">৩</span>
-                  <p><strong>প্রায়োরিটি ডেলিভারি:</strong> ভিআইপি মেম্বারদের অর্ডার যেকোনো সাধারণ অর্ডারের চেয়ে সর্বোচ্চ অগ্রাধিকার ও দ্রুততম সময়ে ডেলিভারি করা হবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">৪</span>
-                  <p><strong>কার্ড হস্তান্তরযোগ্য নয়:</strong> মেম্বারশিপ কার্ড ও অর্জিত পয়েন্ট ব্যক্তিগত এবং অন্য কারো নিকট হস্তান্তরযোগ্য নয়।</p>
-                </div>
+                {(() => {
+                  const defaultTerms = [
+                    { title: 'পয়েন্ট ও রিওয়ার্ড', text: 'প্রতিটি কেনাকাটায় স্বয়ংক্রিয়ভাবে ক্যাশব্যাক ও রিওয়ার্ড পয়েন্ট অর্জিত হবে যা পরবর্তী কেনাকাটায় ব্যবহার করা যাবে।' },
+                    { title: 'ডিজিটাল কার্ড ও বারকোড', text: 'অনুমোদিত কার্ডটি আপনার প্রোফাইলে ইউনিক বারকোডসহ সংরক্ষিত থাকবে এবং শোরুম বা অনলাইনে প্রদর্শনে বিশেষ সুবিধা পাবেন।' },
+                    { title: 'প্রায়োরিটি ডেলিভারি', text: 'ভিআইপি মেম্বারদের অর্ডার যেকোনো সাধারণ অর্ডারের চেয়ে সর্বোচ্চ অগ্রাধিকার ও দ্রুততম সময়ে ডেলিভারি করা হবে।' },
+                    { title: 'কার্ড হস্তান্তরযোগ্য নয়', text: 'মেম্বারশিপ কার্ড ও অর্জিত পয়েন্ট ব্যক্তিগত এবং অন্য কারো নিকট হস্তান্তরযোগ্য নয়।' },
+                  ];
+
+                  const termsList = siteSettings?.loyalty_modal_terms && siteSettings.loyalty_modal_terms.trim()
+                    ? siteSettings.loyalty_modal_terms
+                        .split('\n')
+                        .map(l => l.trim().replace(/^[০-৯0-9]+[.\-)]\s*/, ''))
+                        .filter(Boolean)
+                        .map(line => {
+                          const parts = line.split(':');
+                          if (parts.length > 1) {
+                            return { title: parts[0].trim(), text: parts.slice(1).join(':').trim() };
+                          }
+                          return { title: '', text: line };
+                        })
+                    : defaultTerms;
+
+                  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                  const toBn = (n) => String(n).replace(/[0-9]/g, d => bengaliDigits[+d]);
+
+                  return termsList.map((term, idx) => (
+                    <div key={idx} className="flex items-start space-x-2">
+                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {toBn(idx + 1)}
+                      </span>
+                      <p>
+                        {term.title && <strong>{term.title}: </strong>}
+                        {term.text}
+                      </p>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 

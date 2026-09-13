@@ -7,6 +7,34 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('nexus_token') || null);
   const [loading, setLoading] = useState(true);
 
+  // Global cleanup of legacy cross-account application flags
+  useEffect(() => {
+    try {
+      localStorage.removeItem('alansar_qard_applied_global');
+      localStorage.removeItem('alansar_vip_applied_global');
+      localStorage.removeItem('alansar_qard_applied_guest');
+      localStorage.removeItem('alansar_vip_applied_guest');
+    } catch (e) {}
+  }, []);
+
+  const refreshUser = async () => {
+    const activeToken = token || localStorage.getItem('nexus_token');
+    if (!activeToken) return null;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${activeToken}` }
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUser(data.user);
+        return data.user;
+      }
+    } catch (err) {
+      console.error('Error refreshing user:', err);
+    }
+    return null;
+  };
+
   // Initialize and verify stored token
   useEffect(() => {
     async function checkAuth() {
@@ -82,6 +110,12 @@ export function AuthProvider({ children }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem('nexus_token');
+    try {
+      localStorage.removeItem('alansar_qard_applied_global');
+      localStorage.removeItem('alansar_vip_applied_global');
+      localStorage.removeItem('alansar_qard_applied_guest');
+      localStorage.removeItem('alansar_vip_applied_guest');
+    } catch (e) {}
   };
 
   const updateProfile = async (updates) => {
@@ -137,6 +171,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        refreshUser,
         updateProfile,
         changePassword,
         setUser

@@ -15,6 +15,7 @@ function enrichProduct(p) {
 
   return {
     ...p,
+    delivery_time: p.delivery_time || '১-২ ঘণ্টা',
     stock: stockNum,
     is_out_of_stock: isOutOfStock,
     has_discount: hasDiscount,
@@ -180,7 +181,7 @@ router.put('/:id/stock', requireAdmin, (req, res) => {
 // ADMIN: CREATE PRODUCT
 router.post('/', requireAdmin, (req, res) => {
   try {
-    const { title, description, category_id, subcategory_id, price, discount_price, stock, thumbnail, images, specs, tags, is_featured, is_free_delivery, priority_order } = req.body;
+    const { title, description, category_id, subcategory_id, price, discount_price, stock, thumbnail, images, specs, tags, is_featured, is_free_delivery, priority_order, delivery_time } = req.body;
 
     if (!title || !price || !category_id) {
       return res.status(400).json({ success: false, message: 'Title, category, and regular price are required.' });
@@ -194,6 +195,7 @@ router.post('/', requireAdmin, (req, res) => {
       price: Number(price),
       discount_price: discount_price ? Number(discount_price) : null,
       stock: stock !== undefined ? Number(stock) : 15,
+      delivery_time: (delivery_time && delivery_time.trim()) ? delivery_time.trim() : '১-২ ঘণ্টা',
       thumbnail: thumbnail || 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
       images: Array.isArray(images) && images.length ? images : [thumbnail || 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80'],
       specs: specs || {},
@@ -227,6 +229,9 @@ router.put('/:id', requireAdmin, (req, res) => {
     if (updates.stock !== undefined) updates.stock = Number(updates.stock);
     if (updates.priority_order !== undefined) updates.priority_order = Number(updates.priority_order);
     if (updates.is_free_delivery !== undefined) updates.is_free_delivery = !!updates.is_free_delivery;
+    if (updates.delivery_time !== undefined) {
+      updates.delivery_time = updates.delivery_time.trim() || '১-২ ঘণ্টা';
+    }
 
     const updated = db.updateProduct(id, updates);
     if (!updated) {

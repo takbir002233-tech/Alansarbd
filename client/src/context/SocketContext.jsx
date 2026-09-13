@@ -60,12 +60,88 @@ export function SocketProvider({ children }) {
       ]);
     });
 
+    // Real-time Qard-e-Hasana status update
+    newSocket.on('qard_status_updated', (data) => {
+      console.log('🌸 Qard status updated event received:', data);
+      const isDeclined = data.status === 'Declined' || data.status === 'Rejected';
+      const isApproved = data.status === 'Approved';
+      
+      setUser(prev => {
+        if (!prev) return prev;
+        const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
+        if (!matches) return prev;
+        return {
+          ...prev,
+          qard_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
+          qard_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
+        };
+      });
+
+      if (user && (user.id === data.user_id || (user.phone && data.phone && user.phone.includes(data.phone.replace(/^(\+88|88)/, ''))))) {
+        setLiveNotifications(prev => [
+          {
+            id: Date.now(),
+            type: isApproved ? 'success' : 'alert',
+            title: isApproved ? '🌸 করযে হাসানা অনুমোদিত হয়েছে!' : '❌ করযে হাসানা আবেদন প্রত্যাখ্যাত (Declined)',
+            message: isApproved
+              ? 'আপনার করযে হাসানা ক্রেডিট লিমিট সফলভাবে সক্রিয় করা হয়েছে।'
+              : `আপনার করযে হাসানা আবেদনটি বাতিল করা হয়েছে। কারণ: ${data.notes || 'যাচাইকরণে অসঙ্গতি'}`,
+            time: new Date().toLocaleTimeString()
+          },
+          ...prev
+        ]);
+        if (refreshUser) refreshUser();
+      }
+    });
+
+    // Real-time VIP Loyalty Card status update
+    newSocket.on('loyalty_status_updated', (data) => {
+      console.log('💎 Loyalty status updated event received:', data);
+      const isDeclined = data.status === 'Declined' || data.status === 'Rejected';
+      const isApproved = data.status === 'Approved';
+
+      setUser(prev => {
+        if (!prev) return prev;
+        const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
+        if (!matches) return prev;
+        return {
+          ...prev,
+          loyalty_card_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
+          loyalty_card_approved: isApproved,
+          loyalty_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
+        };
+      });
+
+      if (user && (user.id === data.user_id || (user.phone && data.phone && user.phone.includes(data.phone.replace(/^(\+88|88)/, ''))))) {
+        setLiveNotifications(prev => [
+          {
+            id: Date.now(),
+            type: isApproved ? 'success' : 'alert',
+            title: isApproved ? '💎 ভিআইপি মেম্বারশিপ অনুমোদিত!' : '❌ ভিআইপি মেম্বারশিপ আবেদন প্রত্যাখ্যাত (Declined)',
+            message: isApproved
+              ? 'আপনার ভার্চুয়াল ভিআইপি প্রিভিলেজ কার্ড সক্রিয় করা হয়েছে।'
+              : `আপনার ভিআইপি আবেদনটি বাতিল করা হয়েছে। কারণ: ${data.notes || 'যাচাইকরণে অসঙ্গতি'}`,
+            time: new Date().toLocaleTimeString()
+          },
+          ...prev
+        ]);
+        if (refreshUser) refreshUser();
+      }
+    });
+
+    // Real-time user object sync
+    newSocket.on('user_updated', (data) => {
+      if (user && data.userId === user.id && data.user) {
+        setUser(data.user);
+      }
+    });
+
     setSocket(newSocket);
 
     return () => {
       newSocket.disconnect();
     };
-  }, [isAdmin]);
+  }, [isAdmin, user]);
 
   const clearNotification = (id) => {
     setLiveNotifications(prev => prev.filter(n => n.id !== id));

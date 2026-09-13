@@ -87,6 +87,8 @@ export default function AdminSettings() {
     qard_pillar_3_desc: 'আপনার সুবিধা অনুযায়ী নির্ধারিত মেয়াদের মধ্যে ঋণ পরিশোধের সুযোগ। ঈমানী আমানত হিসেবে যথাসময়ে ঋণ পরিশোধ করুন।',
     qard_terms_title: 'করযে হাসানার শর্তাবলী',
     qard_special_notice: 'আবেদন অনুমোদিত হলে আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে ক্রেডিট লিমিট যুক্ত হবে এবং যেকোনো অর্ডারে ১-ক্লিকে ব্যবহার করা যাবে।',
+    qard_modal_badge: 'আল আনসার করযে হাসানা সম্পূর্ণ সুদমুক্ত ও ইসলামী শরীয়াহ অনুযায়ী পরিচালিত।',
+    qard_modal_terms: 'সুদমুক্ত ঋণ: করযে হাসানার অধীনে গৃহীত কোনো অর্ডারে কোনো প্রকার অতিরিক্ত ফি, সুদ বা সার্ভিস চার্জ নেই। যতটুকু মূল্য ঠিক ততটুকুই পরিশোধ করতে হবে。\nসঠিক তথ্যের নিশ্চয়তা: আবেদনকারীকে অবশ্যই সঠিক জাতীয় পরিচয়পত্র (NID) নম্বর ও স্থায়ী ঠিকানা প্রদান করতে হবে। অসত্য তথ্য দিলে আবেদন তাৎক্ষণিক বাতিল হবে。\nপরিশোধ পদ্ধতি: অর্ডারের সময় ৯০% মূল্য পরিশোধযোগ্য এবং অবশিষ্ট ১০% বা অনুমোদিত লিমিট নির্ধারিত সময়ের মধ্যে পরিশোধ করতে হবে。\nলিমিট বৃদ্ধি: সময়মতো করযে হাসানা পরিশোধ করলে পরবর্তীতে সর্বোচ্চ ৳১০,০০০ পর্যন্ত ক্রেডিট লিমিট স্বয়ংক্রিয়ভাবে বৃদ্ধি পাবে。\nঈমানী আমানত: করযে হাসানা পরিশোধ করা একটি ঈমানী দায়িত্ব। যথাসময়ে ঋণ পরিশোধের মাধ্যমে এই মহৎ খেদমত চালু রাখতে সাহায্য করুন।',
 
     // Loyalty Card / Privilege Club Full CMS
     loyalty_card_enabled: true,
@@ -102,6 +104,8 @@ export default function AdminSettings() {
     loyalty_pillar_3_desc: 'নির্ধারিত অর্ডারে সারা দেশে ফ্রি হোম ডেলিভারি এবং যেকোনো সহযোগিতায় ২৪/৭ ডেডিকেটেড ভিআইপি হেল্পলাইন সাপোর্ট।',
     loyalty_terms_title: 'কার্ডের শর্তাবলী ও নিয়ম',
     loyalty_terms_desc: '১. কার্ডটি আবেদনকারীর নিজস্ব নামে সংরক্ষিত ও হস্তান্তরঅযোগ্য।\n২. প্রতিটি সফল ডেলিভারির পর পয়েন্ট স্বয়ংক্রিয় যোগ হবে।\n৩. চেকআউটে কার্ডের বারকোড স্ক্যান বা নম্বর ব্যবহারযোগ্য।',
+    loyalty_modal_badge: 'আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ সম্পূর্ণ বিনামূল্যে প্রদান করা হয়।',
+    loyalty_modal_terms: 'পয়েন্ট ও রিওয়ার্ড: প্রতিটি কেনাকাটায় স্বয়ংক্রিয়ভাবে ক্যাশব্যাক ও রিওয়ার্ড পয়েন্ট অর্জিত হবে যা পরবর্তী কেনাকাটায় ব্যবহার করা যাবে。\nডিজিটাল কার্ড ও বারকোড: অনুমোদিত কার্ডটি আপনার প্রোফাইলে ইউনিক বারকোডসহ সংরক্ষিত থাকবে এবং শোরুম বা অনলাইনে প্রদর্শনে বিশেষ সুবিধা পাবেন。\nপ্রায়োরিটি ডেলিভারি: ভিআইপি মেম্বারদের অর্ডার যেকোনো সাধারণ অর্ডারের চেয়ে সর্বোচ্চ অগ্রাধিকার ও দ্রুততম সময়ে ডেলিভারি করা হবে。\nকার্ড হস্তান্তরযোগ্য নয়: মেম্বারশিপ কার্ড ও অর্জিত পয়েন্ট ব্যক্তিগত এবং অন্য কারো নিকট হস্তান্তরযোগ্য নয়।',
     loyalty_button_bn: 'লয়ালটি কার্ডের জন্য আবেদন করুন',
     loyalty_button_en: 'Apply for Loyalty Card',
 
@@ -189,7 +193,17 @@ export default function AdminSettings() {
     guarantee_point_3: 'ভাউচার কোডে ইনস্ট্যান্ট ডিসকাউন্ট ও পয়েন্ট রিওয়ার্ড',
     guarantee_point_4: 'আকর্ষণীয় রাজকীয় গিফট বক্স ও কার্ড প্যাকেজিং',
 
-    // 4 Trust Badges CMS
+    // 4 Trust Badges CMS (Homepage between products and footer)
+    badge_1_title: '১০০% খাঁটি ও নির্ভেজাল',
+    badge_1_desc: 'উন্নত মানের গ্যারান্টি',
+    badge_2_title: 'দ্রুততম হোম ডেলিভারি',
+    badge_2_desc: 'সারাদেশে হোম ডেলিভারি',
+    badge_3_title: 'বিনা সুদে করযে হাসানা',
+    badge_3_desc: '১০% তাৎক্ষণিক হালাল ধার',
+    badge_4_title: 'ভিআইপি ক্যাশব্যাক পয়েন্ট',
+    badge_4_desc: 'প্রতি কেনাকাটায় রিওয়ার্ড',
+
+    // Footer Trust Badges
     trust_1_title: '১০০% খাঁটি সুগন্ধি',
     trust_1_desc: 'ফ্রেঞ্চ ও ওরিয়েন্টাল খাঁটি এসেন্সিয়াল অয়েল',
     trust_2_title: 'অ্যালকোহলমুক্ত আতর',
@@ -831,6 +845,48 @@ export default function AdminSettings() {
                       className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-200 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
+
+                  {/* 📝 QARD APPLICATION MODAL POP-UP TERMS CMS */}
+                  <div className="sm:col-span-2 p-4 bg-emerald-950/30 rounded-2xl border-2 border-emerald-500/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-emerald-300 flex items-center">
+                        <ShieldCheck className="w-4 h-4 mr-1.5 text-emerald-400" />
+                        করযে হাসানা আবেদন ফর্মের শর্তাবলী (Popup Modal Terms)
+                      </span>
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        পপ-আপ ফর্মে প্রদর্শিত হবে
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-300 block mb-1">পপ-আপ ফর্মের টপ হাইলাইট / ব্যাজ টেক্সট</label>
+                      <input
+                        type="text"
+                        name="qard_modal_badge"
+                        value={form.qard_modal_badge || ''}
+                        onChange={handleChange}
+                        placeholder="আল আনসার করযে হাসানা সম্পূর্ণ সুদমুক্ত ও ইসলামী শরীয়াহ অনুযায়ী পরিচালিত।"
+                        className="w-full px-3.5 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                        শর্তাবলী পয়েন্টসমূহ (প্রতি লাইনে ১টি শর্ত লিখুন; যেমন: <span className="text-emerald-400">সুদমুক্ত ঋণ: কোনো প্রকার সুদ নেই...</span>)
+                      </label>
+                      <textarea
+                        rows={5}
+                        name="qard_modal_terms"
+                        value={form.qard_modal_terms || ''}
+                        onChange={handleChange}
+                        placeholder="সুদমুক্ত ঋণ: কোনো সুদ বা সার্ভিস চার্জ নেই।&#10;সঠিক তথ্যের নিশ্চয়তা: সঠিক NID প্রদান বাধ্যতামূলক।"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-sans"
+                      />
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        💡 টিপস: প্রতি লাইনে নতুন পয়েন্ট স্বয়ংক্রিয়ভাবে ১, ২, ৩ নম্বরিং এবং কোলন (:) এর আগের অংশ বোল্ড হয়ে প্রদর্শিত হবে।
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -992,6 +1048,48 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-amber-300 font-mono focus:outline-none focus:border-amber-500 font-bold"
                     />
+                  </div>
+
+                  {/* 👑 VIP LOYALTY MODAL POP-UP TERMS CMS */}
+                  <div className="sm:col-span-2 p-4 bg-amber-950/30 rounded-2xl border-2 border-amber-500/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-amber-300 flex items-center">
+                        <CreditCard className="w-4 h-4 mr-1.5 text-amber-400" />
+                        ভিআইপি মেম্বারশিপ আবেদন ফর্মের শর্তাবলী (VIP Popup Modal Terms)
+                      </span>
+                      <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-2 py-0.5 rounded-full border border-amber-500/30">
+                        পপ-আপ ফর্মে প্রদর্শিত হবে
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-300 block mb-1">পপ-আপ ফর্মের টপ হাইলাইট / ব্যাজ টেক্সট</label>
+                      <input
+                        type="text"
+                        name="loyalty_modal_badge"
+                        value={form.loyalty_modal_badge || ''}
+                        onChange={handleChange}
+                        placeholder="আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ সম্পূর্ণ বিনামূল্যে প্রদান করা হয়।"
+                        className="w-full px-3.5 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                        শর্তাবলী পয়েন্টসমূহ (প্রতি লাইনে ১টি শর্ত লিখুন; যেমন: <span className="text-amber-400">পয়েন্ট ও রিওয়ার্ড: প্রতিটি কেনাকাটায় ক্যাশব্যাক...</span>)
+                      </label>
+                      <textarea
+                        rows={5}
+                        name="loyalty_modal_terms"
+                        value={form.loyalty_modal_terms || ''}
+                        onChange={handleChange}
+                        placeholder="পয়েন্ট ও রিওয়ার্ড: প্রতিটি কেনাকাটায় স্বয়ংক্রিয়ভাবে ক্যাশব্যাক ও রিওয়ার্ড পয়েন্ট অর্জিত হবে।&#10;ডিজিটাল কার্ড ও বারকোড: অনুমোদিত কার্ডটি আপনার প্রোফাইলে ইউনিক বারকোডসহ সংরক্ষিত থাকবে।"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 leading-relaxed font-sans"
+                      />
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        💡 টিপস: প্রতি লাইনে নতুন পয়েন্ট স্বয়ংক্রিয়ভাবে ১, ২, ৩ নম্বরিং এবং কোলন (:) এর আগের অংশ বোল্ড হয়ে প্রদর্শিত হবে।
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1391,81 +1489,122 @@ export default function AdminSettings() {
 
             {/* SECTION 8: 4 TRUST BADGES CMS */}
             {activeSection === 'trust' && (
-              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-5 shadow-xl animate-in fade-in">
-                <h3 className="text-sm font-bold text-white flex items-center">
-                  <Sparkles className="w-4 h-4 mr-2 text-emerald-400" /> ৮. ৪টি ট্রাস্ট ব্যাজ CMS
-                </h3>
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-6 shadow-xl animate-in fade-in">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center">
+                    <Sparkles className="w-4 h-4 mr-2 text-emerald-400" /> ৮. হোমপেজের ৪টি গ্যারান্টি ও ট্রাস্ট ব্যাজ CMS
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    হোমপেজে প্রোডাক্টের নিচে এবং ফুটারের উপরে যে ৪টি ব্যাজ (১০০% খাঁটি ও নির্ভেজাল, দ্রুততম হোম ডেলিভারি ইত্যাদি) প্রদর্শিত হয় তা এখান থেকে পরিবর্তন করুন।
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Badge 1 */}
                   <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
-                    <span className="text-[10px] font-bold text-amber-400">ব্যাজ ১</span>
+                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">১. প্রথম ব্যাজ (১০০% খাঁটি ও নির্ভেজাল)</span>
+                    <label className="text-[10px] text-slate-400 block">শিরোনাম (Title)</label>
                     <input
                       type="text"
-                      name="trust_1_title"
-                      value={form.trust_1_title}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                      name="badge_1_title"
+                      value={form.badge_1_title || form.trust_1_title || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_1_title: val, trust_1_title: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white focus:border-amber-400"
                     />
+                    <label className="text-[10px] text-slate-400 block">ছোট বিবরণ (Description)</label>
                     <input
                       type="text"
-                      name="trust_1_desc"
-                      value={form.trust_1_desc}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                      name="badge_1_desc"
+                      value={form.badge_1_desc || form.trust_1_desc || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_1_desc: val, trust_1_desc: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300 focus:border-amber-400"
                     />
                   </div>
 
+                  {/* Badge 2 */}
                   <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
-                    <span className="text-[10px] font-bold text-emerald-400">ব্যাজ ২</span>
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">২. দ্বিতীয় ব্যাজ (দ্রুততম হোম ডেলিভারি)</span>
+                    <label className="text-[10px] text-slate-400 block">শিরোনাম (Title)</label>
                     <input
                       type="text"
-                      name="trust_2_title"
-                      value={form.trust_2_title}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                      name="badge_2_title"
+                      value={form.badge_2_title || form.trust_2_title || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_2_title: val, trust_2_title: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white focus:border-emerald-400"
                     />
+                    <label className="text-[10px] text-slate-400 block">ছোট বিবরণ (Description)</label>
                     <input
                       type="text"
-                      name="trust_2_desc"
-                      value={form.trust_2_desc}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                      name="badge_2_desc"
+                      value={form.badge_2_desc || form.trust_2_desc || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_2_desc: val, trust_2_desc: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300 focus:border-emerald-400"
                     />
                   </div>
 
+                  {/* Badge 3 */}
                   <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400">ব্যাজ ৩</span>
+                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider">৩. তৃতীয় ব্যাজ (বিনা সুদে করযে হাসানা)</span>
+                    <label className="text-[10px] text-slate-400 block">শিরোনাম (Title)</label>
                     <input
                       type="text"
-                      name="trust_3_title"
-                      value={form.trust_3_title}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                      name="badge_3_title"
+                      value={form.badge_3_title || form.trust_3_title || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_3_title: val, trust_3_title: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white focus:border-blue-400"
                     />
+                    <label className="text-[10px] text-slate-400 block">ছোট বিবরণ (Description)</label>
                     <input
                       type="text"
-                      name="trust_3_desc"
-                      value={form.trust_3_desc}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                      name="badge_3_desc"
+                      value={form.badge_3_desc || form.trust_3_desc || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_3_desc: val, trust_3_desc: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300 focus:border-blue-400"
                     />
                   </div>
 
+                  {/* Badge 4 */}
                   <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700 space-y-2">
-                    <span className="text-[10px] font-bold text-purple-400">ব্যাজ ৪</span>
+                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">৪. চতুর্থ ব্যাজ (ভিআইপি ক্যাশব্যাক পয়েন্ট)</span>
+                    <label className="text-[10px] text-slate-400 block">শিরোনাম (Title)</label>
                     <input
                       type="text"
-                      name="trust_4_title"
-                      value={form.trust_4_title}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white"
+                      name="badge_4_title"
+                      value={form.badge_4_title || form.trust_4_title || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_4_title: val, trust_4_title: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 text-white focus:border-purple-400"
                     />
+                    <label className="text-[10px] text-slate-400 block">ছোট বিবরণ (Description)</label>
                     <input
                       type="text"
-                      name="trust_4_desc"
-                      value={form.trust_4_desc}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300"
+                      name="badge_4_desc"
+                      value={form.badge_4_desc || form.trust_4_desc || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm(prev => ({ ...prev, badge_4_desc: val, trust_4_desc: val }));
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-800 text-xs rounded-lg border border-slate-600 text-slate-300 focus:border-purple-400"
                     />
                   </div>
                 </div>

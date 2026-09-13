@@ -194,11 +194,29 @@ router.put('/qard-applications/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
-    const updated = db.updateQardApplicationStatus(id, status, notes);
-    if (!updated) {
+    const result = db.updateQardApplicationStatus(id, status, notes);
+    if (!result || !result.app) {
       return res.status(404).json({ success: false, message: 'Application not found.' });
     }
-    return res.json({ success: true, message: `Application status updated to ${status}!`, application: updated });
+    const { app: updated, user } = result;
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('qard_status_updated', {
+        id: updated.id,
+        user_id: updated.user_id,
+        phone: updated.phone,
+        status: updated.status,
+        notes: updated.admin_notes
+      });
+      if (user) {
+        const safeUser = { ...user };
+        delete safeUser.password_hash;
+        io.emit('user_updated', { userId: user.id, user: safeUser });
+      }
+    }
+
+    return res.json({ success: true, message: `Application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update application.' });
   }
@@ -245,11 +263,29 @@ router.put('/loyalty-applications/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
-    const updated = db.updateLoyaltyApplicationStatus(id, status, notes);
-    if (!updated) {
+    const result = db.updateLoyaltyApplicationStatus(id, status, notes);
+    if (!result || !result.app) {
       return res.status(404).json({ success: false, message: 'Loyalty application not found.' });
     }
-    return res.json({ success: true, message: `Loyalty application status updated to ${status}!`, application: updated });
+    const { app: updated, user } = result;
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('loyalty_status_updated', {
+        id: updated.id,
+        user_id: updated.user_id,
+        phone: updated.phone,
+        status: updated.status,
+        notes: updated.admin_notes
+      });
+      if (user) {
+        const safeUser = { ...user };
+        delete safeUser.password_hash;
+        io.emit('user_updated', { userId: user.id, user: safeUser });
+      }
+    }
+
+    return res.json({ success: true, message: `Loyalty application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update loyalty application.' });
   }

@@ -27,9 +27,9 @@ import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
 import QardApplicationModal from '../components/QardApplicationModal';
 
-export default function UserDashboard({ initialTab = 'overview', onNavigate, onOpenInvoice }) {
+export default function UserDashboard({ initialTab = 'overview', onNavigate, onBack, onOpenInvoice }) {
   const { user, token, updateProfile, changePassword } = useAuth();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
@@ -139,12 +139,14 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
 
   const totalSpent = orders.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? (o.total_amount || 0) : 0), 0);
   const activeOrders = orders.filter(o => !['Delivered', 'Cancelled'].includes(o.status));
+  const isLoyaltyDeclined = (userLoyaltyStatus === 'Declined' || userLoyaltyStatus === 'Rejected') || (user?.loyalty_card_status === 'Declined' || user?.loyalty_card_status === 'Rejected');
   const isLoyaltyApproved = (userLoyaltyStatus === 'Approved') || (user?.loyalty_card_status === 'Approved') || (user?.loyalty_card_approved === true);
   const isLoyaltyPending = (userLoyaltyStatus === 'Pending') || (user?.loyalty_card_status === 'Pending');
+  const isQardDeclined = user?.qard_status === 'Declined' || user?.qard_status === 'Rejected';
   const isQardApproved = user?.qard_status === 'Approved';
   const isQardPending = user?.qard_status === 'Pending';
   const loyaltyPoints = user?.loyalty_points !== undefined ? user.loyalty_points : (isLoyaltyApproved ? 250 : 0);
-  const qardLimit = user?.qard_credit_limit || 5000;
+  const qardLimit = isQardApproved ? (user?.qard_credit_limit || 5000) : 0;
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
 
   return (
@@ -153,7 +155,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
       {/* Universal Back Navigation Bar */}
       <div className="flex items-center justify-between pb-2">
         <button
-          onClick={() => onNavigate('home')}
+          onClick={onBack || (() => onNavigate('home'))}
           className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4 text-amber-800" />
@@ -205,6 +207,140 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
             কালেকশন দেখুন
           </button>
         </div>
+      </div>
+
+      {/* 🌟 MODERN 4-CARD QUICK STATS OVERVIEW */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Stat 1: Total Orders */}
+        <div 
+          onClick={() => setActiveTab('orders')}
+          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">মোট অর্ডার</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Package className="w-4 h-4 text-amber-700" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline space-x-1.5">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+              {toBengaliDigits(orders.length)}
+            </span>
+            <span className="text-[11px] font-bold text-slate-500">টি পার্সেল</span>
+          </div>
+          <p className="text-[10px] text-amber-700 font-semibold mt-0.5 flex items-center">
+            <span>{activeOrders.length > 0 ? `${toBengaliDigits(activeOrders.length)}টি কুরিয়ারে চলমান` : 'সব অর্ডার সম্পন্ন'}</span>
+            <ChevronRight className="w-3 h-3 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </p>
+        </div>
+
+        {/* Stat 2: Total Spent */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">মোট কেনাকাটা</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-emerald-700" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline space-x-1">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+              ৳{toBengaliDigits(totalSpent.toLocaleString())}
+            </span>
+          </div>
+          <p className="text-[10px] text-emerald-700 font-bold mt-0.5">১০০% ক্যাশ অন / ডিজিটাল</p>
+        </div>
+
+        {/* Stat 3: Loyalty Points */}
+        <div 
+          onClick={() => setActiveTab('overview')}
+          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">রিওয়ার্ড পয়েন্ট</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Sparkles className="w-4 h-4 text-purple-700" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline space-x-1.5">
+            <span className="text-xl sm:text-2xl font-black text-purple-900 font-mono">
+              {toBengaliDigits(loyaltyPoints)}
+            </span>
+            <span className="text-[11px] font-bold text-purple-600">পয়েন্ট</span>
+          </div>
+          <p className="text-[10px] text-purple-700 font-semibold mt-0.5">পরবর্তী কেনাকাটায় ছাড়</p>
+        </div>
+
+        {/* Stat 4: Qard Limit */}
+        <div 
+          onClick={() => isQardApproved ? null : setQardModalOpen(true)}
+          className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">করযে হাসানা লিমিট</span>
+            <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <HandHeart className="w-4 h-4 text-teal-700" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline space-x-1">
+            <span className="text-xl sm:text-2xl font-black text-teal-950 font-mono">
+              ৳{toBengaliDigits(qardLimit.toLocaleString())}
+            </span>
+          </div>
+          <p className="text-[10px] text-teal-700 font-bold mt-0.5">
+            {isQardApproved ? '✓ সক্রিয় ক্রেডিট লিমিট' : isQardPending ? '⏳ আবেদন পর্যালোচনায়' : 'বিনা সুদে কেনাকাটা'}
+          </p>
+        </div>
+      </div>
+
+      {/* 📱 Mobile Horizontal Tabs Pill Bar */}
+      <div className="flex md:hidden items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+            activeTab === 'overview'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>ড্যাশবোর্ড ও লয়ালটি</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+            activeTab === 'orders'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200'
+          }`}
+        >
+          <Package className="w-3.5 h-3.5" />
+          <span>অর্ডার ({toBengaliDigits(orders.length)})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+            activeTab === 'profile'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200'
+          }`}
+        >
+          <User className="w-3.5 h-3.5" />
+          <span>ঠিকানা ও তথ্য</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+            activeTab === 'security'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span>নিরাপত্তা</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -286,6 +422,41 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                   
                   {/* Luxury Member Card matching Photo */}
                   <LuxuryLoyaltyCard user={user} />
+                </div>
+              ) : isLoyaltyDeclined ? (
+                /* Declined Status Banner */
+                <div className="bg-rose-50/90 p-6 sm:p-7 rounded-3xl border-2 border-rose-300 shadow-xs space-y-3">
+                  <div className="flex items-center space-x-3 text-rose-900">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-200 text-rose-800 flex items-center justify-center font-bold">
+                      <AlertCircle className="w-6 h-6 text-rose-700" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full border border-rose-200 uppercase tracking-wide">
+                        প্রত্যাখ্যাত (Declined)
+                      </span>
+                      <h3 className="text-sm sm:text-base font-black text-rose-950 mt-1">
+                        আপনার ভিআইপি লয়ালটি কার্ড আবেদনটি অনুমোদিত হয়নি
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white/80 border border-rose-200 rounded-2xl text-xs space-y-1">
+                    <span className="font-bold text-rose-900 block">প্রত্যাখ্যানের কারণ (Admin Note):</span>
+                    <p className="text-rose-800 leading-relaxed font-medium">
+                      {user?.loyalty_decline_reason || 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।'}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    সঠিক ও পূর্ণাঙ্গ তথ্য প্রদান করে আপনি এখনই পুনরায় আবেদন করতে পারেন।
+                  </p>
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => setLoyaltyModalOpen(true)}
+                      className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                      <span>🔄 সংশোধিত তথ্য দিয়ে পুনরায় আবেদন করুন</span>
+                    </button>
+                  </div>
                 </div>
               ) : isLoyaltyPending ? (
                 /* Pending Review Banner */
@@ -437,6 +608,41 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                     💡 আপনি যেকোনো অর্ডারে সর্বোচ্চ ১০% পর্যন্ত করযে হাসানা ধার সুবিধা ব্যবহার করে অবশিষ্ট টাকা ক্যাশ অন ডেলিভারিতে দিতে পারবেন।
                   </p>
                 </div>
+              ) : isQardDeclined ? (
+                /* Declined Status Banner */
+                <div className="bg-rose-50/90 p-5 rounded-3xl border-2 border-rose-300 text-rose-950 space-y-2.5 shadow-2xs">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-rose-200 text-rose-800 flex items-center justify-center font-bold flex-shrink-0">
+                      <AlertCircle className="w-5 h-5 text-rose-700" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                        আবেদন প্রত্যাখ্যাত (Declined)
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-black text-rose-950 mt-0.5">
+                        আপনার করযে হাসানা ঋণের আবেদনটি অনুমোদিত হয়নি
+                      </h4>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white/90 border border-rose-200 rounded-2xl text-xs space-y-0.5">
+                    <span className="font-bold text-rose-900 block text-[11px]">প্রত্যাখ্যানের কারণ (Admin Note):</span>
+                    <p className="text-rose-800 leading-relaxed font-medium">
+                      {user?.qard_decline_reason || 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।'}
+                    </p>
+                  </div>
+                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <p className="text-[11px] text-slate-500">
+                      তথ্য সংশোধন করে আপনি যেকোনো সময় আবার আবেদন করতে পারেন।
+                    </p>
+                    <button
+                      onClick={() => setQardModalOpen(true)}
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5 self-start sm:self-auto"
+                    >
+                      <HandHeart className="w-3.5 h-3.5 text-amber-300" />
+                      <span>🔄 সংশোধিত তথ্য দিয়ে পুনরায় আবেদন করুন</span>
+                    </button>
+                  </div>
+                </div>
               ) : isQardPending ? (
                 <div className="bg-emerald-50 p-5 rounded-3xl border border-emerald-200 text-emerald-950 space-y-2">
                   <div className="flex items-center space-x-2">
@@ -527,13 +733,14 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
-                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl cursor-pointer"
+                          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all"
                         >
-                          লাইভ ট্র্যাকিং
+                          <Truck className="w-3.5 h-3.5 text-amber-200" />
+                          <span>লাইভ ট্র্যাকিং টাইমলাইন</span>
                         </button>
                         <button
                           onClick={() => onOpenInvoice(order)}
-                          className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center space-x-1 shadow-xs cursor-pointer"
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center space-x-1 shadow-xs cursor-pointer"
                         >
                           <Download className="w-3.5 h-3.5 text-amber-400" />
                           <span>ইনভয়েস</span>
@@ -645,9 +852,10 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                         <span className="font-black text-slate-900 text-sm">মোট টাকা: ৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
                         <button
                           onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
-                          className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                          className="px-4 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all"
                         >
-                          লাইভ স্ট্যাটাস টাইমলাইন
+                          <Truck className="w-3.5 h-3.5 text-amber-200" />
+                          <span>লাইভ স্ট্যাটাস টাইমলাইন</span>
                         </button>
                       </div>
                     </div>

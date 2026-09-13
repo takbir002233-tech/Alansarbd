@@ -76,13 +76,6 @@ export default function InvoiceModal({ order, onClose }) {
         {/* Invoice Printable Sheet */}
         <div className="p-8 space-y-6 print:p-6 text-slate-800 bg-white overflow-y-auto modal-scrollable overscroll-contain flex-1" id="printable-invoice">
           
-          {/* Top Animated Hadith Banner */}
-          <PageHadithBanner 
-            text={siteSettings?.hadith_invoice} 
-            defaultText="🌸 হাদিস: সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে। (তিরমিযী)" 
-            className="w-full shadow-2xs"
-          />
-
           {/* Header with Official Logo at Top Corner */}
           <div className="flex items-start justify-between border-b border-amber-200/80 pb-6">
             <div className="flex items-center space-x-4">

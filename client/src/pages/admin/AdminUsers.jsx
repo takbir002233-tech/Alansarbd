@@ -193,7 +193,8 @@ export default function AdminUsers() {
 
   // Reject Qard Application
   const handleQardReject = async (appId, name) => {
-    if (!confirm(`আপনি কি "${name}" এর করযে হাসানা আবেদনটি প্রত্যাখ্যান করতে চান?`)) return;
+    const customReason = prompt(`"${name}" এর করযে হাসানা আবেদনটি প্রত্যাখ্যানের কারণ লিখুন (ঐচ্ছিক):`, 'জাতীয় পরিচয়পত্র তথ্যে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।');
+    if (customReason === null) return;
 
     try {
       const res = await fetch(`/api/admin/qard-applications/${appId}`, {
@@ -202,11 +203,11 @@ export default function AdminUsers() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ status: 'Rejected', notes: 'জাতীয় পরিচয়পত্র তথ্যে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।' })
+        body: JSON.stringify({ status: 'Rejected', notes: customReason.trim() || 'জাতীয় পরিচয়পত্র তথ্যে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।' })
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`আবেদনটি প্রত্যাখ্যান করা হয়েছে।`);
+        showToast(`"${name}" এর করযে হাসানা আবেদনটি প্রত্যাখ্যান করা হয়েছে।`);
         fetchData();
       }
     } catch (err) {
@@ -242,6 +243,16 @@ export default function AdminUsers() {
 
   // Loyalty Card Status Update (1-click Approve / Reject)
   const handleLoyaltyStatusUpdate = async (appId, status, applicantName) => {
+    let customNotes = status === 'Approved' 
+      ? 'আবেদন যাচাই সম্পন্ন হয়েছে এবং ডিজিটাল লয়ালটি কার্ড সক্রিয় করা হয়েছে।' 
+      : 'তথ্য অসম্পূর্ণ থাকায় আবেদনটি বাতিল করা হয়েছে।';
+
+    if (status !== 'Approved') {
+      const inputReason = prompt(`"${applicantName}" এর লয়ালটি কার্ড আবেদন বাতিলের কারণ লিখুন (ঐচ্ছিক):`, customNotes);
+      if (inputReason === null) return;
+      customNotes = inputReason.trim() || customNotes;
+    }
+
     try {
       const res = await fetch(`/api/admin/loyalty-applications/${appId}`, {
         method: 'PUT',
@@ -251,16 +262,14 @@ export default function AdminUsers() {
         },
         body: JSON.stringify({ 
           status, 
-          notes: status === 'Approved' 
-            ? 'আবেদন যাচাই সম্পন্ন হয়েছে এবং ডিজিটাল লয়ালটি কার্ড সক্রিয় করা হয়েছে।' 
-            : 'তথ্য অসম্পূর্ণ থাকায় আবেদনটি বাতিল করা হয়েছে।' 
+          notes: customNotes
         })
       });
       const data = await res.json();
       if (data.success) {
         showToast(status === 'Approved' 
           ? `গ্রাহক "${applicantName}" এর লয়ালটি কার্ড অনুমোদন করা হয়েছে ও সক্রিয় হয়েছে!` 
-          : `আবেদনটি বাতিল করা হয়েছে।`);
+          : `গ্রাহক "${applicantName}" এর লয়ালটি আবেদনটি বাতিল করা হয়েছে।`);
         fetchData();
       }
     } catch (err) {

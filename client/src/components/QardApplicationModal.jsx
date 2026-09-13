@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   HandHeart, 
@@ -11,10 +11,12 @@ import {
   Check 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import useScrollLock from '../hooks/useScrollLock';
 
 export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { siteSettings } = useCart();
   useScrollLock(isOpen);
 
   const [formData, setFormData] = useState({
@@ -33,18 +35,36 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [reapplyMode, setReapplyMode] = useState(false);
 
-  // Check if already applied (single application per user)
-  const userKey = user?.id ? `user_${user.id}` : user?.phone ? `phone_${user.phone}` : 'guest';
+  // Sync user details to form
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+        address: prev.address || user.address || ''
+      }));
+    }
+    // Cleanup any lingering global flag
+    try {
+      localStorage.removeItem('alansar_qard_applied_global');
+    } catch (e) {}
+  }, [user, isOpen]);
+
+  const isDeclined = user?.qard_status === 'Declined' || user?.qard_status === 'Rejected';
+  const isPending = user?.qard_status === 'Pending';
+  const isApproved = user?.qard_status === 'Approved';
+
+  // Check if already applied (scoped to logged-in user only, NOT global across accounts)
   const hasAlreadyApplied = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      localStorage.getItem(`alansar_qard_applied_${userKey}`) === 'true' ||
-      localStorage.getItem('alansar_qard_applied_global') === 'true' ||
-      user?.qard_status === 'Pending' ||
-      user?.qard_status === 'Approved'
-    );
-  }, [isOpen, user, userKey]);
+    if (reapplyMode) return false;
+    if (isPending || isApproved) return true;
+    if (user?.id && localStorage.getItem(`alansar_qard_applied_user_${user.id}`) === 'true') return true;
+    return false;
+  }, [isOpen, user, isPending, isApproved, reapplyMode]);
 
   if (!isOpen) return null;
 
@@ -59,7 +79,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
   };
 
   const handleGeneralClose = () => {
-    if (isSubmitted || hasAlreadyApplied) {
+    if (isSubmitted || hasAlreadyApplied || (isDeclined && !reapplyMode)) {
       handleCloseAndRedirectHome();
     } else {
       onClose();
@@ -112,11 +132,17 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
       }
 
       // Persist that user applied once
-      localStorage.setItem(`alansar_qard_applied_${userKey}`, 'true');
-      localStorage.setItem('alansar_qard_applied_global', 'true');
+      if (user?.id) {
+        localStorage.setItem(`alansar_qard_applied_user_${user.id}`, 'true');
+      }
+      try {
+        localStorage.removeItem('alansar_qard_applied_global');
+      } catch (e) {}
 
       setIsSubmitted(true);
+      setReapplyMode(false);
       setSuccessMsg('আপনার আবেদনটি সফলভাবে গ্রহণ করা হয়েছে!');
+      if (refreshUser) refreshUser();
       if (onSuccess) onSuccess(data.application);
     } catch (err) {
       setErrorMsg(err.message || 'সার্ভারে সংযোগ দেওয়া যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।');
@@ -207,7 +233,49 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
             </div>
           )}
 
-          {isSubmitted || hasAlreadyApplied ? (
+          {isDeclined && !reapplyMode && !isSubmitted ? (
+            /* Declined Status Screen */
+            <div className="py-6 px-3 sm:px-6 text-center space-y-4 flex flex-col items-center justify-center animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-rose-100 border-2 border-rose-500 text-rose-600 flex items-center justify-center shadow-lg">
+                <AlertCircle className="w-10 h-10" />
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[11px] font-black text-rose-700 bg-rose-50 px-3.5 py-1 rounded-full border border-rose-200 uppercase tracking-wide">
+                  আবেদন স্ট্যাটাস: প্রত্যাখ্যাত (Declined)
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 mt-1">
+                  আপনার করযে হাসানা আবেদনটি অনুমোদিত হয়নি
+                </h3>
+                <div className="p-3.5 bg-rose-50/80 border border-rose-200 rounded-2xl max-w-sm mx-auto text-left space-y-1 shadow-2xs">
+                  <span className="text-[11px] font-black text-rose-900 block">প্রত্যাখ্যানের কারণ (Admin Note):</span>
+                  <p className="text-xs text-rose-800 leading-relaxed font-medium">
+                    {user?.qard_decline_reason || 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আপনার আবেদনটি এই মুহূর্তে অনুমোদন করা সম্ভব হয়নি।'}
+                  </p>
+                </div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  তথ্য সংশোধন করে আপনি এখনই নতুন করে পুনরায় আবেদন করতে পারেন।
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => { setReapplyMode(true); setErrorMsg(null); }}
+                  className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-800 hover:to-emerald-900 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center space-x-2 transition-all active:scale-95"
+                >
+                  <span>🔄 সংশোধিত তথ্য দিয়ে পুনরায় আবেদন করুন</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseAndRedirectHome}
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-all"
+                >
+                  <span>হোম পেজে ফিরে যান</span>
+                </button>
+              </div>
+            </div>
+          ) : isSubmitted || hasAlreadyApplied ? (
             /* Success / Already Submitted Confirmation Screen */
             <div className="py-6 px-3 sm:px-6 text-center space-y-4 flex flex-col items-center justify-center animate-in zoom-in-95">
               <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-500 text-emerald-700 flex items-center justify-center shadow-lg animate-bounce">
@@ -457,30 +525,48 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
             <div className="p-4 sm:p-5 overflow-y-auto space-y-3 text-xs text-slate-700 leading-relaxed font-sans">
               <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 font-bold text-[11px] flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-                <span>আল আনসার করযে হাসানা সম্পূর্ণ সুদমুক্ত ও ইসলামী শরীয়াহ অনুযায়ী পরিচালিত।</span>
+                <span>{siteSettings?.qard_modal_badge || 'আল আনসার করযে হাসানা সম্পূর্ণ সুদমুক্ত ও ইসলামী শরীয়াহ অনুযায়ী পরিচালিত।'}</span>
               </div>
 
               <div className="space-y-2.5 text-[11.5px]">
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">১</span>
-                  <p><strong>সুদমুক্ত ঋণ:</strong> করযে হাসানার অধীনে গৃহীত কোনো অর্ডারে কোনো প্রকার অতিরিক্ত ফি, সুদ বা সার্ভিস চার্জ নেই। যতটুকু মূল্য ঠিক ততটুকুই পরিশোধ করতে হবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">২</span>
-                  <p><strong>সঠিক তথ্যের নিশ্চয়তা:</strong> আবেদনকারীকে অবশ্যই সঠিক জাতীয় পরিচয়পত্র (NID) নম্বর ও স্থায়ী ঠিকানা প্রদান করতে হবে। অসত্য তথ্য দিলে আবেদন তাৎক্ষণিক বাতিল হবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">৩</span>
-                  <p><strong>পরিশোধ পদ্ধতি:</strong> অর্ডারের সময় ৯০% মূল্য পরিশোধযোগ্য এবং অবশিষ্ট ১০% বা অনুমোদিত লিমিট নির্ধারিত সময়ের মধ্যে পরিশোধ করতে হবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">৪</span>
-                  <p><strong>লিমিট বৃদ্ধি:</strong> সময়মতো করযে হাসানা পরিশোধ করলে পরবর্তীতে সর্বোচ্চ ৳১০,০০০ পর্যন্ত ক্রেডিট লিমিট স্বয়ংক্রিয়ভাবে বৃদ্ধি পাবে।</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">৫</span>
-                  <p><strong>ঈমানী আমানত:</strong> করযে হাসানা পরিশোধ করা একটি ঈমানী দায়িত্ব। যথাসময়ে ঋণ পরিশোধের মাধ্যমে এই মহৎ খেদমত চালু রাখতে সাহায্য করুন।</p>
-                </div>
+                {(() => {
+                  const defaultTerms = [
+                    { title: 'সুদমুক্ত ঋণ', text: 'করযে হাসানার অধীনে গৃহীত কোনো অর্ডারে কোনো প্রকার অতিরিক্ত ফি, সুদ বা সার্ভিস চার্জ নেই। যতটুকু মূল্য ঠিক ততটুকুই পরিশোধ করতে হবে।' },
+                    { title: 'সঠিক তথ্যের নিশ্চয়তা', text: 'আবেদনকারীকে অবশ্যই সঠিক জাতীয় পরিচয়পত্র (NID) নম্বর ও স্থায়ী ঠিকানা প্রদান করতে হবে। অসত্য তথ্য দিলে আবেদন তাৎক্ষণিক বাতিল হবে।' },
+                    { title: 'পরিশোধ পদ্ধতি', text: 'অর্ডারের সময় ৯০% মূল্য পরিশোধযোগ্য এবং অবশিষ্ট ১০% বা অনুমোদিত লিমিট নির্ধারিত সময়ের মধ্যে পরিশোধ করতে হবে।' },
+                    { title: 'লিমিট বৃদ্ধি', text: 'সময়মতো করযে হাসানা পরিশোধ করলে পরবর্তীতে সর্বোচ্চ ৳১০,০০০ পর্যন্ত ক্রেডিট লিমিট স্বয়ংক্রিয়ভাবে বৃদ্ধি পাবে।' },
+                    { title: 'ঈমানী আমানত', text: 'করযে হাসানা পরিশোধ করা একটি ঈমানী দায়িত্ব। যথাসময়ে ঋণ পরিশোধের মাধ্যমে এই মহৎ খেদমত চালু রাখতে সাহায্য করুন।' },
+                  ];
+
+                  const termsList = siteSettings?.qard_modal_terms && siteSettings.qard_modal_terms.trim()
+                    ? siteSettings.qard_modal_terms
+                        .split('\n')
+                        .map(l => l.trim().replace(/^[০-৯0-9]+[.\-)]\s*/, ''))
+                        .filter(Boolean)
+                        .map(line => {
+                          const parts = line.split(':');
+                          if (parts.length > 1) {
+                            return { title: parts[0].trim(), text: parts.slice(1).join(':').trim() };
+                          }
+                          return { title: '', text: line };
+                        })
+                    : defaultTerms;
+
+                  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                  const toBn = (n) => String(n).replace(/[0-9]/g, d => bengaliDigits[+d]);
+
+                  return termsList.map((term, idx) => (
+                    <div key={idx} className="flex items-start space-x-2">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {toBn(idx + 1)}
+                      </span>
+                      <p>
+                        {term.title && <strong>{term.title}: </strong>}
+                        {term.text}
+                      </p>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 

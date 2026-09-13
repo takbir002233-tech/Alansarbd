@@ -609,8 +609,8 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
               <ShieldCheck className="w-6 h-6 text-amber-700" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_1_title || '১০০% খাঁটি ও নির্ভেজাল'}</h4>
-              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_1_desc || 'উন্নত মানের গ্যারান্টি'}</p>
+              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_1_title || siteSettings?.trust_1_title || '১০০% খাঁটি ও নির্ভেজাল'}</h4>
+              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_1_desc || siteSettings?.trust_1_desc || 'উন্নত মানের গ্যারান্টি'}</p>
             </div>
           </div>
 
@@ -619,8 +619,8 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
               <Truck className="w-6 h-6 text-emerald-700" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_2_title || 'দ্রুততম হোম ডেলিভারি'}</h4>
-              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_2_desc || 'সারাদেশে হোম ডেলিভারি'}</p>
+              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_2_title || siteSettings?.trust_2_title || 'দ্রুততম হোম ডেলিভারি'}</h4>
+              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_2_desc || siteSettings?.trust_2_desc || 'সারাদেশে হোম ডেলিভারি'}</p>
             </div>
           </div>
 
@@ -629,8 +629,8 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
               <HandHeart className="w-6 h-6 text-amber-700" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_3_title || 'বিনা সুদে করযে হাসানা'}</h4>
-              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_3_desc || '১০% তাৎক্ষণিক হালাল ধার'}</p>
+              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_3_title || siteSettings?.trust_3_title || 'বিনা সুদে করযে হাসানা'}</h4>
+              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_3_desc || siteSettings?.trust_3_desc || '১০% তাৎক্ষণিক হালাল ধার'}</p>
             </div>
           </div>
 
@@ -639,8 +639,8 @@ export default function Home({ onNavigate, searchKeyword = '', setSearchKeyword 
               <CreditCard className="w-6 h-6 text-emerald-700" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_4_title || 'ভিআইপি ক্যাশব্যাক পয়েন্ট'}</h4>
-              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_4_desc || 'প্রতি কেনাকাটায় রিওয়ার্ড'}</p>
+              <h4 className="text-xs font-black text-slate-900">{siteSettings?.badge_4_title || siteSettings?.trust_4_title || 'ভিআইপি ক্যাশব্যাক পয়েন্ট'}</h4>
+              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{siteSettings?.badge_4_desc || siteSettings?.trust_4_desc || 'প্রতি কেনাকাটায় রিওয়ার্ড'}</p>
             </div>
           </div>
         </div>

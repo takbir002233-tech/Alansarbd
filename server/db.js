@@ -888,6 +888,7 @@ class Database {
       review_count: 1,
       is_featured: productData.is_featured || false,
       is_free_delivery: productData.is_free_delivery || false,
+      delivery_time: productData.delivery_time || '১-২ ঘণ্টা',
       subcategory_id: productData.subcategory_id || null,
       priority_order: productData.priority_order || (this.data.products.length + 1),
       created_at: new Date().toISOString(),
@@ -1191,6 +1192,19 @@ class Database {
       ...appData
     };
     this.data.qard_applications.unshift(newApp);
+
+    // Sync status with user account if user exists
+    let user = appData.user_id ? this.getUserById(appData.user_id) : null;
+    if (!user && appData.email) user = this.getUserByEmail(appData.email.toLowerCase());
+    if (!user && appData.phone) {
+      const cleanPhone = appData.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
+    if (user) {
+      user.qard_status = 'Pending';
+      user.qard_decline_reason = null;
+    }
+
     this.save();
     return newApp;
   }
@@ -1203,19 +1217,31 @@ class Database {
     app.admin_notes = notes;
     app.reviewed_at = new Date().toISOString();
 
-    if (status === 'Approved') {
-      let user = app.user_id ? this.getUserById(app.user_id) : null;
-      if (!user && app.email) user = this.getUserByEmail(app.email);
-      if (!user && app.phone) user = this.getUserByPhone(app.phone);
+    let user = app.user_id ? this.getUserById(app.user_id) : null;
+    if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+    if (!user && app.phone) {
+      const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
 
-      if (user) {
+    if (user) {
+      if (status === 'Approved') {
         user.qard_status = 'Approved';
         user.qard_credit_limit = Number(app.requested_limit) || 5000;
         user.qard_available_credit = Number(app.requested_limit) || 5000;
+        user.qard_decline_reason = null;
+      } else if (status === 'Rejected' || status === 'Declined') {
+        user.qard_status = 'Declined';
+        user.qard_credit_limit = 0;
+        user.qard_available_credit = 0;
+        user.qard_decline_reason = notes || 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।';
+      } else if (status === 'Pending') {
+        user.qard_status = 'Pending';
+        user.qard_decline_reason = null;
       }
     }
     this.save();
-    return app;
+    return { app, user };
   }
 
   // Loyalty Card Applications
@@ -1234,11 +1260,15 @@ class Database {
     this.data.loyalty_applications.unshift(newApp);
 
     // If user exists, also update user's status to Pending
-    if (appData.user_id) {
-      const user = this.getUserById(appData.user_id);
-      if (user) {
-        user.loyalty_card_status = 'Pending';
-      }
+    let user = appData.user_id ? this.getUserById(appData.user_id) : null;
+    if (!user && appData.email) user = this.getUserByEmail(appData.email.toLowerCase());
+    if (!user && appData.phone) {
+      const cleanPhone = appData.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
+    if (user) {
+      user.loyalty_card_status = 'Pending';
+      user.loyalty_decline_reason = null;
     }
     this.save();
     return newApp;
@@ -1252,22 +1282,33 @@ class Database {
     app.admin_notes = notes;
     app.reviewed_at = new Date().toISOString();
 
-    if (status === 'Approved') {
-      let user = app.user_id ? this.getUserById(app.user_id) : null;
-      if (!user && app.email) user = this.getUserByEmail(app.email);
-      if (!user && app.phone) user = this.getUserByPhone(app.phone);
+    let user = app.user_id ? this.getUserById(app.user_id) : null;
+    if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+    if (!user && app.phone) {
+      const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
 
-      if (user) {
+    if (user) {
+      if (status === 'Approved') {
         user.loyalty_card_status = 'Approved';
         user.loyalty_card_approved = true;
         user.loyalty_tier = 'Royal Gold VIP';
+        user.loyalty_decline_reason = null;
         if (!user.loyalty_card_number) {
           user.loyalty_card_number = `ANSAR-VIP-${Math.floor(1000 + Math.random() * 9000)}-2026`;
         }
+      } else if (status === 'Rejected' || status === 'Declined') {
+        user.loyalty_card_status = 'Declined';
+        user.loyalty_card_approved = false;
+        user.loyalty_decline_reason = notes || 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।';
+      } else if (status === 'Pending') {
+        user.loyalty_card_status = 'Pending';
+        user.loyalty_decline_reason = null;
       }
     }
     this.save();
-    return app;
+    return { app, user };
   }
 
   // Suspended Account Appeals

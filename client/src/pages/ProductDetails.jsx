@@ -17,6 +17,7 @@ import {
   XCircle,
   Tag,
   HandHeart,
+  Clock,
   X
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -316,6 +317,12 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
                 <Truck className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                 <span className="font-semibold">
                   {product.is_free_delivery ? '🚚 সারাদেশে ফ্রি ডেলিভারি!' : '🚚 সারাদেশে দ্রুত হোম ডেলিভারি'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1.5 text-slate-700">
+                <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span className="font-medium text-slate-600">
+                  ডেলিভারি সময়: <strong className="text-slate-900">{product.delivery_time || '১-২ ঘণ্টা'}</strong>
                 </span>
               </div>
               <div className="flex items-center space-x-1.5 text-slate-600 text-[10.5px]">

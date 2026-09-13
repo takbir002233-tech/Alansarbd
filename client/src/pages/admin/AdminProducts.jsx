@@ -21,7 +21,8 @@ import {
   RotateCcw,
   Tag,
   ListPlus,
-  HelpCircle
+  HelpCircle,
+  Clock
 } from 'lucide-react';
 
 export default function AdminProducts() {
@@ -47,6 +48,7 @@ export default function AdminProducts() {
     stock: '15',
     thumbnail: '',
     description: '',
+    delivery_time: '১-২ ঘণ্টা',
     is_featured: false,
     is_free_delivery: false,
     priority_order: '1'
@@ -99,6 +101,7 @@ export default function AdminProducts() {
       stock: '20',
       thumbnail: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
       description: '',
+      delivery_time: '১-২ ঘণ্টা',
       is_featured: false,
       is_free_delivery: false,
       priority_order: String(products.length + 1)
@@ -123,6 +126,7 @@ export default function AdminProducts() {
       price: String(prod.price || ''),
       discount_price: prod.discount_price ? String(prod.discount_price) : '',
       stock: String(prod.stock !== undefined ? prod.stock : 15),
+      delivery_time: prod.delivery_time || '১-২ ঘণ্টা',
       thumbnail: prod.thumbnail || '',
       description: prod.description || '',
       is_featured: !!prod.is_featured,
@@ -1086,7 +1090,43 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              {/* 🚚 8. TOGGLES (FREE DELIVERY & FEATURED) */}
+              {/* ⏱️ 8. CUSTOM DELIVERY TIME (প্রতি প্রোডাক্টের ডেলিভারি সময়) */}
+              <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-400 flex items-center">
+                    <Clock className="w-4 h-4 mr-1.5 text-amber-400" />
+                    Delivery Time / ডেলিভারি সময় (যেমন: ১-২ ঘণ্টা, ২৪ ঘণ্টা, ২-৩ দিন)
+                  </label>
+                  <span className="text-[11px] text-slate-400">কার্ডে ও পেজে প্রদর্শিত হবে</span>
+                </div>
+                <input
+                  type="text"
+                  value={formData.delivery_time || ''}
+                  onChange={(e) => setFormData({ ...formData, delivery_time: e.target.value })}
+                  placeholder="যেমন: ১-২ ঘণ্টা বা 1-2 hours বা ২৪ ঘণ্টা"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 text-sm font-bold rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-400"
+                />
+                {/* Quick Delivery Presets */}
+                <div className="flex items-center space-x-1.5 overflow-x-auto text-xs pt-0.5">
+                  <span className="text-[11px] font-bold text-slate-400 mr-1 flex-shrink-0">কুইক সিলেক্ট:</span>
+                  {['১-২ ঘণ্টা', '২৪ ঘণ্টা', '১-২ দিন', '২-৩ দিন', 'ইনস্ট্যান্ট ডেলিভারি', '1-2 hours'].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, delivery_time: preset })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all flex-shrink-0 cursor-pointer ${
+                        formData.delivery_time === preset
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                          : 'bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 🚚 9. TOGGLES (FREE DELIVERY & FEATURED) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl">
                   <label className="flex items-center space-x-2.5 text-xs font-bold text-emerald-300 cursor-pointer">
