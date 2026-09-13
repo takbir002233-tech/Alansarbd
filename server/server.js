@@ -79,10 +79,8 @@ io.on('connection', (socket) => {
 
 const fs = require('fs');
 
-// Serve client static build in production if available
+// Serve preview route
 const clientDistPath = path.join(__dirname, '../client/dist');
-app.use(express.static(clientDistPath));
-
 app.get(['/preview', '/preview.html'], (req, res) => {
   const previewDist = path.join(clientDistPath, 'preview.html');
   const previewBrain = 'C:\\Users\\HP\\.gemini\\antigravity\\brain\\1ad9fe0d-4a65-40dd-aaae-eb41dc0ea843\\preview.html';
@@ -92,6 +90,41 @@ app.get(['/preview', '/preview.html'], (req, res) => {
   }
   return res.send('Preview file not found.');
 });
+
+// Live Dev Proxy to Vite:
+// If Vite dev server (port 5173) is running, proxy frontend requests to Vite so file edits appear instantly on refresh!
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {
+    return next();
+  }
+
+  const options = {
+    hostname: '127.0.0.1',
+    port: 5173,
+    path: req.url,
+    method: req.method,
+    headers: { ...req.headers, host: 'localhost:5173' }
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on('error', () => {
+    // If Vite dev server is not active, fallback to production dist
+    next();
+  });
+
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    req.pipe(proxyReq, { end: true });
+  } else {
+    proxyReq.end();
+  }
+});
+
+// Production fallback: Serve client static build
+app.use(express.static(clientDistPath));
 
 app.use((req, res, next) => {
   if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {

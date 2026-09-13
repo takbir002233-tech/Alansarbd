@@ -14,11 +14,18 @@ import {
   Download
 } from 'lucide-react';
 
-export default function OrderTrack({ initialCode = '', onNavigate, onOpenInvoice }) {
-  const [orderCode, setOrderCode] = useState(initialCode);
-  const [order, setOrder] = useState(null);
+export default function OrderTrack({ 
+  initialCode = '', 
+  initialOrderNumber = '', 
+  initialOrder = null, 
+  onNavigate, 
+  onOpenInvoice 
+}) {
+  const targetCode = initialCode || initialOrderNumber || (initialOrder ? initialOrder.order_code : '');
+  const [orderCode, setOrderCode] = useState(targetCode);
+  const [order, setOrder] = useState(initialOrder || null);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(!!initialOrder || !!targetCode);
   const [errorMsg, setErrorMsg] = useState(null);
 
   // Bengali digits converter helper
@@ -53,11 +60,16 @@ export default function OrderTrack({ initialCode = '', onNavigate, onOpenInvoice
   };
 
   useEffect(() => {
-    if (initialCode) {
-      setOrderCode(initialCode);
-      fetchOrder(initialCode);
+    const code = initialCode || initialOrderNumber || (initialOrder ? initialOrder.order_code : '');
+    if (initialOrder) {
+      setOrder(initialOrder);
+      setOrderCode(initialOrder.order_code);
+      setSearched(true);
+    } else if (code) {
+      setOrderCode(code);
+      fetchOrder(code);
     }
-  }, [initialCode]);
+  }, [initialCode, initialOrderNumber, initialOrder]);
 
   const handleSearch = (e) => {
     e.preventDefault();

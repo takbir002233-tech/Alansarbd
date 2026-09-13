@@ -18,6 +18,7 @@ export default function PaymentGatewayModal({
   isOpen,
   onClose,
   totalAmount,
+  deliveryFee = 60,
   siteSettings,
   user,
   onConfirmPayment
@@ -25,7 +26,12 @@ export default function PaymentGatewayModal({
   useScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('mfs'); // 'mfs', 'bank', 'cod'
   const [selectedMethod, setSelectedMethod] = useState(null); // null = method selector, 'bkash', 'nagad', 'rocket', etc.
+  const [codMfsProvider, setCodMfsProvider] = useState('bkash_personal');
+  const advanceFee = Number(deliveryFee) || 60;
+  const remainingCodAmount = Math.max(0, totalAmount - advanceFee);
   const [senderNumber, setSenderNumber] = useState(user?.phone || '');
+  const [senderBankName, setSenderBankName] = useState('');
+  const [senderAccountName, setSenderAccountName] = useState(user?.name || '');
   const [transactionId, setTransactionId] = useState('');
   const [copiedField, setCopiedField] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes countdown
@@ -174,22 +180,22 @@ export default function PaymentGatewayModal({
     },
     bank: {
       key: 'bank',
-      name: 'Islami Bank Bangladesh',
+      name: 'Islami Bank Bangladesh PLC (IBBL)',
       shortName: 'Bank Transfer',
       methodType: 'NPSB / BEFTN / Direct Transfer',
       number: siteSettings?.bank_account_no || '2050112233445500',
-      accountName: 'AL ANSAR TRADING CORP',
-      branch: 'Uttara Central Branch, Dhaka',
-      routing: '125271822',
+      accountName: siteSettings?.bank_account_name || 'AL ANSAR TRADING CORP',
+      branch: siteSettings?.bank_branch || 'Uttara Central Branch, Dhaka',
+      routing: siteSettings?.bank_routing || '125271822',
       bgColor: 'bg-[#1E3A8A]',
       themeHex: '#1E3A8A',
       textColor: 'text-white',
       accentBorder: 'border-[#1E3A8A]',
       helpline: '16259',
       instructions: [
-        'যেকোনো ব্যাংক অ্যাপ বা অনলাইন ব্যাংকিং থেকে ফান্ড ট্রান্সফার করুন।',
-        'অ্যাকাউন্ট নম্বর ও রাউটিং নম্বর সঠিকভাবে পূরণ করুন।',
-        'ট্রান্সফার রেফারেন্স বা ট্রানজেকশন স্লিপ আইডি নিচে দিন।'
+        'যেকোনো ব্যাংক অ্যাপ (Cellfin, CityTouch, EBL Skybanking) বা অনলাইন ব্যাংকিং থেকে ফান্ড ট্রান্সফার করুন।',
+        'অ্যাকাউন্ট নম্বর: 2050112233445500 এবং রাউটিং: 125271822 ব্যবহার করুন।',
+        'টাকা পাঠানোর পর নিচে আপনার ব্যাংকের নাম, অ্যাকাউন্ট নম্বর ও ট্রানজেকশন রেফারেন্স প্রদান করুন।'
       ]
     },
     cod: {
@@ -202,10 +208,10 @@ export default function PaymentGatewayModal({
       themeHex: '#059669',
       textColor: 'text-white',
       accentBorder: 'border-[#059669]',
-      helpline: '01700-000000',
+      helpline: siteSettings?.store_phone || '01700-000000',
       instructions: [
         'পণ্য আপনার ঠিকানায় পৌঁছানোর পর দেখে-শুনে ডেলিভারিম্যানের কাছে সম্পূর্ণ টাকা পরিশোধ করবেন।',
-        'কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই।'
+        'কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই। নিচে ‘অর্ডার নিশ্চিত করুন (Next)’ বাটনে ক্লিক করে এগিয়ে যান।'
       ]
     }
   };
@@ -223,17 +229,50 @@ export default function PaymentGatewayModal({
     }
 
     if (selectedMethod.key === 'cod') {
+      if (!senderNumber.trim()) {
+        setValidationError('যে নম্বর থেকে ডেলিভারি ফি পাঠিয়েছেন তা উল্লেখ করুন।');
+        return;
+      }
+      if (!transactionId.trim()) {
+        setValidationError('ডেলিভারি ফি লেনদেনের Transaction ID (TrxID) প্রদান করুন।');
+        return;
+      }
       onConfirmPayment({
         payment_method: 'cod',
-        sender_number: '',
-        transaction_id: ''
+        advance_delivery_fee_paid: true,
+        delivery_fee_amount: advanceFee,
+        delivery_fee_method: codMfsProvider,
+        sender_number: senderNumber.trim(),
+        transaction_id: transactionId.trim().toUpperCase()
       });
       return;
     }
 
-    // Digital methods require sender number & TrxID
+    if (selectedMethod.key === 'bank') {
+      if (!senderBankName.trim()) {
+        setValidationError('যে ব্যাংক থেকে টাকা পাঠিয়েছেন তার নাম উল্লেখ করুন (যেমন: ডাচ-বাংলা, ব্র্যাক, ইত্যাদি)।');
+        return;
+      }
+      if (!senderNumber.trim()) {
+        setValidationError('আপনার প্রেরক ব্যাংক একাউন্ট নম্বর বা মোবাইল নম্বর দিন।');
+        return;
+      }
+      if (!transactionId.trim()) {
+        setValidationError('ব্যাংক ট্রানজেকশন রেফারেন্স বা ডিপোজিট স্লিপ নম্বর দিন।');
+        return;
+      }
+
+      onConfirmPayment({
+        payment_method: 'bank',
+        sender_number: `${senderBankName.trim()} (${senderAccountName ? senderAccountName.trim() + ' - ' : ''}${senderNumber.trim()})`,
+        transaction_id: transactionId.trim().toUpperCase()
+      });
+      return;
+    }
+
+    // Digital mobile banking methods require sender number & TrxID
     if (!senderNumber.trim()) {
-      setValidationError('যে নম্বর/অ্যাকাউন্ট থেকে টাকা পাঠিয়েছেন তা উল্লেখ করুন।');
+      setValidationError('যে নম্বর থেকে টাকা পাঠিয়েছেন তা উল্লেখ করুন।');
       return;
     }
 
@@ -371,7 +410,7 @@ export default function PaymentGatewayModal({
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  MFS / WALLET
+                  📱 মোবাইল ব্যাংকিং
                 </button>
                 <button
                   type="button"
@@ -382,18 +421,21 @@ export default function PaymentGatewayModal({
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  BANK TRANSFER
+                  🏦 ব্যাংক ট্রান্সফার
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('cod')}
+                  onClick={() => {
+                    setActiveTab('cod');
+                    handleSelectMethod('cod');
+                  }}
                   className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
                     activeTab === 'cod'
                       ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  CASH ON DELIVERY
+                  🚚 ক্যাশ অন ডেলিভারি
                 </button>
               </div>
 
@@ -546,31 +588,84 @@ export default function PaymentGatewayModal({
                     <div className="space-y-3 flex-1">
                       <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-100">
                         <div>
-                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">AMOUNT</span>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                            {selectedMethod.key === 'cod' ? 'এখন প্রদেয় (ডেলিভারি ফি)' : 'AMOUNT'}
+                          </span>
                           <span className="text-base sm:text-lg font-black text-slate-900 font-mono">
-                            ৳{toBengaliDigits(totalAmount.toLocaleString())}
+                            ৳{toBengaliDigits((selectedMethod.key === 'cod' ? advanceFee : totalAmount).toLocaleString())}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">METHOD</span>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
+                            {selectedMethod.key === 'cod' ? 'বাকি মূল্য (ক্যাশ)' : 'METHOD'}
+                          </span>
                           <span className="text-xs font-black text-slate-800">
-                            {selectedMethod.methodType}
+                            {selectedMethod.key === 'cod' ? `৳${toBengaliDigits(remainingCodAmount.toLocaleString())}` : selectedMethod.methodType}
                           </span>
                         </div>
                       </div>
 
+                      {/* If COD, show MFS selection pills for advance delivery fee */}
+                      {selectedMethod.key === 'cod' && (
+                        <div className="space-y-1.5 pb-2 border-b border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-700 block">
+                            ডেলিভারি ফি পরিশোধের মাধ্যম নির্বাচন করুন:
+                          </span>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[
+                              { key: 'bkash_personal', name: 'bKash', color: 'bg-[#E2136E]' },
+                              { key: 'nagad_personal', name: 'Nagad', color: 'bg-[#F7941D]' },
+                              { key: 'rocket_personal', name: 'Rocket', color: 'bg-[#8C3494]' },
+                              { key: 'upay', name: 'Upay', color: 'bg-[#005C8A]' }
+                            ].map((m) => (
+                              <button
+                                key={m.key}
+                                type="button"
+                                onClick={() => setCodMfsProvider(m.key)}
+                                className={`py-1 px-1 text-[11px] font-black rounded-lg border transition-all cursor-pointer ${
+                                  codMfsProvider === m.key
+                                    ? `${m.color} text-white shadow-xs ring-2 ring-amber-400/40`
+                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
+                                }`}
+                              >
+                                {m.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Number Row with Copy Button */}
                       <div>
                         <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">
-                          {selectedMethod.key === 'bank' ? 'ACCOUNT NUMBER' : `NUMBER (${selectedMethod.methodType.toUpperCase()})`}
+                          {selectedMethod.key === 'bank' 
+                            ? 'ACCOUNT NUMBER' 
+                            : selectedMethod.key === 'cod'
+                            ? `ডেলিভারি ফি পাঠানোর ${codMfsProvider.toUpperCase().replace('_PERSONAL', '')} নম্বর (SEND MONEY)`
+                            : `NUMBER (${selectedMethod.methodType.toUpperCase()})`}
                         </span>
                         <div className="flex items-center space-x-2 mt-0.5">
                           <span className="text-sm sm:text-base font-mono font-black text-slate-900 tracking-wider select-all">
-                            {selectedMethod.number}
+                            {selectedMethod.key === 'cod'
+                              ? (codMfsProvider.includes('nagad') 
+                                  ? (siteSettings?.nagad_number || '01811223344') 
+                                  : codMfsProvider.includes('rocket')
+                                  ? (siteSettings?.rocket_number || '01911223344')
+                                  : (siteSettings?.bkash_number || '01715712941'))
+                              : selectedMethod.number}
                           </span>
                           <button
                             type="button"
-                            onClick={() => handleCopy(selectedMethod.number, 'number')}
+                            onClick={() => handleCopy(
+                              selectedMethod.key === 'cod'
+                                ? (codMfsProvider.includes('nagad') 
+                                    ? (siteSettings?.nagad_number || '01811223344') 
+                                    : codMfsProvider.includes('rocket')
+                                    ? (siteSettings?.rocket_number || '01911223344')
+                                    : (siteSettings?.bkash_number || '01715712941'))
+                                : selectedMethod.number, 
+                              'number'
+                            )}
                             className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center space-x-1 cursor-pointer ${
                               copiedField === 'number'
                                 ? 'bg-emerald-600 text-white'
@@ -651,12 +746,78 @@ export default function PaymentGatewayModal({
                 ))}
               </div>
 
-              {/* Input Fields for TrxID & Sender Number (Photo 1 "Verify with Transaction ID instead") */}
-              {selectedMethod.key !== 'cod' && (
+              {/* Cash On Delivery Guidance Box */}
+              {selectedMethod.key === 'cod' && (
+                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-300 text-emerald-950 space-y-1.5 shadow-2xs">
+                  <div className="flex items-center space-x-2">
+                    <Truck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                    <h4 className="text-xs font-black">ক্যাশ অন ডেলিভারি নির্দেশিকা</h4>
+                  </div>
+                  <p className="text-[11.5px] text-emerald-900 leading-relaxed">
+                    অর্ডার কনফার্মেশনের জন্য উপরের নম্বরে শুধুমাত্র ডেলিভারি ফি <strong>৳{toBengaliDigits(advanceFee.toLocaleString())}</strong> অগ্রিম পরিশোধ করুন। বাকি পণ্যমূল্য <strong>৳{toBengaliDigits(remainingCodAmount.toLocaleString())}</strong> ডেলিভারির সময় পণ্য হাতে পেয়ে ডেলিভারিম্যানকে পরিশোধ করবেন।
+                  </p>
+                </div>
+              )}
+
+              {/* Bank Transfer Inputs */}
+              {selectedMethod.key === 'bank' && (
+                <div className="p-4 bg-blue-50/70 rounded-2xl border border-blue-200/90 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-blue-950 uppercase tracking-wider">
+                      ব্যাংক ট্রান্সফার তথ্য প্রদান করুন
+                    </span>
+                    <span className="text-[10px] text-blue-700 font-semibold">* বাধ্যতামূলক</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        প্রেরক ব্যাংকের নাম (Sender Bank):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="যেমন: ডাচ-বাংলা ব্যাংক, ব্র্যাক ব্যাংক, ইসলামী ব্যাংক..."
+                        value={senderBankName}
+                        onChange={(e) => setSenderBankName(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-medium focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        প্রেরক অ্যাকাউন্ট নম্বর বা নাম:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="যেমন: 2050... অথবা আপনার নাম"
+                        value={senderNumber}
+                        onChange={(e) => setSenderNumber(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-mono focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        Transaction ID / ডিপোজিট স্লিপ নম্বর:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="যেমন: FT260911001"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-mono uppercase focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Verification Inputs for Mobile Banking & COD advance delivery fee */}
+              {selectedMethod.key !== 'bank' && (
                 <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-amber-950 uppercase tracking-wider">
-                      পেমেন্ট ভেরিফিকেশন তথ্য
+                      {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি ভেরিফিকেশন তথ্য' : 'পেমেন্ট ভেরিফিকেশন তথ্য'}
                     </span>
                     <span className="text-[10px] text-amber-700 font-semibold">* বাধ্যতামূলক</span>
                   </div>
@@ -664,7 +825,7 @@ export default function PaymentGatewayModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        প্রেরক মোবাইল নম্বর (Sender Number):
+                        {selectedMethod.key === 'cod' ? 'যে নম্বর থেকে ডেলিভারি ফি দিয়েছেন:' : 'প্রেরক মোবাইল নম্বর (Sender Number):'}
                       </label>
                       <input
                         type="text"
@@ -677,7 +838,7 @@ export default function PaymentGatewayModal({
 
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Transaction ID (TrxID):
+                        {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি পাঠানোর TrxID:' : 'Transaction ID (TrxID):'}
                       </label>
                       <input
                         type="text"
@@ -719,7 +880,11 @@ export default function PaymentGatewayModal({
                   }`}
                 >
                   <Check className="w-4 h-4" />
-                  <span>I'VE PAID - CONFIRM / নিশ্চিত করুন</span>
+                  <span>
+                    {selectedMethod.key === 'cod'
+                      ? 'অর্ডার নিশ্চিত করুন (Next) →'
+                      : "I'VE PAID - CONFIRM / নিশ্চিত করুন"}
+                  </span>
                 </button>
               </div>
 

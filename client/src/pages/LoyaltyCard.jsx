@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
+import PageHadithBanner from '../components/PageHadithBanner';
 import AuthModal from '../components/AuthModal';
 
 export default function LoyaltyCard({ onNavigate, onBack }) {
@@ -31,11 +32,7 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
                         appliedStatus === 'Pending';
 
   const handleApplyClick = () => {
-    if (!user) {
-      setAuthModalOpen(true);
-    } else {
-      setModalOpen(true);
-    }
+    setModalOpen(true);
   };
 
   const handleAuthSuccess = () => {
@@ -51,16 +48,22 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5 animate-in fade-in font-sans">
       
       {/* Top Universal Back Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
         <button
           onClick={onBack || (() => onNavigate('home'))}
-          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
+          className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4 text-amber-800" />
           <span>← পিছনে যান (Back)</span>
         </button>
 
-        <span className="text-xs font-bold text-amber-900 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200 flex items-center space-x-1.5 shadow-2xs">
+        <PageHadithBanner 
+          text={siteSettings?.hadith_loyalty_card} 
+          defaultText="🌸 হাদিস: তোমরা পারস্পরিক উপহার আদান-প্রদান করো, এতে পারস্পরিক ভালোবাসা বৃদ্ধি পাবে। (আল-আদাবুল মুফরাদ)" 
+          className="flex-1 max-w-xl mx-auto"
+        />
+
+        <span className="text-xs font-bold text-amber-900 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200 flex items-center space-x-1.5 shadow-2xs flex-shrink-0">
           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
           <span>আল আনসার প্রিভিলেজ ক্লাব মেম্বারশিপ</span>
         </span>

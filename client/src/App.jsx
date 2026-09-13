@@ -296,7 +296,9 @@ function MainApp() {
           <OrderTrack
             onNavigate={navigate}
             onBack={handleBack}
-            initialOrderNumber={pageParams.orderNumber}
+            initialCode={pageParams.code || pageParams.orderNumber || ''}
+            initialOrderNumber={pageParams.code || pageParams.orderNumber || ''}
+            initialOrder={pageParams.order || null}
             onOpenInvoice={handleOpenInvoice}
           />
         )}

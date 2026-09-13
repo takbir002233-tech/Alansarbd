@@ -526,7 +526,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
 
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => onNavigate('track-order', { code: order.order_code })}
+                          onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
                           className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl cursor-pointer"
                         >
                           লাইভ ট্র্যাকিং
@@ -644,7 +644,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onO
                       <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
                         <span className="font-black text-slate-900 text-sm">মোট টাকা: ৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
                         <button
-                          onClick={() => onNavigate('track-order', { code: order.order_code })}
+                          onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
                           className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-colors cursor-pointer"
                         >
                           লাইভ স্ট্যাটাস টাইমলাইন

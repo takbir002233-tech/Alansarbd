@@ -53,19 +53,19 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
   return (
     <div
       onClick={handleCardClick}
-      className={`product-card group bg-white rounded-2xl border transition-all duration-200 ease-out flex flex-col overflow-hidden cursor-pointer relative transform hover:-translate-y-1 hover:scale-[1.018] font-sans ${
+      className={`product-card group bg-white rounded-2xl border transition-all duration-200 ease-out flex flex-col overflow-hidden cursor-pointer relative transform hover:-translate-y-1 hover:scale-[1.015] font-sans ${
         isOutOfStock 
           ? 'border-slate-200 opacity-80 hover:border-slate-300' 
-          : 'border-amber-200/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-400/40 shadow-xs hover:shadow-xl hover:shadow-amber-500/15'
+          : 'border-slate-200/90 hover:border-red-500 hover:ring-2 hover:ring-red-400/30 shadow-xs hover:shadow-xl'
       }`}
     >
-      {/* Top subtle golden accent bar on card */}
-      <div className="h-0.5 w-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Top subtle red accent line on card */}
+      <div className="h-0.5 w-full bg-gradient-to-r from-red-500 via-amber-400 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      {/* Product Image Box with Luxury Framing & Badges */}
-      <div className={`relative w-full ${compact ? 'pt-[64%]' : 'pt-[80%]'} bg-gradient-to-b from-amber-50/60 via-slate-50 to-amber-100/30 overflow-hidden`}>
+      {/* Product Image Box (Taller proportion with minimal gap) */}
+      <div className={`relative w-full ${compact ? 'pt-[82%]' : 'pt-[94%]'} bg-gradient-to-b from-slate-50/80 via-white to-amber-50/20 overflow-hidden flex items-center justify-center`}>
         
-        {/* Background Image with Zoom */}
+        {/* Background / Product Image */}
         <img
           src={product.thumbnail || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80'}
           alt={product.title}
@@ -73,33 +73,42 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
             e.target.onerror = null;
             e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
           }}
-          className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out ${
-            isOutOfStock ? 'grayscale-30 group-hover:scale-102' : 'group-hover:scale-110'
+          className={`absolute inset-0 w-full h-full object-contain p-2.5 transition-transform duration-500 ease-out ${
+            isOutOfStock ? 'grayscale-30 group-hover:scale-102' : 'group-hover:scale-108'
           }`}
           loading="lazy"
         />
 
-        {/* Elegant Light Gleam Sheen Effect on Hover */}
-        <div className="pointer-events-none absolute inset-0 z-10 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+        {/* TOP-LEFT: Red Sawtooth Ribbon Discount Tag (Matching reference image ৳20 OFF) */}
+        {hasDiscount && (
+          <div className="absolute top-0 left-2 sm:left-2.5 z-20 pointer-events-none drop-shadow-md">
+            <div className="bg-[#e11414] text-white font-black text-[10px] sm:text-[11.5px] leading-tight px-1.5 sm:px-2 pt-1 pb-1.5 text-center relative flex flex-col items-center">
+              <span className="font-extrabold tracking-tight">৳{toBengaliDigits(savings.toLocaleString())}</span>
+              <span className="text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-wider -mt-0.5">OFF</span>
+              
+              {/* Sawtooth / Zigzag bottom edge */}
+              <div 
+                className="absolute -bottom-1.5 left-0 right-0 h-1.5 bg-[#e11414]"
+                style={{
+                  clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 85% 30%, 70% 100%, 55% 30%, 40% 100%, 25% 30%, 10% 100%, 0% 30%)'
+                }}
+              />
+            </div>
+          </div>
+        )}
 
-        {/* TOP-LEFT: 💥 ছাড় (DISCOUNT) & 👑 রয়্যাল (ROYAL FEATURED) */}
-        <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20 flex flex-col gap-1 pointer-events-none items-start">
-          {hasDiscount && (
-            <span className="bg-gradient-to-r from-rose-600 via-red-500 to-amber-600 text-white text-[8px] sm:text-[9.5px] font-black px-2 py-0.5 rounded-full shadow-md border border-white/50 ring-1 ring-rose-500/30 flex items-center space-x-0.5 tracking-tight animate-pulse">
-              <Flame className="w-2.5 h-2.5 text-amber-200 flex-shrink-0" />
-              <span>{toBengaliDigits(discountPercent)}% ছাড়</span>
+        {/* Featured Tag (Royal Choice) if applicable */}
+        {product.is_featured && (
+          <div className={`absolute ${hasDiscount ? 'top-10 sm:top-11 left-1.5' : 'top-1.5 left-1.5'} z-20 pointer-events-none`}>
+            <span className="bg-gradient-to-r from-[#032318] to-[#063b2a] text-amber-300 text-[7.5px] sm:text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-xs border border-amber-400/80 flex items-center space-x-0.5">
+              <Crown className="w-2 h-2 text-amber-300 flex-shrink-0" />
+              <span>রয়্যাল</span>
             </span>
-          )}
-          {product.is_featured && (
-            <span className="bg-gradient-to-r from-[#032318] via-[#063b2a] to-[#032318] text-amber-300 text-[7.5px] sm:text-[8.5px] font-black px-2 py-0.5 rounded-full shadow-md border border-amber-400/80 ring-1 ring-amber-400/30 flex items-center space-x-1 backdrop-blur-xs">
-              <Crown className="w-2.5 h-2.5 text-amber-300 flex-shrink-0 animate-spin-slow" />
-              <span>রয়্যাল চয়েস</span>
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* TOP-RIGHT: 📦 স্টক (STOCK) & 🚚 ফ্রি ডেলিভারি (FREE DELIVERY) */}
-        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-20 flex flex-col gap-1 pointer-events-none items-end">
+        {/* TOP-RIGHT: Stock status & Free delivery tags */}
+        <div className="absolute top-1.5 right-1.5 z-20 flex flex-col gap-1 pointer-events-none items-end">
           {isOutOfStock ? (
             <span className="bg-rose-700 text-white text-[7.5px] sm:text-[8.5px] font-black px-2 py-0.5 rounded-full shadow-md border border-rose-300/40 flex items-center space-x-0.5">
               <XCircle className="w-2.5 h-2.5 text-rose-200" />
@@ -110,19 +119,12 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
               <AlertTriangle className="w-2.5 h-2.5 text-amber-100" />
               <span>মাত্র {toBengaliDigits(stockNum)}টি বাকি!</span>
             </span>
-          ) : (
-            <span className="bg-[#04241b]/95 text-emerald-200 text-[7.5px] sm:text-[8.5px] font-bold px-2 py-0.5 rounded-full shadow-md border border-emerald-400/50 backdrop-blur-xs flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>স্টক আছে</span>
-            </span>
-          )}
-
-          {product.is_free_delivery && (
-            <span className="bg-gradient-to-r from-teal-700 via-emerald-700 to-teal-800 text-white text-[7.5px] sm:text-[8.5px] font-black px-2 py-0.5 rounded-full shadow-md border border-teal-300/50 flex items-center space-x-1">
-              <Truck className="w-2.5 h-2.5 text-teal-200" />
+          ) : product.is_free_delivery ? (
+            <span className="bg-teal-700 text-white text-[7px] sm:text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-xs flex items-center space-x-0.5">
+              <Truck className="w-2 h-2 text-teal-200" />
               <span>ফ্রি ডেলিভারি</span>
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Stock Out Overlay if zero stock */}
@@ -133,91 +135,64 @@ export default function ProductCard({ product, onNavigate, onSelect, compact = f
             </span>
           </div>
         )}
-
-        {/* Quick View Button on Hover */}
-        {!isOutOfStock && (
-          <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-10">
-            <span className="bg-white/95 text-slate-900 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full shadow-lg flex items-center space-x-1 backdrop-blur-xs transform translate-y-2 group-hover:translate-y-0 transition-transform border border-amber-300">
-              <Eye className="w-3.5 h-3.5 text-amber-600" />
-              <span>বিস্তারিত দেখুন</span>
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Content Area */}
-      <div className={`${compact ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3.5'} flex-1 flex flex-col justify-between`}>
+      {/* Content Area - Compact with minimal gaps so photo is taller */}
+      <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-between space-y-1.5">
         <div>
-          {/* Rating */}
-          <div className="flex items-center space-x-1 mb-1">
-            <div className="flex items-center text-amber-500">
-              <Star className="w-3 h-3 fill-current" />
-            </div>
-            <span className="text-[9.5px] sm:text-[11px] font-black text-slate-800">{toBengaliDigits(product.rating || 5.0)}</span>
-            <span className="text-[8.5px] sm:text-[9.5px] text-slate-400">({toBengaliDigits(product.review_count || 24)})</span>
-          </div>
+          {/* Subtle Delivery Line (Matching reference image: "Delivery 1-2 hours") */}
+          <p className="text-[9.5px] sm:text-[10.5px] text-slate-500 italic text-center font-medium tracking-tight">
+            {product.is_free_delivery ? 'Delivery 1-2 hours • ফ্রি ডেলিভারি' : 'Delivery 1-2 hours • দ্রুত ডেলিভারি'}
+          </p>
 
-          {/* Title */}
-          <h3 className={`text-[11px] sm:text-xs md:text-[13px] font-black text-slate-800 line-clamp-2 group-hover:text-amber-700 transition-colors leading-snug ${compact ? 'min-h-[1.6rem] sm:min-h-[2rem]' : 'min-h-[1.9rem] sm:min-h-[2.3rem]'}`}>
+          {/* Product Title */}
+          <h3 className="text-xs sm:text-[13px] font-black text-slate-800 text-center line-clamp-2 leading-tight group-hover:text-red-600 transition-colors mt-0.5 min-h-[1.7rem] sm:min-h-[2rem]">
             {product.title}
           </h3>
-
-          {/* 💰 সাশ্রয় (SAVINGS HIGHLIGHT BAR - চোখে পড়ার মতো স্পেশাল ব্যাজ) */}
-          <div className="my-1.5 flex items-center flex-wrap gap-1">
-            {hasDiscount ? (
-              <span className="bg-gradient-to-r from-emerald-100 to-teal-50 text-emerald-950 border border-emerald-300/90 px-2 py-0.5 rounded-lg text-[8.5px] sm:text-[10px] font-black inline-flex items-center space-x-1 shadow-2xs">
-                <span className="text-emerald-700 font-bold">💰 সাশ্রয়</span>
-                <span className="text-emerald-800 font-mono font-black">৳{toBengaliDigits(savings.toLocaleString())}</span>
-                <span className="text-rose-600 font-bold text-[8px] sm:text-[9px]">({toBengaliDigits(discountPercent)}% ছাড়)</span>
-              </span>
-            ) : product.is_free_delivery ? (
-              <span className="bg-teal-50 text-teal-900 border border-teal-200 px-2 py-0.5 rounded-lg text-[8.5px] sm:text-[10px] font-bold inline-flex items-center space-x-1 shadow-2xs">
-                <Truck className="w-3 h-3 text-teal-700" />
-                <span>ফ্রি হোম ডেলিভারি</span>
-              </span>
-            ) : (
-              <span className="bg-amber-50 text-amber-900 border border-amber-200/80 px-2 py-0.5 rounded-lg text-[8.5px] sm:text-[10px] font-bold inline-flex items-center space-x-1 shadow-2xs">
-                <Sparkles className="w-3 h-3 text-amber-600" />
-                <span>১০০% খাঁটি ও অরিজিনাল</span>
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Pricing & Add Button Row */}
-        <div className="mt-1 pt-1.5 border-t border-amber-100/90 flex items-center justify-between gap-1.5">
-          <div className="min-w-0">
-            <div className="flex items-baseline space-x-1 sm:space-x-1.5 flex-wrap">
-              <span className="text-xs sm:text-sm md:text-[15px] font-black text-slate-900 tracking-tight font-mono">
-                ৳{toBengaliDigits(price.toLocaleString())}
+        {/* Pricing & Add to Bag Button Stack */}
+        <div className="space-y-1.5 pt-0.5">
+          {/* Price Row: Strikethrough Regular Price + Bold Vibrant Red Selling Price + Per Piece */}
+          <div className="flex items-center justify-center space-x-1.5 sm:space-x-2 flex-wrap">
+            {hasDiscount && (
+              <span className="text-[11px] sm:text-xs text-slate-400 line-through font-bold decoration-slate-400 font-mono">
+                ৳{toBengaliDigits(regularPrice.toLocaleString())}
               </span>
-              {hasDiscount && (
-                <span className="text-[9px] sm:text-[10.5px] text-slate-400 line-through font-bold decoration-rose-500/70 font-mono">
-                  ৳{toBengaliDigits(regularPrice.toLocaleString())}
-                </span>
-              )}
-            </div>
+            )}
+            <span className="text-sm sm:text-base md:text-[17px] font-black text-[#e11414] font-mono tracking-tight">
+              ৳{toBengaliDigits(price.toLocaleString())}
+            </span>
+            <span className="text-[9.5px] sm:text-[10.5px] text-slate-500 font-medium">
+              Per Piece
+            </span>
           </div>
 
-          {/* Add to Cart CTA */}
+          {/* Red Pill "+ Add to Bag" Button (Matching reference image) */}
           <button
             onClick={handleAdd}
             disabled={isOutOfStock}
-            className={`p-1.5 sm:p-2 rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0 cursor-pointer ${
+            className={`w-full py-1.5 sm:py-2 px-3 rounded-full font-black text-xs sm:text-[12.5px] transition-all duration-200 flex items-center justify-center space-x-1 shadow-md active:scale-95 cursor-pointer ${
               added
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30'
+                ? 'bg-emerald-600 text-white shadow-emerald-500/30'
                 : isOutOfStock
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-sm hover:shadow-md hover:shadow-amber-500/30 active:scale-95 border border-amber-400/80'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                : 'bg-[#e11414] hover:bg-[#c90f0f] text-white shadow-red-500/25 hover:shadow-lg hover:shadow-red-500/30'
             }`}
-            title={isOutOfStock ? 'স্টক শেষ' : added ? 'যুক্ত হয়েছে!' : 'ব্যাগে যোগ করুন'}
+            title={isOutOfStock ? 'স্টক শেষ' : added ? 'ব্যাগে যুক্ত হয়েছে!' : 'ব্যাগে যোগ করুন'}
           >
             {added ? (
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+              <>
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>যুক্ত হয়েছে!</span>
+              </>
             ) : isOutOfStock ? (
-              <span className="text-[8.5px] font-bold px-0.5 text-slate-400">শেষ</span>
+              <span>স্টক শেষ</span>
             ) : (
-              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-950" />
+              <>
+                <span className="text-base font-bold leading-none mr-0.5">+</span>
+                <span>Add to Bag</span>
+              </>
             )}
           </button>
         </div>

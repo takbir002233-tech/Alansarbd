@@ -1,8 +1,12 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle, Package, Printer, Clock, ArrowRight, ShieldCheck, Truck, Download, ArrowLeft } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import PageHadithBanner from '../components/PageHadithBanner';
 
 export default function OrderConfirmation({ order, onNavigate, onOpenInvoice }) {
+  const { siteSettings } = useCart();
+
   // Bengali digits converter helper
   const toBengaliDigits = (str) => {
     const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -39,15 +43,20 @@ export default function OrderConfirmation({ order, onNavigate, onOpenInvoice }) 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-6 animate-in fade-in font-sans">
       
-      {/* Universal Back Button */}
-      <div className="flex items-center justify-between pb-2">
+      {/* Universal Back Button & Animated Hadith Banner */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-2">
         <button
           onClick={() => onNavigate('home')}
-          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs self-start sm:self-auto"
         >
           <ArrowLeft className="w-4 h-4 text-amber-800" />
           <span>← পিছনে যান (Back)</span>
         </button>
+
+        <PageHadithBanner 
+          text={siteSettings?.hadith_invoice || siteSettings?.hadith_checkout}
+          defaultText="“সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে।” — (তিরমিযী)"
+        />
       </div>
 
       {/* Success Card */}

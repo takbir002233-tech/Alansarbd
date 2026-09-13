@@ -213,23 +213,30 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
           </div>
         </div>
 
-        {/* Mobile View (< md): Stacked gracefully so all 3 are fully visible and centered */}
-        <div className="md:hidden flex flex-col space-y-0.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <div className="flex items-center space-x-1 text-amber-300 font-black truncate max-w-[62%]">
-              <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-pulse flex-shrink-0" />
-              <span className="truncate">✨ আসসালামু আলাইকুম! আল আনসার সুপার শপ</span>
-            </div>
-            <div className="flex items-center space-x-1 text-amber-100 font-mono font-bold text-[9.5px]">
-              <Clock className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
-              <span>{currentDateTimeStr ? (currentDateTimeStr.includes('|') ? currentDateTimeStr.split('|')[1].trim() : currentDateTimeStr) : 'লোড হচ্ছে...'}</span>
-            </div>
+        {/* Mobile View (< md): Complete Bar, Date, Time, Salam, and Bismillah cleanly presented */}
+        <div className="md:hidden flex flex-col py-1 space-y-0.5 text-white">
+          {/* Row 1: Full Islamic Salam Greeting */}
+          <div className="flex items-center justify-center text-center space-x-1 text-amber-300 font-black text-[10px] sm:text-[11px] px-1">
+            <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-pulse flex-shrink-0" />
+            <span className="whitespace-nowrap">✨ আসসালামু আলাইকুম! আল আনসার সুপার শপে আপনাকে স্বাগতম</span>
+            <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-pulse flex-shrink-0" />
           </div>
-          {/* Mobile Bismillah Center */}
-          <div className="flex items-center justify-center space-x-1 text-amber-100/95 font-bold text-[9.5px] tracking-wide text-center pt-0.5 border-t border-amber-500/15">
-            <Sparkles className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
-            <span className="font-serif">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
-            <Sparkles className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+
+          {/* Row 2: Complete Bismillah (Arabic & Bengali) */}
+          <div className="flex items-center justify-center text-center space-x-1 text-amber-100/95 font-serif font-bold text-[9px] sm:text-[9.5px] tracking-wide px-1">
+            <span>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ • বিসমিল্লাহির রাহমানির রাহিম</span>
+          </div>
+
+          {/* Row 3: Day of Week (কি বার), Date (তারিখ) & Real-time Clock (সময়) matching PC */}
+          <div className="flex items-center justify-between border-t border-amber-500/20 pt-0.5 text-[9px] sm:text-[9.5px] px-1 text-amber-100 font-mono font-bold">
+            <div className="flex items-center space-x-1">
+              <Calendar className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+              <span>{currentDateTimeStr ? (currentDateTimeStr.includes('|') ? currentDateTimeStr.split('|')[0].trim() : currentDateTimeStr) : 'শুক্রবার, ১১ সেপ্টেম্বর ২০২৬'}</span>
+            </div>
+            <div className="flex items-center space-x-1 text-amber-300 font-mono tabular-nums whitespace-nowrap">
+              <Clock className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+              <span>{currentDateTimeStr ? (currentDateTimeStr.includes('|') ? currentDateTimeStr.split('|')[1].trim() : '') : '০৬:১৫:০০ PM'}</span>
+            </div>
           </div>
         </div>
       </div>

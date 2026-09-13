@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Printer, CheckCircle, ShieldCheck, Phone, MapPin, Mail, Truck, ExternalLink, Download, ArrowLeft, Sparkles, BookOpen } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import PageHadithBanner from './PageHadithBanner';
 import useScrollLock from '../hooks/useScrollLock';
 
 export default function InvoiceModal({ order, onClose }) {
@@ -75,22 +76,30 @@ export default function InvoiceModal({ order, onClose }) {
         {/* Invoice Printable Sheet */}
         <div className="p-8 space-y-6 print:p-6 text-slate-800 bg-white overflow-y-auto modal-scrollable overscroll-contain flex-1" id="printable-invoice">
           
+          {/* Top Animated Hadith Banner */}
+          <PageHadithBanner 
+            text={siteSettings?.hadith_invoice} 
+            defaultText="🌸 হাদিস: সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে। (তিরমিযী)" 
+            className="w-full shadow-2xs"
+          />
+
           {/* Header with Official Logo at Top Corner */}
           <div className="flex items-start justify-between border-b border-amber-200/80 pb-6">
             <div className="flex items-center space-x-4">
               <img 
-                src="/logo.jpg" 
+                src={siteSettings?.logo_url || "/logo.jpg"} 
                 alt="AL ANSAR Logo" 
-                className="h-16 w-16 object-contain rounded-2xl border-2 border-amber-300 shadow-xs" 
+                onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpg'; }}
+                className="h-16 w-16 object-contain rounded-2xl border-2 border-amber-400 ring-2 ring-amber-300/40 shadow-xs bg-white p-1" 
               />
               <div>
                 <div className="flex items-baseline space-x-1.5">
-                  <span className="text-2xl font-black text-slate-900 tracking-tight">
-                    AL ANSAR
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    {siteSettings?.store_name || 'AL ANSAR SUPER SHOP'}
                   </span>
                 </div>
                 <p className="text-xs text-amber-800 font-bold tracking-wider">
-                  আল আনসার • লাক্সারি পারফিউম ও খাঁটি আতর
+                  {siteSettings?.store_name_bn || 'আল আনসার সুপার শপ'} • প্রিমিয়াম কোয়ালিটি ও বিশ্বস্ত সেবা
                 </p>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs">{siteSettings?.showroom_address || siteSettings?.store_address || 'উত্তরা, ঢাকা-১২৩০, বাংলাদেশ'}</p>
                 <p className="text-xs text-slate-500 font-medium">হটলাইন: {siteSettings?.store_phone || '+880 1711-223344'}</p>

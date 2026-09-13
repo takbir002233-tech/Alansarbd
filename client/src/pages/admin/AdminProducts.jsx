@@ -52,6 +52,10 @@ export default function AdminProducts() {
     priority_order: '1'
   });
 
+  // Discount Engine State for Add / Edit Modal (Auto generates New Price from Discount % or ৳)
+  const [discountPercentInput, setDiscountPercentInput] = useState('');
+  const [discountAmountInput, setDiscountAmountInput] = useState('');
+
   // Dynamic Specification Points List: Array of { key: string, value: string }
   const [specsList, setSpecsList] = useState([
     { key: 'Brand', value: 'AL ANSAR Luxury Collection' },
@@ -99,6 +103,8 @@ export default function AdminProducts() {
       is_free_delivery: false,
       priority_order: String(products.length + 1)
     });
+    setDiscountPercentInput('');
+    setDiscountAmountInput('');
     setSpecsList([
       { key: 'Brand', value: 'AL ANSAR Luxury Collection' },
       { key: 'Type', value: 'Eau de Parfum (EDP)' },
@@ -124,6 +130,18 @@ export default function AdminProducts() {
       priority_order: String(prod.priority_order || 1)
     });
 
+    const reg = Number(prod.price) || 0;
+    const sale = Number(prod.discount_price) || 0;
+    if (reg > 0 && sale > 0 && sale < reg) {
+      const pct = Math.round(((reg - sale) / reg) * 100);
+      const amt = reg - sale;
+      setDiscountPercentInput(String(pct));
+      setDiscountAmountInput(String(amt));
+    } else {
+      setDiscountPercentInput('');
+      setDiscountAmountInput('');
+    }
+
     // Convert specs object to array
     if (prod.specs && typeof prod.specs === 'object') {
       const arr = Object.entries(prod.specs).map(([k, v]) => ({ key: k, value: String(v) }));
@@ -133,6 +151,117 @@ export default function AdminProducts() {
     }
 
     setModalOpen(true);
+  };
+
+  // Smart Price & Auto-Discount Calculation Handlers
+  const handleRegularPriceChange = (val) => {
+    const regPrice = Number(val);
+    let newDiscountPrice = formData.discount_price;
+    let newDiscountAmt = discountAmountInput;
+
+    if (val === '' || isNaN(regPrice) || regPrice <= 0) {
+      setFormData(prev => ({ ...prev, price: val, discount_price: '' }));
+      setDiscountPercentInput('');
+      setDiscountAmountInput('');
+      return;
+    }
+
+    if (discountPercentInput !== '' && !isNaN(Number(discountPercentInput)) && Number(discountPercentInput) > 0) {
+      const pct = Number(discountPercentInput);
+      const savings = Math.round(regPrice * (pct / 100));
+      const calculatedSale = Math.max(0, regPrice - savings);
+      newDiscountPrice = String(calculatedSale);
+      newDiscountAmt = String(savings);
+      setDiscountAmountInput(newDiscountAmt);
+    } else if (discountAmountInput !== '' && !isNaN(Number(discountAmountInput)) && Number(discountAmountInput) > 0) {
+      const amt = Number(discountAmountInput);
+      const calculatedSale = Math.max(0, regPrice - amt);
+      const pct = Math.round((amt / regPrice) * 100);
+      newDiscountPrice = String(calculatedSale);
+      setDiscountPercentInput(String(pct));
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      price: val,
+      discount_price: newDiscountPrice
+    }));
+  };
+
+  const handleDiscountPercentChange = (pctVal) => {
+    setDiscountPercentInput(pctVal);
+    const reg = Number(formData.price);
+
+    if (pctVal === '' || isNaN(Number(pctVal)) || Number(pctVal) <= 0) {
+      setDiscountAmountInput('');
+      setFormData(prev => ({ ...prev, discount_price: '' }));
+      return;
+    }
+
+    const pct = Math.min(100, Math.max(0, Number(pctVal)));
+    if (reg > 0) {
+      const savings = Math.round(reg * (pct / 100));
+      const newSalePrice = Math.max(0, reg - savings);
+      setDiscountAmountInput(String(savings));
+      setFormData(prev => ({
+        ...prev,
+        discount_price: String(newSalePrice)
+      }));
+    }
+  };
+
+  const handleDiscountAmountChange = (amtVal) => {
+    setDiscountAmountInput(amtVal);
+    const reg = Number(formData.price);
+
+    if (amtVal === '' || isNaN(Number(amtVal)) || Number(amtVal) <= 0) {
+      setDiscountPercentInput('');
+      setFormData(prev => ({ ...prev, discount_price: '' }));
+      return;
+    }
+
+    const amt = Number(amtVal);
+    if (reg > 0) {
+      const newSalePrice = Math.max(0, reg - amt);
+      const pct = Math.round((amt / reg) * 100);
+      setDiscountPercentInput(String(pct));
+      setFormData(prev => ({
+        ...prev,
+        discount_price: String(newSalePrice)
+      }));
+    }
+  };
+
+  const handleSalePriceChange = (saleVal) => {
+    setFormData(prev => ({ ...prev, discount_price: saleVal }));
+    const reg = Number(formData.price);
+    const sale = Number(saleVal);
+
+    if (saleVal === '' || isNaN(sale) || sale <= 0 || reg <= 0) {
+      setDiscountPercentInput('');
+      setDiscountAmountInput('');
+      return;
+    }
+
+    if (sale < reg) {
+      const savings = reg - sale;
+      const pct = Math.round((savings / reg) * 100);
+      setDiscountPercentInput(String(pct));
+      setDiscountAmountInput(String(savings));
+    } else {
+      setDiscountPercentInput('0');
+      setDiscountAmountInput('0');
+    }
+  };
+
+  const handleQuickDiscountPreset = (pct) => {
+    if (pct === 0) {
+      setDiscountPercentInput('');
+      setDiscountAmountInput('');
+      setFormData(prev => ({ ...prev, discount_price: '' }));
+      return;
+    }
+    handleDiscountPercentChange(String(pct));
   };
 
   // Specs Points Handlers
@@ -642,47 +771,151 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              {/* 💰 3. PRICING & AUTO DISCOUNT DISPLAY */}
-              <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1">
-                      Regular Price / আগের মূল্য (BDT) *
+              {/* 💰 3. PRICING & SMART AUTO-GENERATED DISCOUNT ENGINE */}
+              <div className="p-4 bg-gradient-to-b from-slate-800 to-slate-900 rounded-2xl border-2 border-amber-500/40 shadow-md space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg">
+                      <Percent className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-black text-white">দাম ও ডিসকাউন্ট (Pricing & Auto Discount Engine)</h4>
+                      <p className="text-[10px] text-slate-400">আগের দাম ও ডিসকাউন্ট দিলে নতুন বিক্রয় মূল্য অটো জেনারেট হবে</p>
+                    </div>
+                  </div>
+                  {formData.discount_price && Number(formData.discount_price) < Number(formData.price) && (
+                    <span className="text-[11px] font-black text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{discountPercentInput || liveDiscountPercent}% ছাড় চালু</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* 3 Interlinked Fields: 1) Previous Price, 2) Discount % / Tk, 3) Auto-Generated New Price */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {/* Field 1: Previous Price / Regular Price */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300 block">
+                      আগের দাম / Regular Price (৳) *
                     </label>
                     <input
                       type="number"
                       required
-                      placeholder="e.g. 4500"
+                      placeholder="e.g. 1000"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono font-bold"
+                      onChange={(e) => handleRegularPriceChange(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-950 text-sm font-bold font-mono rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-400 placeholder-slate-600"
                     />
+                    <span className="text-[10px] text-slate-400 block">পণ্যের মূল বা আগের মূল্য</span>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-amber-300 block mb-1">
-                      Sale Price / বর্তমান মূল্য (BDT)
+                  {/* Field 2: Discount (%) and (৳) */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-amber-300 block flex items-center justify-between">
+                      <span>ডিসকাউন্ট / ছাড় (%) বা (৳)</span>
+                      {discountPercentInput && <span className="text-emerald-400 font-mono font-bold">{discountPercentInput}%</span>}
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          placeholder="20%"
+                          min="0"
+                          max="100"
+                          value={discountPercentInput}
+                          onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                          className="w-full pl-2.5 pr-6 py-2.5 bg-slate-950 text-xs font-bold font-mono rounded-xl border border-amber-500/50 text-amber-300 focus:outline-none focus:border-amber-400 placeholder-slate-600"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-amber-400 font-bold">%</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          placeholder="৳ ছাড়"
+                          min="0"
+                          value={discountAmountInput}
+                          onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                          className="w-full pl-2 pr-5 py-2.5 bg-slate-950 text-xs font-bold font-mono rounded-xl border border-amber-500/50 text-amber-300 focus:outline-none focus:border-amber-400 placeholder-slate-600"
+                        />
+                        <span className="absolute right-1.5 top-2.5 text-xs text-amber-400 font-bold">৳</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-amber-400/80 block">% অথবা টাকায় ছাড় লিখুন</span>
+                  </div>
+
+                  {/* Field 3: Auto-Generated New Price / Sale Price */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-emerald-300 block flex items-center justify-between">
+                      <span>নতুন দাম / New Price (৳)</span>
+                      <span className="text-[9.5px] bg-emerald-950 text-emerald-400 border border-emerald-600/50 px-1.5 py-0.5 rounded font-bold">
+                        ✨ Auto Generate
+                      </span>
                     </label>
                     <input
                       type="number"
-                      placeholder="e.g. 3600 (ডিসকাউন্ট মূল্য)"
+                      placeholder="অটো জেনারেট হবে (e.g. 800)"
                       value={formData.discount_price}
-                      onChange={(e) => setFormData({ ...formData, discount_price: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono font-bold text-amber-300"
+                      onChange={(e) => handleSalePriceChange(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-emerald-950/40 text-sm font-black font-mono rounded-xl border-2 border-emerald-500/70 text-emerald-300 focus:outline-none focus:border-emerald-400 placeholder-emerald-700/50"
                     />
+                    <span className="text-[10px] text-emerald-400/80 block">কাস্টমার এই নতুন দামে কিনবে</span>
                   </div>
                 </div>
 
-                {/* Live Auto-Discount Calculation Preview Box */}
-                {hasLiveDiscount && (
-                  <div className="p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-300 animate-in fade-in">
-                    <span className="font-bold flex items-center">
-                      <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
-                      Auto-Calculated Discount: <strong className="text-amber-300 ml-1 font-black text-sm">{liveDiscountPercent}% OFF</strong>
-                    </span>
-                    <span className="bg-emerald-900 px-3 py-1 rounded-full font-black text-xs border border-emerald-400/40">
-                      Customer Saves: ৳{liveSavings.toLocaleString()}
-                    </span>
+                {/* Quick 1-Click Discount Preset Buttons */}
+                <div className="pt-2 border-t border-slate-700/70">
+                  <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
+                    <span className="text-[11px] font-bold text-slate-400 mr-1 flex-shrink-0">কুইক ডিসকাউন্ট:</span>
+                    {[5, 10, 15, 20, 25, 30, 40, 50].map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => handleQuickDiscountPreset(pct)}
+                        className={`px-2 py-1 rounded-lg text-xs font-bold font-mono transition-all flex-shrink-0 cursor-pointer ${
+                          discountPercentInput === String(pct)
+                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                            : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700'
+                        }`}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDiscountPreset(0)}
+                      className="px-2 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-rose-900/40 border border-slate-700 transition-all flex-shrink-0 cursor-pointer"
+                    >
+                      ছাড় নেই (Reset)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Auto-Discount Preview Result Box */}
+                {formData.price && Number(formData.price) > 0 && (
+                  <div className={`p-3 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${
+                    formData.discount_price && Number(formData.discount_price) < Number(formData.price)
+                      ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200'
+                      : 'bg-slate-900 border-slate-700 text-slate-400'
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                      <span>
+                        আগের দাম: <strong className="text-white font-mono">৳{Number(formData.price).toLocaleString()}</strong>
+                        {formData.discount_price && Number(formData.discount_price) < Number(formData.price) ? (
+                          <>
+                            {' → '}ছাড়: <strong className="text-amber-300 font-bold">{discountPercentInput || liveDiscountPercent}% (৳{Number(discountAmountInput || liveSavings).toLocaleString()})</strong>
+                            {' → '}নতুন বিক্রয় মূল্য: <strong className="text-emerald-300 text-sm font-black font-mono">৳{Number(formData.discount_price).toLocaleString()}</strong>
+                          </>
+                        ) : (
+                          <span className="text-slate-400 ml-1.5">(কোনো ছাড় নেই, রেগুলার মূল্যে বিক্রি হবে)</span>
+                        )}
+                      </span>
+                    </div>
+                    {formData.discount_price && Number(formData.discount_price) < Number(formData.price) && (
+                      <span className="bg-emerald-900/90 text-emerald-300 px-2.5 py-0.5 rounded-full font-black text-[11px] border border-emerald-400/40 flex-shrink-0 self-start sm:self-auto">
+                        ক্রেতা সাশ্রয় করবে ৳{Number(discountAmountInput || liveSavings).toLocaleString()}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

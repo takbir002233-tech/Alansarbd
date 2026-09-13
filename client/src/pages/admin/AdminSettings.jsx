@@ -58,6 +58,13 @@ export default function AdminSettings() {
     marquee_text: '✨ আসসালামু আলাইকুম! আল আনসার-এ আপনাকে স্বাগতম • ভাউচার কোড ANSAR10 ব্যবহারে পান ১০% তাৎক্ষণিক ছাড় • ২০০০ টাকার বেশি অর্ডারে সারাদেশে ফ্রি হোম ডেলিভারি • বিনা সুদে করযে হাসানা (১০% তাৎক্ষণিক ধার) সুবিধা উপভোগ করুন ✨',
     marquee_enabled: true,
 
+    // Page-specific Hadith & Notice Banners CMS
+    hadith_product_details: '🌸 হাদিস: সৎ ও বিশ্বস্ত ব্যবসায়ী কিয়ামতের দিন নবী, সত্যবাদী ও শহীদদের সাথে থাকবেন। (তিরমিজি)',
+    hadith_checkout: '🌸 হাদিস: আল্লাহ সেই ব্যক্তির প্রতি রহম করেন, যে বিক্রির সময়, ক্রয়ের সময় ও পাওনা আদায়ের সময় নম্রতা প্রদর্শন করে। (সহীহ বুখারী)',
+    hadith_invoice: '🌸 হাদিস: সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে। (তিরমিযী)',
+    hadith_qard_hasana: '🌸 হাদিস: যে ব্যক্তি কোনো মুসলিমের পার্থিব কষ্ট দূর করবে, আল্লাহ কিয়ামতের দিন তার কষ্ট দূর করবেন। (মুসলিম)',
+    hadith_loyalty_card: '🌸 হাদিস: তোমরা পারস্পরিক উপহার আদান-প্রদান করো, এতে পারস্পরিক ভালোবাসা বৃদ্ধি পাবে। (আল-আদাবুল মুফরাদ)',
+
     // Invoice Hadith & Slogans
     invoice_hadith_slogans: [
       '“সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে।” — (তিরমিযী)',
@@ -329,7 +336,7 @@ export default function AdminSettings() {
   const sections = [
     { id: 'brand', label: '১. ব্র্যান্ড ও লোগো', icon: Building },
     { id: 'marquee', label: '২. চলন্ত শিরোনাম', icon: Bell },
-    { id: 'invoice', label: '৩. ইনভয়েস হাদিস ও স্লোগান', icon: FileText },
+    { id: 'invoice', label: '৩. পেজ হাদিস ব্যানার ও ইনভয়েস CMS', icon: FileText },
     { id: 'qard', label: '৪. করযে হাসানা পেজ ও শর্তাবলী', icon: HandHeart },
     { id: 'loyalty', label: '৫. লয়ালটি কার্ড ও মেম্বারশিপ CMS', icon: Sparkles },
     { id: 'terms', label: '৬. শর্তাবলী ও পলিসি পেজ', icon: ShieldCheck },
@@ -532,49 +539,144 @@ export default function AdminSettings() {
               </div>
             )}
 
-            {/* SECTION 3: INVOICE HADITH & SLOGANS */}
+            {/* SECTION 3: PAGE HADITH BANNERS & INVOICE SLOGANS CMS */}
             {activeSection === 'invoice' && (
-              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-5 shadow-xl animate-in fade-in">
-                <h3 className="text-sm font-bold text-white flex items-center">
-                  <FileText className="w-4 h-4 mr-2 text-emerald-400" /> ৩. ইনভয়েসের নিচের হাদিস ও ইসলামিক স্লোগান (Invoice Hadith CMS)
-                </h3>
-                <p className="text-xs text-slate-400">
-                  গ্রাহক যখন ইনভয়েস প্রিন্ট বা PDF ডাউনলোড করবেন, তখন নিচের এই হাদিস ও স্লোগানগুলো ইনভয়েস কাগজের নিচে স্বয়ংক্রিয়ভাবে মুদ্রিত হবে।
-                </p>
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-slate-800 space-y-7 shadow-xl animate-in fade-in">
+                
+                {/* PART A: 5 KEY PAGES HADITH BANNERS */}
+                <div className="space-y-4 pb-6 border-b border-slate-800">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <h3 className="text-sm font-bold text-white">
+                      ৩.ক. ৫টি প্রধান পেজের ইসলামিক হাদিস / বিজ্ঞাপন ব্যানার CMS
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    ওয়েবসাইটের ৫টি মূল পেজে ব্যাক বাটন ও ব্যাজের মাঝে এই এনিমেটেড হাদিস ব্যানার প্রদর্শিত হবে। আপনি চাইলে যেকোনো লেখা পরিবর্তন করতে পারেন।
+                  </p>
 
-                <div className="space-y-2">
-                  {(form.invoice_hadith_slogans || []).map((slogan, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-800 rounded-xl border border-slate-700 text-xs text-amber-200">
-                      <span className="flex-1 pr-3">“{slogan}”</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSlogan(idx)}
-                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                        title="মুছে ফেলুন"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  <div className="space-y-4 pt-1">
+                    {/* 1. Product Details */}
+                    <div>
+                      <label className="text-xs font-bold text-amber-300 block mb-1">
+                        ১. পণ্য বিস্তারিত পেজ ব্যানার (Product Details Hadith Banner)
+                      </label>
+                      <input
+                        type="text"
+                        name="hadith_product_details"
+                        value={form.hadith_product_details || ''}
+                        onChange={handleChange}
+                        placeholder="🌸 হাদিস: সৎ ও বিশ্বস্ত ব্যবসায়ী কিয়ামতের দিন নবী, সত্যবাদী ও শহীদদের সাথে থাকবেন। (তিরমিজি)"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                      />
                     </div>
-                  ))}
+
+                    {/* 2. Checkout Page */}
+                    <div>
+                      <label className="text-xs font-bold text-emerald-300 block mb-1">
+                        ২. চেকআউট পেজ ব্যানার (Checkout Hadith Banner)
+                      </label>
+                      <input
+                        type="text"
+                        name="hadith_checkout"
+                        value={form.hadith_checkout || ''}
+                        onChange={handleChange}
+                        placeholder="🌸 হাদিস: আল্লাহ সেই ব্যক্তির প্রতি রহম করেন, যে বিক্রির সময়, ক্রয়ের সময় ও পাওনা আদায়ের সময় নম্রতা প্রদর্শন করে। (সহীহ বুখারী)"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* 3. Invoice Header */}
+                    <div>
+                      <label className="text-xs font-bold text-cyan-300 block mb-1">
+                        ৩. অফিসিয়াল ইনভয়েস শীর্ষ ব্যানার (Invoice Header Hadith Banner)
+                      </label>
+                      <input
+                        type="text"
+                        name="hadith_invoice"
+                        value={form.hadith_invoice || ''}
+                        onChange={handleChange}
+                        placeholder="🌸 হাদিস: সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে। (তিরমিযী)"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    {/* 4. Qard Hasana Page */}
+                    <div>
+                      <label className="text-xs font-bold text-teal-300 block mb-1">
+                        ৪. করযে হাসানা পেজ ব্যানার (Qard Hasana Hadith Banner)
+                      </label>
+                      <input
+                        type="text"
+                        name="hadith_qard_hasana"
+                        value={form.hadith_qard_hasana || ''}
+                        onChange={handleChange}
+                        placeholder="🌸 হাদিস: যে ব্যক্তি কোনো মুসলিমের পার্থিব কষ্ট দূর করবে, আল্লাহ কিয়ামতের দিন তার কষ্ট দূর করবেন। (মুসলিম)"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-teal-500"
+                      />
+                    </div>
+
+                    {/* 5. VIP Loyalty Card Page */}
+                    <div>
+                      <label className="text-xs font-bold text-violet-300 block mb-1">
+                        ৫. ভিআইপি মেম্বারশিপ ও লয়ালটি কার্ড ব্যানার (VIP Loyalty Card Hadith Banner)
+                      </label>
+                      <input
+                        type="text"
+                        name="hadith_loyalty_card"
+                        value={form.hadith_loyalty_card || ''}
+                        onChange={handleChange}
+                        placeholder="🌸 হাদিস: তোমরা পারস্পরিক উপহার আদান-প্রদান করো, এতে পারস্পরিক ভালোবাসা বৃদ্ধি পাবে। (আল-আদাবুল মুফরাদ)"
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-violet-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex space-x-2 pt-2">
-                  <input
-                    type="text"
-                    placeholder="নতুন হাদিস বা স্লোগান লিখুন..."
-                    value={newSloganInput}
-                    onChange={(e) => setNewSloganInput(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddSlogan}
-                    className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center space-x-1 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>যোগ করুন</span>
-                  </button>
+                {/* PART B: INVOICE FOOTER PRINTABLE SLOGANS */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-white flex items-center">
+                    <FileText className="w-4 h-4 mr-2 text-emerald-400" /> ৩.খ. ইনভয়েসের নিচের হাদিস ও ইসলামিক স্লোগান (Invoice Footer Slogans CMS)
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    গ্রাহক যখন ইনভয়েস প্রিন্ট বা PDF ডাউনলোড করবেন, তখন নিচের এই হাদিস ও স্লোগানগুলো ইনভয়েস কাগজের নিচে স্বয়ংক্রিয়ভাবে মুদ্রিত হবে।
+                  </p>
+
+                  <div className="space-y-2">
+                    {(form.invoice_hadith_slogans || []).map((slogan, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-800 rounded-xl border border-slate-700 text-xs text-amber-200">
+                        <span className="flex-1 pr-3">“{slogan}”</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSlogan(idx)}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex space-x-2 pt-2">
+                    <input
+                      type="text"
+                      placeholder="নতুন হাদিস বা স্লোগান লিখুন..."
+                      value={newSloganInput}
+                      onChange={(e) => setNewSloganInput(e.target.value)}
+                      className="flex-1 px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSlogan}
+                      className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>যোগ করুন</span>
+                    </button>
+                  </div>
                 </div>
+
               </div>
             )}
 

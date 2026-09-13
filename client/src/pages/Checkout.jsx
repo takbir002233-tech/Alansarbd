@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import PaymentGatewayModal from '../components/PaymentGatewayModal';
+import PageHadithBanner from '../components/PageHadithBanner';
 import useScrollLock from '../hooks/useScrollLock';
 import { 
   bangladeshDivisions, 
@@ -287,18 +288,24 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5 font-sans animate-in fade-in">
       
-      {/* Top Standardized Universal Back Button & Security Badge */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-5">
+      {/* Top Standardized Universal Back Button, Hadith Banner & Security Badge */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-5 gap-3 flex-wrap sm:flex-nowrap">
         <button
           type="button"
           onClick={onBack || (() => onNavigate('home'))}
-          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs"
+          className="inline-flex items-center space-x-2 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer shadow-2xs flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4 text-amber-800" />
           <span>← পিছনে যান (Back)</span>
         </button>
 
-        <div className="flex items-center space-x-2 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 shadow-2xs">
+        <PageHadithBanner 
+          text={siteSettings?.hadith_checkout} 
+          defaultText="🌸 হাদিস: আল্লাহ সেই ব্যক্তির প্রতি রহম করেন, যে বিক্রির সময়, ক্রয়ের সময় ও পাওনা আদায়ের সময় নম্রতা প্রদর্শন করে। (সহীহ বুখারী)" 
+          className="flex-1 max-w-xl mx-auto"
+        />
+
+        <div className="flex items-center space-x-2 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 shadow-2xs flex-shrink-0">
           <Lock className="w-3.5 h-3.5 text-emerald-600" />
           <span>২৫৬-বিট এনক্রিপ্টেড নিরাপদ চেকআউট</span>
         </div>
@@ -726,6 +733,7 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         totalAmount={grandTotal}
+        deliveryFee={deliveryFee}
         siteSettings={siteSettings}
         user={user}
         onConfirmPayment={handleConfirmPaymentOrder}
