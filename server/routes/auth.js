@@ -115,7 +115,13 @@ router.post('/login', (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        is_staff: user.is_staff || false,
+        permissions: user.permissions || []
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -137,8 +143,21 @@ router.post('/login', (req, res) => {
 
 // GET CURRENT USER PROFILE
 router.get('/me', authenticateToken, (req, res) => {
-  const safeUser = { ...req.user };
+  const user = db.getUserById(req.user.id) || req.user;
+  const safeUser = { ...user };
   delete safeUser.password_hash;
+
+  // Check if user has pending deletion appeal
+  const appeals = db.getAccountAppeals() || [];
+  const pendingAppeal = appeals.find(a => 
+    (a.user_id === user.id || (a.user_email && a.user_email === user.email) || (a.user_phone && a.user_phone === user.phone)) &&
+    a.appeal_type === 'account_deletion' &&
+    a.status === 'Under Review'
+  );
+  if (pendingAppeal) {
+    safeUser.pending_deletion_appeal = pendingAppeal;
+  }
+
   return res.json({ success: true, user: safeUser });
 });
 
@@ -282,4 +301,100 @@ router.post('/reset-password', (req, res) => {
   }
 });
 
+// SELF DELETE ACCOUNT BY USER (Only allowed if no active VIP card or Korje Hasana)
+router.delete('/me', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = db.getUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Administrator accounts cannot be deleted directly through user dashboard.' });
+    }
+
+    // Check if user has active VIP Card or Korje Hasana Credit
+    const hasVip = user.loyalty_card_approved === true || user.loyalty_card_status === 'Approved';
+    const hasQard = user.qard_status === 'Approved';
+
+    if (hasVip || hasQard) {
+      return res.status(400).json({
+        success: false,
+        requires_appeal: true,
+        message: 'আপনার অ্যাকাউন্টে সক্রিয় ভিআইপি লয়ালটি কার্ড বা করযে হাসানা ক্রেডিট সক্রিয় রয়েছে। অ্যাকাউন্ট বন্ধ করতে অনুগ্রহ করে অ্যাডমিন বরাবরে আপিল আবেদন জমা দিন।'
+      });
+    }
+
+    const success = db.deleteUser(userId);
+    if (!success) {
+      return res.status(500).json({ success: false, message: 'Could not delete user account.' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'আপনার অ্যাকাউন্টটি সফলভাবে চিরতরে মুছে ফেলা হয়েছে।'
+    });
+  } catch (err) {
+    console.error('Self account deletion error:', err);
+    return res.status(500).json({ success: false, message: 'Server error deleting account.' });
+  }
+});
+
+// SUBMIT ACCOUNT DELETION APPEAL (For VIP Card or Korje Hasana holders)
+router.post('/delete-appeal', authenticateToken, (req, res) => {
+  try {
+    const user = db.getUserById(req.user.id) || req.user;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ success: false, message: 'অ্যাকাউন্ট বাতিলের কারণ বা বিস্তারিত ব্যাখ্যা লিখুন।' });
+    }
+
+    // Check for existing pending deletion appeal
+    const existingAppeals = db.getAccountAppeals() || [];
+    const pendingExisting = existingAppeals.find(a => 
+      (a.user_id === user.id || (a.user_email && a.user_email === user.email) || (a.user_phone && a.user_phone === user.phone)) &&
+      a.appeal_type === 'account_deletion' &&
+      a.status === 'Under Review'
+    );
+
+    if (pendingExisting) {
+      return res.status(400).json({
+        success: false,
+        message: 'আপনার একটি অ্যাকাউন্ট বাতিলের আপিল ইতিমধ্যে অ্যাডমিন প্যানেলে পর্যালোচনায় রয়েছে।'
+      });
+    }
+
+    const hasVip = user.loyalty_card_approved === true || user.loyalty_card_status === 'Approved';
+    const hasQard = user.qard_status === 'Approved';
+
+    const appeal = db.createAccountAppeal({
+      appeal_type: 'account_deletion',
+      user_id: user.id,
+      user_email: user.email || '',
+      user_phone: user.phone || '',
+      user_name: user.name || '',
+      reason: reason.trim(),
+      has_vip: hasVip,
+      has_qard: hasQard,
+      loyalty_card_number: user.loyalty_card_number || null,
+      loyalty_points: user.loyalty_points || 0,
+      qard_limit: user.qard_credit_limit || 0,
+      status: 'Under Review'
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'আপনার অ্যাকাউন্ট বাতিলের আপিল সফলভাবে অ্যাডমিন প্যানেলে জমা হয়েছে। অ্যাডমিন পর্যালোচনা করে চূড়ান্ত সিদ্ধান্ত গ্রহণ করবে।',
+      appeal
+    });
+  } catch (err) {
+    console.error('Error submitting delete appeal:', err);
+    return res.status(500).json({ success: false, message: 'আবেদন পাঠাতে সমস্যা হয়েছে।' });
+  }
+});
+
 module.exports = router;
+

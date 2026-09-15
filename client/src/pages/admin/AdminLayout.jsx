@@ -4,29 +4,44 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingBag, 
-  Layers,
+  Layers, 
   Users, 
   MessageSquare, 
   Settings, 
   LogOut, 
-  Store,
-  Tag,
-  Sparkles
+  Store, 
+  Tag, 
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function AdminLayout({ children, activeTab, setActiveTab, onNavigate }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin, hasPermission } = useAuth();
 
-  const navigation = [
-    { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
-    { id: 'orders', label: 'Orders & Courier Trace', icon: Package },
-    { id: 'products', label: 'Perfumes & Inventory', icon: ShoppingBag },
-    { id: 'categories', label: 'Categories & Sub-Categories', icon: Layers },
-    { id: 'vouchers', label: 'Vouchers & Promo Codes', icon: Tag },
-    { id: 'users', label: 'Customer Management', icon: Users },
-    { id: 'chat', label: 'Live Support Desk', icon: MessageSquare },
-    { id: 'settings', label: 'Global CMS & Settings', icon: Settings },
+  const allNavigation = [
+    { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard, perm: 'dashboard.view' },
+    { id: 'orders', label: 'Orders & Courier Trace', icon: Package, perm: 'orders.view' },
+    { id: 'products', label: 'Perfumes & Inventory', icon: ShoppingBag, perm: 'products.view' },
+    { id: 'categories', label: 'Categories & Sub-Categories', icon: Layers, perm: 'categories.manage' },
+    { id: 'vouchers', label: 'Vouchers & Promo Codes', icon: Tag, perm: 'vouchers.manage' },
+    { id: 'users', label: 'Customer Management', icon: Users, perm: 'customers.view' },
+    { id: 'chat', label: 'Live Support Desk', icon: MessageSquare, perm: 'chat.manage' },
+    { id: 'settings', label: 'Global CMS & Settings', icon: Settings, perm: 'settings.manage' },
+    { id: 'staff', label: 'স্টাফ ও পারমিশন কন্ট্রোল', icon: ShieldCheck, superOnly: true },
   ];
+
+  // Filter navigation items by role and granular permissions
+  const navigation = allNavigation.filter(item => {
+    if (item.superOnly) return isSuperAdmin;
+    return hasPermission(item.perm);
+  });
+
+  // Auto-redirect to first available tab if current active tab is unauthorized
+  React.useEffect(() => {
+    if (navigation.length > 0 && !navigation.some(n => n.id === activeTab)) {
+      setActiveTab(navigation[0].id);
+    }
+  }, [navigation, activeTab, setActiveTab]);
 
   return (
     <div 
@@ -39,7 +54,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
         <div className="space-y-8">
           
           {/* Brand Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(navigation[0]?.id || 'dashboard')}>
             <img 
               src="/logo.jpg" 
               alt="AL ANSAR" 
@@ -53,7 +68,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
                 </span>
               </div>
               <p className="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">
-                Admin Master Control
+                {user?.is_staff ? (user.custom_role || 'Staff Control') : 'Admin Master Control'}
               </p>
             </div>
           </div>
@@ -90,7 +105,13 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white truncate">{user?.name || 'Administrator'}</p>
-                <p className="text-[10px] text-emerald-400">Super Admin Access</p>
+                {user?.is_staff ? (
+                  <span className="inline-block text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.2 rounded border border-amber-500/25 truncate max-w-[130px]">
+                    {user.custom_role || 'মডারেটর'}
+                  </span>
+                ) : (
+                  <p className="text-[10px] text-emerald-400 font-semibold">Super Admin Access</p>
+                )}
               </div>
             </div>
 

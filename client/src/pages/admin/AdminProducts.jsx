@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminProducts() {
-  const { token } = useAuth();
+  const { token, hasPermission } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -442,13 +442,15 @@ export default function AdminProducts() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Fragrance / Gift</span>
-        </button>
+        {hasPermission('products.create') && (
+          <button
+            onClick={handleOpenAddModal}
+            className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Fragrance / Gift</span>
+          </button>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -629,7 +631,7 @@ export default function AdminProducts() {
                             <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center ${
                               isOut
                                 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                : stockNum <= 5
+                                : stockNum <= 10
                                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                 : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             }`}>
@@ -668,21 +670,29 @@ export default function AdminProducts() {
                       {/* Actions */}
                       <td className="p-4 align-middle text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleOpenEditModal(prod)}
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl"
-                            title="Edit Product"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
+                          {hasPermission('products.edit') && (
+                            <button
+                              onClick={() => handleOpenEditModal(prod)}
+                              className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl"
+                              title="Edit Product"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
-                          <button
-                            onClick={() => setDeleteConfirm(prod.id)}
-                            className="p-2 bg-slate-800 hover:bg-rose-900/60 text-rose-400 rounded-xl"
-                            title="Delete Product"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {hasPermission('products.delete') && (
+                            <button
+                              onClick={() => setDeleteConfirm(prod.id)}
+                              className="p-2 bg-slate-800 hover:bg-rose-900/60 text-rose-400 rounded-xl"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {!hasPermission('products.edit') && !hasPermission('products.delete') && (
+                            <span className="text-[10px] text-slate-500 font-semibold italic">ভিউ অনলি</span>
+                          )}
                         </div>
                       </td>
                     </tr>

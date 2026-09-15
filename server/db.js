@@ -875,6 +875,15 @@ class Database {
     return this.data.users[idx];
   }
 
+  deleteUser(id) {
+    const idx = this.data.users.findIndex(u => u.id === id);
+    if (idx === -1) return false;
+    this.data.users.splice(idx, 1);
+    this.save();
+    return true;
+  }
+
+
   // Products
   getProducts() { 
     return [...this.data.products].sort((a, b) => (a.priority_order || 999) - (b.priority_order || 999)); 
@@ -1050,16 +1059,17 @@ class Database {
   
   createOrder(orderData) {
     const orderNumber = orderData.order_code || orderData.order_number || ('ANSAR-' + Math.floor(100000 + Math.random() * 900000));
-    const trackingCode = 'STF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const trackingUrl = `https://steadfast.com.bd/t/${trackingCode}`;
     
     const newOrder = {
       id: 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       order_code: orderNumber,
       order_number: orderNumber,
-      tracking_code: trackingCode,
-      tracking_url: trackingUrl,
-      courier_status: 'Processing at Uttara Hub',
+      tracking_code: orderData.tracking_code || null,
+      tracking_url: orderData.tracking_url || null,
+      courier_name: orderData.courier_name || null,
+      consignment_id: orderData.consignment_id || null,
+      courier_tracking_url: orderData.courier_tracking_url || null,
+      courier_status: orderData.courier_status || null,
       created_at: new Date().toISOString(),
       status: 'Pending',
       ...orderData
@@ -1359,10 +1369,15 @@ class Database {
 
     if (status === 'Resolved') {
       let user = null;
-      if (appeal.user_email) user = this.getUserByEmail(appeal.user_email);
+      if (appeal.user_id) user = this.getUserById(appeal.user_id);
+      if (!user && appeal.user_email) user = this.getUserByEmail(appeal.user_email);
       if (!user && appeal.user_phone) user = this.getUserByPhone(appeal.user_phone);
       if (user) {
-        user.is_blocked = false;
+        if (appeal.appeal_type === 'account_deletion') {
+          this.deleteUser(user.id);
+        } else {
+          user.is_blocked = false;
+        }
       }
     }
     this.save();
@@ -1375,6 +1390,65 @@ class Database {
     this.data.site_settings = { ...this.data.site_settings, ...newSettings };
     this.save();
     return this.data.site_settings;
+  }
+
+  // STAFF / SUB-ADMIN MANAGEMENT
+  getStaffUsers() {
+    return (this.data.users || [])
+      .filter(u => u.is_staff === true)
+      .map(u => {
+        const safe = { ...u };
+        delete safe.password_hash;
+        return safe;
+      });
+  }
+
+  createStaffUser(staffData) {
+    if (!this.data.users) this.data.users = [];
+    const newStaff = {
+      id: 'usr_staff_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      is_staff: true,
+      role: 'admin',
+      custom_role: staffData.custom_role || 'মডারেটর',
+      permissions: Array.isArray(staffData.permissions) ? staffData.permissions : [],
+      is_blocked: false,
+      created_at: new Date().toISOString(),
+      ...staffData
+    };
+    this.data.users.push(newStaff);
+    this.save();
+    return newStaff;
+  }
+
+  updateStaffUser(id, updates) {
+    const user = (this.data.users || []).find(u => u.id === id && u.is_staff === true);
+    if (!user) return null;
+
+    if (updates.name) user.name = updates.name.trim();
+    if (updates.phone) user.phone = updates.phone.trim();
+    if (updates.email) user.email = updates.email.trim();
+    if (updates.custom_role) user.custom_role = updates.custom_role.trim();
+    if (updates.permissions && Array.isArray(updates.permissions)) {
+      user.permissions = updates.permissions;
+    }
+    if (updates.is_blocked !== undefined) {
+      user.is_blocked = Boolean(updates.is_blocked);
+    }
+    if (updates.password_hash) {
+      user.password_hash = updates.password_hash;
+    }
+
+    user.updated_at = new Date().toISOString();
+    this.save();
+    return user;
+  }
+
+  deleteStaffUser(id) {
+    const index = (this.data.users || []).findIndex(u => u.id === id && u.is_staff === true);
+    if (index === -1) return false;
+    this.data.users.splice(index, 1);
+    this.save();
+    return true;
   }
 }
 

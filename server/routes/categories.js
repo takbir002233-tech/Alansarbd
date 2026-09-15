@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requirePermission } = require('../middleware/auth');
 
 // GET ALL CATEGORIES
 router.get('/', (req, res) => {
@@ -34,7 +34,7 @@ router.get('/:idOrSlug', (req, res) => {
 });
 
 // ADMIN: CREATE CATEGORY
-router.post('/', requireAdmin, (req, res) => {
+router.post('/', requirePermission('categories.manage'), (req, res) => {
   try {
     const { name, icon, image, priority_order, subcategories } = req.body;
 
@@ -62,7 +62,7 @@ router.post('/', requireAdmin, (req, res) => {
 });
 
 // ADMIN: UPDATE CATEGORY
-router.put('/:id', requireAdmin, (req, res) => {
+router.put('/:id', requirePermission('categories.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -88,7 +88,7 @@ router.put('/:id', requireAdmin, (req, res) => {
 });
 
 // ADMIN: DELETE CATEGORY
-router.delete('/:id', requireAdmin, (req, res) => {
+router.delete('/:id', requirePermission('categories.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const deleted = db.deleteCategory(id);
@@ -107,7 +107,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
 });
 
 // ADMIN: REORDER CATEGORY (Move Up / Down)
-router.post('/:id/reorder', requireAdmin, (req, res) => {
+router.post('/:id/reorder', requirePermission('categories.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const { direction } = req.body;
@@ -133,7 +133,7 @@ router.post('/:id/reorder', requireAdmin, (req, res) => {
 });
 
 // ADMIN: ADD SUBCATEGORY
-router.post('/:id/subcategories', requireAdmin, (req, res) => {
+router.post('/:id/subcategories', requirePermission('categories.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -160,7 +160,7 @@ router.post('/:id/subcategories', requireAdmin, (req, res) => {
 });
 
 // ADMIN: DELETE SUBCATEGORY
-router.delete('/:id/subcategories/:subId', requireAdmin, (req, res) => {
+router.delete('/:id/subcategories/:subId', requirePermission('categories.manage'), (req, res) => {
   try {
     const { id, subId } = req.params;
     const deleted = db.deleteSubcategory(id, subId);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requirePermission } = require('../middleware/auth');
 
 // Bot automated response knowledge engine
 function getAutomatedBotReply(messageText) {
@@ -123,7 +123,7 @@ router.post('/:convId/send', (req, res) => {
 });
 
 // ADMIN: GET ALL CONVERSATIONS LIST
-router.get('/admin/all', requireAdmin, (req, res) => {
+router.get('/admin/all', requirePermission('chat.manage'), (req, res) => {
   try {
     const conversations = db.getConversations();
     return res.json({ success: true, conversations });
@@ -134,7 +134,7 @@ router.get('/admin/all', requireAdmin, (req, res) => {
 });
 
 // ADMIN: REPLY TO USER
-router.post('/admin/:convId/reply', requireAdmin, (req, res) => {
+router.post('/admin/:convId/reply', requirePermission('chat.manage'), (req, res) => {
   try {
     const { convId } = req.params;
     const { text } = req.body;

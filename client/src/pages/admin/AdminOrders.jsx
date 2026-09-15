@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { 
   Package, 
+  ShoppingBag,
   Search, 
   Filter, 
   Printer, 
@@ -227,7 +229,8 @@ function getOrderDivision(order) {
 }
 
 export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
-  const { token } = useAuth();
+  const { token, hasPermission } = useAuth();
+  const { socket } = useSocket();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -237,6 +240,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [viewMode, setViewMode] = useState('division'); // 'division' | 'flat'
   const [confirmingId, setConfirmingId] = useState(null);
+  const [advancingId, setAdvancingId] = useState(null);
 
   // Sync initialStatus when changed from dashboard
   useEffect(() => {
@@ -248,7 +252,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
   // Courier Link Assignment Modal State
   const [editingCourierOrder, setEditingCourierOrder] = useState(null);
   const [courierForm, setCourierForm] = useState({
-    status: 'Shipped',
+    status: 'Processing',
     courier_name: 'Steadfast Courier',
     consignment_id: '',
     courier_tracking_url: '',
@@ -287,6 +291,38 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
     fetchOrders();
   }, [token, statusFilter, paymentFilter]);
 
+  // Real-time synchronization with Dashboard & Store via WebSocket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdated = (eventData) => {
+      if (eventData && eventData.order) {
+        setOrders(prev => {
+          const exists = prev.some(o => o.id === eventData.orderId);
+          if (!exists) return prev;
+          if (statusFilter !== 'all' && statusFilter.toLowerCase() !== (eventData.status || '').toLowerCase()) {
+            return prev.filter(o => o.id !== eventData.orderId);
+          }
+          return prev.map(o => o.id === eventData.orderId ? { ...o, ...eventData.order } : o);
+        });
+      } else {
+        fetchOrders();
+      }
+    };
+
+    const handleNewOrder = () => {
+      fetchOrders();
+    };
+
+    socket.on('order_status_updated', handleStatusUpdated);
+    socket.on('new_order', handleNewOrder);
+
+    return () => {
+      socket.off('order_status_updated', handleStatusUpdated);
+      socket.off('new_order', handleNewOrder);
+    };
+  }, [socket, statusFilter]);
+
   // 1-Click Order Confirmation (Moves order from Pending to Confirmed)
   const handleConfirmOrder = async (order) => {
     setConfirmingId(order.id);
@@ -308,11 +344,9 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
         
         // Optimistic update
         setOrders(prev => {
-          // If current tab is 'pending', removing it makes it disappear immediately!
           if (statusFilter === 'pending') {
             return prev.filter(o => o.id !== order.id);
           }
-          // Otherwise update its status
           return prev.map(o => o.id === order.id ? data.order : o);
         });
       } else {
@@ -326,14 +360,55 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
     }
   };
 
+  // 1-Click Status Progression (Confirmed -> Processing, Shipped -> Delivered)
+  const handleAdvanceStatus = async (order, nextStatus, noteText) => {
+    setAdvancingId(order.id);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: nextStatus,
+          note: noteText || `Order status updated to ${nextStatus}`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const msg = nextStatus === 'Processing'
+          ? `অর্ডার #${order.order_code} প্রসেসিং-এ পাঠানো হয়েছে!`
+          : nextStatus === 'Delivered'
+          ? `অর্ডার #${order.order_code} সফলভাবে ডেলিভার্ড সম্পন্ন হয়েছে!`
+          : `অর্ডার #${order.order_code} স্ট্যাটাস ${nextStatus} এ আপডেট হয়েছে!`;
+        showToast(msg);
+
+        setOrders(prev => {
+          if (statusFilter !== 'all' && statusFilter.toLowerCase() !== nextStatus.toLowerCase()) {
+            return prev.filter(o => o.id !== order.id);
+          }
+          return prev.map(o => o.id === order.id ? data.order : o);
+        });
+      } else {
+        alert(data.message || 'স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে');
+      }
+    } catch (err) {
+      console.error('Error advancing status:', err);
+      alert('স্ট্যাটাস আপডেট করার সময় ত্রুটি ঘটেছে');
+    } finally {
+      setAdvancingId(null);
+    }
+  };
+
   const handleOpenCourierModal = (order) => {
     setEditingCourierOrder(order);
     setCourierForm({
-      status: order.status === 'Pending' ? 'Processing' : (order.status || 'Shipped'),
+      status: order.status || 'Processing',
       courier_name: order.courier_name || 'Steadfast Courier',
       consignment_id: order.consignment_id || '',
-      courier_tracking_url: order.courier_tracking_url || '',
-      note: `Courier dispatched with ${order.courier_name || 'Steadfast'}`
+      courier_tracking_url: order.courier_tracking_url || order.tracking_url || '',
+      note: `Courier updated for #${order.order_code}`
     });
   };
 
@@ -353,14 +428,20 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`অর্ডার #${editingCourierOrder.order_code} এর কুরিয়ার ট্র্যাকিং লিংক যুক্ত হয়েছে!`);
-        setOrders(prev =>
-          prev.map(o => (o.id === editingCourierOrder.id ? data.order : o))
-        );
+        showToast(`অর্ডার #${editingCourierOrder.order_code} এর কুরিয়ার ট্র্যাকিং লিংক সফলভাবে সংরক্ষিত হয়েছে!`);
+        setOrders(prev => {
+          if (statusFilter !== 'all' && statusFilter.toLowerCase() !== (courierForm.status || '').toLowerCase()) {
+            return prev.filter(o => o.id !== editingCourierOrder.id);
+          }
+          return prev.map(o => (o.id === editingCourierOrder.id ? data.order : o));
+        });
         setEditingCourierOrder(null);
+      } else {
+        alert(data.message || 'কুরিয়ার লিংক সংরক্ষণ করতে সমস্যা হয়েছে');
       }
     } catch (err) {
       console.error('Error saving courier link:', err);
+      alert('কুরিয়ার লিংক সংরক্ষণ করতে ত্রুটি ঘটেছে');
     } finally {
       setUpdating(false);
     }
@@ -414,6 +495,20 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
 
   const statuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
+  // Real-time filtered orders by search term (including product title, customer, phone, trx)
+  const displayedOrders = useMemo(() => {
+    if (!searchTerm.trim()) return orders;
+    const q = searchTerm.trim().toLowerCase();
+    return orders.filter(o =>
+      (o.order_code || '').toLowerCase().includes(q) ||
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').toLowerCase().includes(q) ||
+      (o.shipping_city || '').toLowerCase().includes(q) ||
+      (o.transaction_id || '').toLowerCase().includes(q) ||
+      (Array.isArray(o.items) && o.items.some(it => (it.title || '').toLowerCase().includes(q)))
+    );
+  }, [orders, searchTerm]);
+
   // Group orders by Division in Alphabetical Sequence
   const divisionGroupedOrders = useMemo(() => {
     const groups = {};
@@ -444,8 +539,8 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
       orders: []
     };
 
-    // Distribute orders into division buckets
-    orders.forEach(order => {
+    // Distribute filtered orders into division buckets
+    displayedOrders.forEach(order => {
       const divInfo = getOrderDivision(order);
       if (groups[divInfo.id]) {
         groups[divInfo.id].orders.push(order);
@@ -455,7 +550,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
     });
 
     return groups;
-  }, [orders]);
+  }, [displayedOrders]);
 
   // Render a Single Order Row with division theme styling
   const renderOrderRow = (order, theme = null) => {
@@ -491,6 +586,41 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
           </p>
           {order.notes && (
             <p className="text-[10px] text-amber-300 italic mt-1">নোট: "{order.notes}"</p>
+          )}
+        </td>
+
+        {/* Ordered Products & Quantity */}
+        <td className="p-4 align-top min-w-[200px] max-w-xs">
+          {Array.isArray(order.items) && order.items.length > 0 ? (
+            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+              {order.items.map((it, idx) => (
+                <div key={idx} className="flex items-center space-x-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 shadow-xs">
+                  {it.thumbnail ? (
+                    <img 
+                      src={it.thumbnail} 
+                      alt={it.title} 
+                      className="w-7 h-7 rounded-lg object-cover flex-shrink-0 border border-slate-700" 
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-700 text-amber-400">
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold text-white truncate leading-tight" title={it.title}>
+                      {it.title}
+                    </p>
+                    <div className="text-[10px] text-slate-300 flex items-center space-x-1.5 mt-0.5">
+                      <span className="text-amber-400 font-mono font-black">×{it.quantity || 1} টি</span>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-slate-400 font-mono">৳{(it.price || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className="text-[11px] text-slate-500 italic block py-1">—</span>
           )}
         </td>
 
@@ -542,36 +672,78 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
           </div>
         </td>
 
-        {/* Courier Link & Consignment */}
+        {/* Courier Link & Consignment (Strict Gating: Only active in Processing) */}
         <td className="p-4 align-top max-w-xs">
-          {order.courier_tracking_url ? (
-            <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/80">
-              <p className="text-[11px] font-bold text-emerald-400 flex items-center">
-                <Truck className="w-3.5 h-3.5 mr-1" /> {order.courier_name || 'Courier'}
-              </p>
-              {order.consignment_id && (
-                <p className="text-[10px] font-mono text-slate-300">
-                  ID: {order.consignment_id}
+          {order.status === 'Processing' ? (
+            (order.courier_tracking_url || order.tracking_url) ? (
+              <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-amber-500/40 shadow">
+                <p className="text-[11px] font-bold text-amber-400 flex items-center">
+                  <Truck className="w-3.5 h-3.5 mr-1" /> {order.courier_name || 'Courier'}
                 </p>
-              )}
-              <a
-                href={order.courier_tracking_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-bold text-amber-300 hover:underline flex items-center"
+                {order.consignment_id && (
+                  <p className="text-[10px] font-mono text-slate-300">
+                    ID: {order.consignment_id}
+                  </p>
+                )}
+                <div className="flex items-center space-x-2">
+                  <a
+                    href={order.courier_tracking_url || order.tracking_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] font-bold text-amber-300 hover:underline flex items-center"
+                  >
+                    <span>Live Courier Link</span>
+                    <ExternalLink className="w-3 h-3 ml-1" />
+                  </a>
+                  {hasPermission('orders.courier_link') && (
+                    <button
+                      onClick={() => handleOpenCourierModal(order)}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                    >
+                      এডিট
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : hasPermission('orders.courier_link') ? (
+              <button
+                onClick={() => handleOpenCourierModal(order)}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black rounded-lg flex items-center space-x-1 cursor-pointer shadow transition-transform active:scale-95"
               >
-                <span>Live Courier Link</span>
-                <ExternalLink className="w-3 h-3 ml-1" />
-              </a>
-            </div>
+                <Truck className="w-3 h-3 text-slate-950" />
+                <span>+ কুরিয়ার লিংক দিন</span>
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-500 italic block py-1">কুরিয়ার দেওয়ার অনুমতি নেই</span>
+            )
+          ) : (order.status === 'Shipped' || order.status === 'Delivered') ? (
+            (order.courier_tracking_url || order.tracking_url) ? (
+              <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/80">
+                <p className="text-[11px] font-bold text-emerald-400 flex items-center">
+                  <Truck className="w-3.5 h-3.5 mr-1" /> {order.courier_name || 'Courier'}
+                </p>
+                {order.consignment_id && (
+                  <p className="text-[10px] font-mono text-slate-300">
+                    ID: {order.consignment_id}
+                  </p>
+                )}
+                <a
+                  href={order.courier_tracking_url || order.tracking_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-bold text-amber-300 hover:underline flex items-center"
+                >
+                  <span>Live Courier Link</span>
+                  <ExternalLink className="w-3 h-3 ml-1" />
+                </a>
+              </div>
+            ) : (
+              <span className="text-[11px] text-slate-500 italic block py-1">—</span>
+            )
           ) : (
-            <button
-              onClick={() => handleOpenCourierModal(order)}
-              className="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-850 text-amber-300 text-[11px] font-bold rounded-lg border border-amber-500/40 flex items-center space-x-1 cursor-pointer shadow"
-            >
-              <Truck className="w-3 h-3 text-amber-400" />
-              <span>+ কুরিয়ার লিংক দিন</span>
-            </button>
+            <span className="text-[11px] text-slate-500 italic block py-1">
+              প্রসেসিং হলে কুরিয়ার দেওয়া যাবে
+            </span>
           )}
         </td>
 
@@ -580,7 +752,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
           <div className="space-y-2">
             
             {/* 1-Click Order Confirmation for Pending */}
-            {isPending && (
+            {hasPermission('orders.status_update') && isPending && (
               <button
                 type="button"
                 disabled={confirmingId === order.id}
@@ -593,11 +765,53 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
               </button>
             )}
 
+            {/* 1-Click Advance to Processing for Confirmed */}
+            {hasPermission('orders.status_update') && order.status === 'Confirmed' && (
+              <button
+                type="button"
+                disabled={advancingId === order.id}
+                onClick={() => handleAdvanceStatus(order, 'Processing', 'Sent to Processing & Packaging')}
+                className="w-full px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-lg shadow-indigo-600/40 flex items-center justify-center space-x-1.5 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="প্রসেসিং-এ পাঠান"
+              >
+                <span>{advancingId === order.id ? 'পাঠানো হচ্ছে...' : 'প্রসেসিং-এ পাঠান ➔'}</span>
+              </button>
+            )}
+
+            {/* 1-Click Advance to Shipped for Processing */}
+            {hasPermission('orders.status_update') && order.status === 'Processing' && (
+              <button
+                type="button"
+                disabled={advancingId === order.id}
+                onClick={() => handleAdvanceStatus(order, 'Shipped', 'Dispatched to Courier')}
+                className="w-full px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-black rounded-xl shadow-lg shadow-sky-600/40 flex items-center justify-center space-x-1.5 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="শিপড-এ পাঠান"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>{advancingId === order.id ? 'পাঠানো হচ্ছে...' : 'শিপড-এ পাঠান ➔'}</span>
+              </button>
+            )}
+
+            {/* 1-Click Complete Delivery for Shipped */}
+            {hasPermission('orders.status_update') && order.status === 'Shipped' && (
+              <button
+                type="button"
+                disabled={advancingId === order.id}
+                onClick={() => handleAdvanceStatus(order, 'Delivered', 'Delivered to Customer')}
+                className="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-600/40 flex items-center justify-center space-x-1.5 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="ডেলিভারি সম্পন্ন করুন"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>{advancingId === order.id ? 'আপডেট হচ্ছে...' : 'ডেলিভারি সম্পন্ন ✓'}</span>
+              </button>
+            )}
+
             {/* Status Dropdown */}
             <select
               value={order.status}
+              disabled={!hasPermission('orders.status_update')}
               onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
-              className={`w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border outline-none cursor-pointer ${
+              className={`w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border outline-none ${!hasPermission('orders.status_update') ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${
                 order.status === 'Confirmed'
                   ? 'bg-blue-950 text-blue-300 border-blue-700'
                   : order.status === 'Processing'
@@ -621,13 +835,15 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
         {/* Actions */}
         <td className="p-4 align-top text-right">
           <div className="flex items-center justify-end space-x-2">
-            <button
-              onClick={() => handleOpenCourierModal(order)}
-              className="p-2 bg-slate-900/80 hover:bg-slate-800 text-amber-400 rounded-xl cursor-pointer border border-slate-700"
-              title="Assign Courier Partner & Link"
-            >
-              <Edit className="w-3.5 h-3.5" />
-            </button>
+            {order.status === 'Processing' && (
+              <button
+                onClick={() => handleOpenCourierModal(order)}
+                className="p-2 bg-slate-900/80 hover:bg-slate-800 text-amber-400 rounded-xl cursor-pointer border border-slate-700"
+                title="Assign Courier Partner & Link"
+              >
+                <Edit className="w-3.5 h-3.5" />
+              </button>
+            )}
 
             <button
               onClick={() => onOpenInvoice(order)}
@@ -735,7 +951,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
         <div className="w-full md:w-96 relative">
           <input
             type="text"
-            placeholder="অর্ডার কোড, গ্রাহক, ফোন, জেলা বা TrxID লিখে খুঁজুন..."
+            placeholder="অর্ডার কোড, পণ্যের নাম, গ্রাহক, ফোন, জেলা বা TrxID লিখে খুঁজুন..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
@@ -822,7 +1038,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
                         {config.nameEn} ({config.nameBn})
                       </h3>
                       <span className={`text-xs px-3 py-1 rounded-full font-black ${config.theme.badgeBg}`}>
-                        {divOrders.length} টি অর্ডার
+                        <strong className="font-mono font-black">{divOrders.length}</strong> টি অর্ডার
                       </span>
                     </div>
 
@@ -838,6 +1054,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
                         <tr>
                           <th className="p-4">Order Code & Date</th>
                           <th className="p-4">Customer & Location</th>
+                          <th className="p-4">Products & Quantity</th>
                           <th className="p-4">Payment & TrxID</th>
                           <th className="p-4">Courier Link & Consignment</th>
                           <th className="p-4">Status</th>
@@ -866,6 +1083,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
                 <tr>
                   <th className="p-4">Order Code & Date</th>
                   <th className="p-4">Customer & Location</th>
+                  <th className="p-4">Products & Quantity</th>
                   <th className="p-4">Payment & TrxID</th>
                   <th className="p-4">Courier Link & Consignment</th>
                   <th className="p-4">Status</th>
@@ -873,7 +1091,7 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {orders.map(order => renderOrderRow(order))}
+                {displayedOrders.map(order => renderOrderRow(order))}
               </tbody>
             </table>
           </div>

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requirePermission } = require('../middleware/auth');
 
 // APPLY VOUCHER CODE (Public customer endpoint)
 router.post('/apply', (req, res) => {
@@ -62,7 +62,7 @@ router.get('/', (req, res) => {
 });
 
 // ADMIN: CREATE VOUCHER
-router.post('/', requireAdmin, (req, res) => {
+router.post('/', requirePermission('vouchers.manage'), (req, res) => {
   try {
     const { code, discount_type, discount_value, min_spend, is_active, description } = req.body;
     if (!code || !discount_value) {
@@ -90,7 +90,7 @@ router.post('/', requireAdmin, (req, res) => {
 });
 
 // ADMIN: UPDATE VOUCHER
-router.put('/:id', requireAdmin, (req, res) => {
+router.put('/:id', requirePermission('vouchers.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -98,6 +98,7 @@ router.put('/:id', requireAdmin, (req, res) => {
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Voucher not found to update.' });
     }
+
     return res.json({
       success: true,
       message: 'Voucher updated successfully!',
@@ -110,7 +111,7 @@ router.put('/:id', requireAdmin, (req, res) => {
 });
 
 // ADMIN: DELETE VOUCHER
-router.delete('/:id', requireAdmin, (req, res) => {
+router.delete('/:id', requirePermission('vouchers.manage'), (req, res) => {
   try {
     const { id } = req.params;
     const deleted = db.deleteVoucher(id);

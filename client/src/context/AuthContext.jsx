@@ -159,7 +159,33 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to delete account');
+      }
+      logout();
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  };
+
   const isAdmin = user && user.role === 'admin';
+  const isSuperAdmin = Boolean(user && user.role === 'admin' && !user.is_staff);
+
+  const hasPermission = (permKey) => {
+    if (!user || user.role !== 'admin') return false;
+    if (!user.is_staff) return true; // Super admin has full unconstrained access
+    if (!Array.isArray(user.permissions)) return false;
+    if (user.permissions.includes('*')) return true;
+    return user.permissions.includes(permKey);
+  };
 
   return (
     <AuthContext.Provider
@@ -168,12 +194,15 @@ export function AuthProvider({ children }) {
         token,
         loading,
         isAdmin,
+        isSuperAdmin,
+        hasPermission,
         login,
         register,
         logout,
         refreshUser,
         updateProfile,
         changePassword,
+        deleteAccount,
         setUser
       }}
     >

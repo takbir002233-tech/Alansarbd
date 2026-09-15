@@ -40,6 +40,8 @@ import AdminVouchers from './pages/admin/AdminVouchers';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminChatDesk from './pages/admin/AdminChatDesk';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminStaffManagement from './pages/admin/AdminStaffManagement';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Zero loading spinners or delay indicators as requested by user
 
@@ -219,28 +221,31 @@ function MainApp() {
       />
     ) : (
       <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onNavigate={navigate}>
-        {adminTab === 'dashboard' && (
-          <AdminDashboard 
-            onNavigateTab={(tab, status) => {
-              setAdminTab(tab);
-              if (status) setAdminOrderFilter(status);
-            }} 
-            onOpenInvoice={handleOpenInvoice} 
-          />
-        )}
-        {adminTab === 'orders' && (
-          <AdminOrders 
-            initialStatus={adminOrderFilter} 
-            onOpenInvoice={handleOpenInvoice} 
-          />
-        )}
-        {adminTab === 'products' && <AdminProducts />}
-        {adminTab === 'categories' && <AdminCategories />}
-        {adminTab === 'vouchers' && <AdminVouchers />}
-        {adminTab === 'users' && <AdminUsers />}
-        {adminTab === 'chat' && <AdminChatDesk />}
-        {adminTab === 'settings' && <AdminSettings />}
-        {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />}
+        <ErrorBoundary>
+          {adminTab === 'dashboard' && (
+            <AdminDashboard 
+              onNavigateTab={(tab, status) => {
+                setAdminTab(tab);
+                if (status) setAdminOrderFilter(status);
+              }} 
+              onOpenInvoice={handleOpenInvoice} 
+            />
+          )}
+          {adminTab === 'orders' && (
+            <AdminOrders 
+              initialStatus={adminOrderFilter} 
+              onOpenInvoice={handleOpenInvoice} 
+            />
+          )}
+          {adminTab === 'products' && <AdminProducts />}
+          {adminTab === 'categories' && <AdminCategories />}
+          {adminTab === 'vouchers' && <AdminVouchers />}
+          {adminTab === 'users' && <AdminUsers />}
+          {adminTab === 'chat' && <AdminChatDesk />}
+          {adminTab === 'settings' && <AdminSettings />}
+          {adminTab === 'staff' && <AdminStaffManagement />}
+          {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />}
+        </ErrorBoundary>
       </AdminLayout>
     );
   }

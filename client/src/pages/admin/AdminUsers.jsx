@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Users, 
+  User,
   Search, 
   ShieldBan, 
   ShieldCheck, 
@@ -19,11 +20,17 @@ import {
   Sparkles,
   CreditCard,
   Check,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  Trash2,
+  Package,
+  Calendar,
+  TrendingUp,
+  PackageCheck
 } from 'lucide-react';
 
 export default function AdminUsers() {
-  const { token } = useAuth();
+  const { token, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState('users'); // users, qard, loyalty, appeals
   const [users, setUsers] = useState([]);
   const [qardApps, setQardApps] = useState([]);
@@ -32,6 +39,32 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [successToast, setSuccessToast] = useState('');
+
+  const canViewUsers = hasPermission('customers.view');
+  const canViewQard = hasPermission('customers.qard_applications');
+  const canViewLoyalty = hasPermission('customers.loyalty_applications');
+  const canViewAppeals = hasPermission('customers.appeals');
+
+  // Auto-switch to first permitted tab
+  useEffect(() => {
+    const allowed = [];
+    if (canViewUsers) allowed.push('users');
+    if (canViewQard) allowed.push('qard');
+    if (canViewLoyalty) allowed.push('loyalty');
+    if (canViewAppeals) allowed.push('appeals');
+    if (allowed.length > 0 && !allowed.includes(activeTab)) {
+      setActiveTab(allowed[0]);
+    }
+  }, [canViewUsers, canViewQard, canViewLoyalty, canViewAppeals, activeTab]);
+
+  // User Profile & Activity View Modal
+  const [viewingUser, setViewingUser] = useState(null);
+  const [viewingDetails, setViewingDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // User Deletion Modal State
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
   
   // User Edit Modal
   const [editingUser, setEditingUser] = useState(null);
@@ -56,22 +89,42 @@ export default function AdminUsers() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, qardRes, appealsRes, loyaltyRes] = await Promise.all([
-        fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/qard-applications', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/account-appeals', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/loyalty-applications', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+      const promises = [];
 
-      const usersData = await usersRes.json();
-      const qardData = await qardRes.json();
-      const appealsData = await appealsRes.json();
-      const loyaltyData = await loyaltyRes.json();
+      if (canViewUsers) {
+        promises.push(
+          fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(d => { if (d.success) setUsers(d.users || []); })
+            .catch(() => {})
+        );
+      }
+      if (canViewQard) {
+        promises.push(
+          fetch('/api/admin/qard-applications', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(d => { if (d.success) setQardApps(d.applications || []); })
+            .catch(() => {})
+        );
+      }
+      if (canViewAppeals) {
+        promises.push(
+          fetch('/api/admin/account-appeals', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(d => { if (d.success) setAppeals(d.appeals || []); })
+            .catch(() => {})
+        );
+      }
+      if (canViewLoyalty) {
+        promises.push(
+          fetch('/api/admin/loyalty-applications', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(d => { if (d.success) setLoyaltyApps(d.applications || []); })
+            .catch(() => {})
+        );
+      }
 
-      if (usersData.success) setUsers(usersData.users || []);
-      if (qardData.success) setQardApps(qardData.applications || []);
-      if (appealsData.success) setAppeals(appealsData.appeals || []);
-      if (loyaltyData.success) setLoyaltyApps(loyaltyData.applications || []);
+      await Promise.all(promises);
     } catch (err) {
       console.error('Error fetching admin users data:', err);
     } finally {
@@ -81,7 +134,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [token, canViewUsers, canViewQard, canViewAppeals, canViewLoyalty]);
 
   const showToast = (msg) => {
     setSuccessToast(msg);
@@ -155,6 +208,55 @@ export default function AdminUsers() {
     }
   };
 
+  // View User Full Profile & Activity History
+  const handleOpenUserProfile = async (user) => {
+    setViewingUser(user);
+    setViewingDetails(null);
+    setLoadingDetails(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/details`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setViewingDetails(data);
+      }
+    } catch (err) {
+      console.error('Error loading user details:', err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Confirm and Execute User Deletion
+  const confirmDeleteUser = async () => {
+    if (!deletingUser) return;
+    setDeletingLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`গ্রাহক "${deletingUser.name}" এর অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে!`);
+        setUsers(prev => prev.filter(u => u.id !== deletingUser.id));
+        if (viewingUser && viewingUser.id === deletingUser.id) {
+          setViewingUser(null);
+        }
+        setDeletingUser(null);
+      } else {
+        alert(data.message || 'অ্যাকাউন্ট ডিলিট করতে সমস্যা হয়েছে');
+      }
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      alert('অ্যাকাউন্ট ডিলিট করার সময় ত্রুটি ঘটেছে');
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
+
+
   // Open Qard Approval Modal
   const handleOpenQardApprove = (app) => {
     setApprovingApp(app);
@@ -215,8 +317,24 @@ export default function AdminUsers() {
     }
   };
 
-  // Account Appeal Status Update (1-click Unblock)
-  const handleAppealStatusUpdate = async (appealId, status, userName) => {
+  // Account Appeal Status Update (1-click Unblock or Approve Deletion)
+  const handleAppealStatusUpdate = async (appealId, status, userName, isDeletionAppeal = false) => {
+    if (isDeletionAppeal && status === 'Resolved') {
+      const confirmDelete = window.confirm(`আপনি কি নিশ্চিত যে গ্রাহক "${userName}" এর অ্যাকাউন্ট বাতিলের আবেদন অনুমোদন করে অ্যাকাউন্টটি চিরতরে ডিলিট করতে চান?`);
+      if (!confirmDelete) return;
+    }
+
+    let defaultReply = '';
+    if (isDeletionAppeal) {
+      defaultReply = status === 'Resolved'
+        ? 'অ্যাকাউন্ট বাতিলের আবেদন অনুমোদিত হয়েছে এবং অ্যাকাউন্টটি সম্পূর্ণ মুছে ফেলা হয়েছে।'
+        : 'অ্যাকাউন্ট বাতিলের আবেদনটি বাতিল করা হলো।';
+    } else {
+      defaultReply = status === 'Resolved'
+        ? 'অ্যাকাউন্ট রিভিউ সফল হয়েছে এবং অ্যাকাউন্টটি সম্পূর্ণ সক্রিয় ও আনব্লক করা হয়েছে।'
+        : 'আপিল পর্যালোচনা করে স্থগিতাদেশ বজায় রাখা হলো।';
+    }
+
     try {
       const res = await fetch(`/api/admin/account-appeals/${appealId}`, {
         method: 'PUT',
@@ -226,18 +344,23 @@ export default function AdminUsers() {
         },
         body: JSON.stringify({ 
           status, 
-          admin_reply: status === 'Resolved' 
-            ? 'অ্যাকাউন্ট রিভিউ সফল হয়েছে এবং অ্যাকাউন্টটি সম্পূর্ণ সক্রিয় ও আনব্লক করা হয়েছে।' 
-            : 'আপিল পর্যালোচনা করে স্থগিতাদেশ বজায় রাখা হলো।' 
+          admin_reply: defaultReply
         })
       });
       const data = await res.json();
       if (data.success) {
-        showToast(status === 'Resolved' ? `গ্রাহক "${userName}" কে ১-ক্লিকে আনব্লক করা হয়েছে!` : `আপিলটি বাতিল করা হয়েছে।`);
+        if (isDeletionAppeal) {
+          showToast(status === 'Resolved' ? `গ্রাহক "${userName}" এর আবেদন অনুমোদিত ও অ্যাকাউন্ট ডিলিট হয়েছে!` : `আপিলটি বাতিল করা হয়েছে।`);
+        } else {
+          showToast(status === 'Resolved' ? `গ্রাহক "${userName}" কে ১-ক্লিকে আনব্লক করা হয়েছে!` : `আপিলটি বাতিল করা হয়েছে।`);
+        }
         fetchData();
+      } else {
+        alert(data.message || 'আপডেট করতে সমস্যা হয়েছে');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error updating appeal:', err);
+      alert('আপিল আপডেট করতে ত্রুটি ঘটেছে');
     }
   };
 
@@ -312,60 +435,68 @@ export default function AdminUsers() {
 
         {/* Tab Switcher */}
         <div className="flex items-center space-x-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto shadow-xl">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'users' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>গ্রাহক ও লয়ালটি ({users.length})</span>
-          </button>
+          {canViewUsers && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'users' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>গ্রাহক ও লয়ালটি ({users.length})</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('qard')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'qard' ? 'bg-emerald-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <HandHeart className="w-3.5 h-3.5" />
-            <span>করযে হাসানা আবেদন</span>
-            {pendingQardCount > 0 && (
-              <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
-                {pendingQardCount}
-              </span>
-            )}
-          </button>
+          {canViewQard && (
+            <button
+              onClick={() => setActiveTab('qard')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'qard' ? 'bg-emerald-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <HandHeart className="w-3.5 h-3.5" />
+              <span>করযে হাসানা আবেদন</span>
+              {pendingQardCount > 0 && (
+                <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                  {pendingQardCount}
+                </span>
+              )}
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('loyalty')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'loyalty' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>লয়ালটি কার্ড আবেদন ({loyaltyApps.length})</span>
-            {pendingLoyaltyCount > 0 && (
-              <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
-                {pendingLoyaltyCount}
-              </span>
-            )}
-          </button>
+          {canViewLoyalty && (
+            <button
+              onClick={() => setActiveTab('loyalty')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'loyalty' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>লয়ালটি কার্ড আবেদন ({loyaltyApps.length})</span>
+              {pendingLoyaltyCount > 0 && (
+                <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                  {pendingLoyaltyCount}
+                </span>
+              )}
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('appeals')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'appeals' ? 'bg-rose-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>আপিল আবেদন</span>
-            {pendingAppealsCount > 0 && (
-              <span className="bg-rose-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black animate-pulse">
-                {pendingAppealsCount}
-              </span>
-            )}
-          </button>
+          {canViewAppeals && (
+            <button
+              onClick={() => setActiveTab('appeals')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'appeals' ? 'bg-rose-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>আপিল আবেদন</span>
+              {pendingAppealsCount > 0 && (
+                <span className="bg-rose-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black animate-pulse">
+                  {pendingAppealsCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -460,7 +591,14 @@ export default function AdminUsers() {
 
                       <td className="p-4">
                         <p className="font-bold text-white">৳{(u.total_spent || 0).toLocaleString()}</p>
-                        <p className="text-[10px] text-slate-400">{u.orders_count || 0} টি অর্ডার</p>
+                        <div className="flex items-center space-x-1.5 mt-0.5">
+                          <span className="text-[10px] text-slate-300 font-mono font-bold">{u.orders_count || 0} টি অর্ডার</span>
+                          {u.cancelled_orders_count > 0 && (
+                            <span className="text-[10px] text-rose-400 font-mono font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25" title="গ্রাহক বাতিল করেছেন">
+                              {u.cancelled_orders_count} বাতিল
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="p-4">
@@ -471,26 +609,51 @@ export default function AdminUsers() {
                         </span>
                       </td>
 
-                      <td className="p-4 text-right space-x-2">
-                        {u.role !== 'admin' && (
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          {/* View Profile & Order Activity Button */}
                           <button
-                            onClick={() => handleToggleBlock(u.id, u.name, u.is_blocked)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                              u.is_blocked
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50'
-                            }`}
+                            onClick={() => handleOpenUserProfile(u)}
+                            className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition-colors flex items-center space-x-1 cursor-pointer"
+                            title="গ্রাহকের প্রোফাইল ও অর্ডার অ্যাক্টিভিটি দেখুন"
                           >
-                            {u.is_blocked ? 'আনব্লক' : 'সাসপেন্ড'}
+                            <Eye className="w-3.5 h-3.5 text-amber-400" />
+                            <span>প্রোফাইল</span>
                           </button>
-                        )}
 
-                        <button
-                          onClick={() => handleOpenEdit(u)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
-                        >
-                          এডিট / লিমিট
-                        </button>
+                          {hasPermission('customers.block') && u.role !== 'admin' && (
+                            <button
+                              onClick={() => handleToggleBlock(u.id, u.name, u.is_blocked)}
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                                u.is_blocked
+                                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                  : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50'
+                              }`}
+                            >
+                              {u.is_blocked ? 'আনব্লক' : 'সাসপেন্ড'}
+                            </button>
+                          )}
+
+                          {hasPermission('customers.edit_limit') && (
+                            <button
+                              onClick={() => handleOpenEdit(u)}
+                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                              title="তথ্য ও লিমিট এডিট করুন"
+                            >
+                              এডিট
+                            </button>
+                          )}
+
+                          {hasPermission('customers.delete') && u.role !== 'admin' && (
+                            <button
+                              onClick={() => setDeletingUser(u)}
+                              className="p-1.5 bg-slate-800/80 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700 hover:border-rose-700/50 transition-colors cursor-pointer"
+                              title="অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -708,17 +871,17 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* TAB 4: SUSPENDED ACCOUNT APPEALS DESK */}
+      {/* TAB 4: SUSPENDED ACCOUNT & DELETION APPEALS DESK */}
       {activeTab === 'appeals' && (
         <div className="space-y-4 animate-in fade-in">
           <div className="bg-slate-900 rounded-3xl border border-rose-900/40 p-6 sm:p-8 space-y-6 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-2 text-rose-400" /> স্থগিত গ্রাহক অ্যাকাউন্ট রিভিউ আপিল ({appeals.length})
+                  <AlertCircle className="w-4 h-4 mr-2 text-rose-400" /> গ্রাহক আপিল ও অ্যাকাউন্ট বাতিলের আবেদন সমূহ ({appeals.length})
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  যেসব একাউন্ট সাময়িক বন্ধ/ব্যান রয়েছে তাদের রিভিউ আবেদন পর্যালোচনা করে ১-ক্লিকে আনব্লক করতে পারেন।
+                  স্থগিত একাউন্টের রিভিউ এবং VIP/করযে হাসানা গ্রাহকদের অ্যাকাউন্ট ডিলিট আপিল আবেদনসমূহ পর্যালোচনা করুন।
                 </p>
               </div>
 
@@ -728,62 +891,111 @@ export default function AdminUsers() {
             </div>
 
             {appeals.length === 0 ? (
-              <p className="text-xs text-slate-500 py-12 text-center">কোনো স্থগিত অ্যাকাউন্টের আপিল আবেদন জমা নেই।</p>
+              <p className="text-xs text-slate-500 py-12 text-center">কোনো আপিল বা অ্যাকাউন্ট বাতিলের আবেদন জমা নেই।</p>
             ) : (
               <div className="space-y-4">
-                {appeals.map(appeal => (
-                  <div key={appeal.id} className="p-5 sm:p-6 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-4 text-xs shadow-lg">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700 gap-3">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-bold text-white text-sm">{appeal.user_name || 'গ্রাহক'}</h4>
-                          <span className="text-[10px] text-slate-400 font-mono">({new Date(appeal.created_at).toLocaleDateString('bn-BD')})</span>
-                        </div>
-                        <p className="text-slate-400 font-mono mt-0.5">
-                          ইমেইল / মোবাইল: <strong className="text-amber-300">{appeal.user_email || appeal.user_phone}</strong>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-2.5">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          appeal.status === 'Resolved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                          appeal.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                          'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
-                        }`}>
-                          {appeal.status === 'Resolved' ? '✓ নিষ্পত্তি (আনব্লকড)' : appeal.status === 'Rejected' ? '✕ বাতিল' : '⏳ পর্যালোচনার অপেক্ষায়'}
-                        </span>
-
-                        {appeal.status === 'Under Review' && (
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleAppealStatusUpdate(appeal.id, 'Resolved', appeal.user_name || 'গ্রাহক')}
-                              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-                            >
-                              ✓ ১-ক্লিকে আনব্লক করুন
-                            </button>
-                            <button
-                              onClick={() => handleAppealStatusUpdate(appeal.id, 'Rejected', appeal.user_name || 'গ্রাহক')}
-                              className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-700/50 cursor-pointer transition-colors"
-                            >
-                              ✕ প্রত্যাখ্যান
-                            </button>
+                {appeals.map(appeal => {
+                  const isDeletion = appeal.appeal_type === 'account_deletion';
+                  return (
+                    <div key={appeal.id} className={`p-5 sm:p-6 rounded-2xl border space-y-4 text-xs shadow-lg ${
+                      isDeletion ? 'bg-slate-800/95 border-rose-900/60 ring-1 ring-rose-500/20' : 'bg-slate-800/80 border-slate-700'
+                    }`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700 gap-3">
+                        <div>
+                          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <h4 className="font-bold text-white text-sm">{appeal.user_name || 'গ্রাহক'}</h4>
+                            {isDeletion ? (
+                              <span className="text-[10px] font-black text-rose-300 bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 flex items-center space-x-1">
+                                <Trash2 className="w-3 h-3 text-rose-400" />
+                                <span>অ্যাকাউন্ট ডিলিট আবেদন</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-amber-300 bg-amber-950/80 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                                🔒 স্থগিত অ্যাকাউন্ট রিভিউ
+                              </span>
+                            )}
+                            <span className="text-[10px] text-slate-400 font-mono">({new Date(appeal.created_at).toLocaleDateString('bn-BD')})</span>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                          <p className="text-slate-400 font-mono mt-0.5">
+                            ইমেইল / মোবাইল: <strong className="text-amber-300">{appeal.user_email || appeal.user_phone}</strong>
+                          </p>
+                        </div>
 
-                    <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-amber-100 leading-relaxed">
-                      <strong className="text-amber-400 block mb-1">গ্রাহকের আপিল বার্তা ও ব্যাখ্যা:</strong>
-                      {appeal.reason}
-                    </div>
+                        <div className="flex items-center space-x-2.5">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            appeal.status === 'Resolved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                            appeal.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                            'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
+                          }`}>
+                            {appeal.status === 'Resolved' 
+                              ? (isDeletion ? '✓ ডিলিট সম্পন্ন' : '✓ নিষ্পত্তি (আনব্লকড)') 
+                              : appeal.status === 'Rejected' 
+                              ? '✕ বাতিল' 
+                              : '⏳ পর্যালোচনার অপেক্ষায়'}
+                          </span>
 
-                    {appeal.admin_reply && (
-                      <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-800/40 text-emerald-300">
-                        <strong>অ্যাডমিন উত্তর:</strong> {appeal.admin_reply}
+                          {appeal.status === 'Under Review' && (
+                            <div className="flex items-center space-x-2">
+                              {isDeletion ? (
+                                <button
+                                  onClick={() => handleAppealStatusUpdate(appeal.id, 'Resolved', appeal.user_name || 'গ্রাহক', true)}
+                                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>✓ অনুমোদন ও ডিলিট</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleAppealStatusUpdate(appeal.id, 'Resolved', appeal.user_name || 'গ্রাহক', false)}
+                                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                                >
+                                  ✓ ১-ক্লিকে আনব্লক করুন
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleAppealStatusUpdate(appeal.id, 'Rejected', appeal.user_name || 'গ্রাহক', isDeletion)}
+                                className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-700/50 cursor-pointer transition-colors"
+                              >
+                                ✕ বাতিল
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* If Account Deletion Appeal, show VIP Card and Qard status */}
+                      {isDeletion && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-950/60 rounded-xl border border-slate-700/60 text-slate-300">
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>
+                              VIP কার্ড: <strong className="text-amber-300 font-mono">{appeal.loyalty_card_number || 'সক্রিয়'}</strong> (পয়েন্ট: <strong className="text-emerald-400">{appeal.loyalty_points || 0}</strong>)
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <HandHeart className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span>
+                              করযে হাসানা লিমিট: <strong className="text-emerald-300 font-mono">৳{(appeal.qard_limit || 0).toLocaleString()}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 text-amber-100 leading-relaxed">
+                        <strong className="text-amber-400 block mb-1">
+                          {isDeletion ? 'অ্যাকাউন্ট বাতিলের কারণ ও গ্রাহকের আবেদন বার্তা:' : 'গ্রাহকের আপিল বার্তা ও ব্যাখ্যা:'}
+                        </strong>
+                        {appeal.reason}
+                      </div>
+
+                      {appeal.admin_reply && (
+                        <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-800/40 text-emerald-300">
+                          <strong>অ্যাডমিন উত্তর / স্ট্যাটাস:</strong> {appeal.admin_reply}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -950,6 +1162,307 @@ export default function AdminUsers() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* USER PROFILE & ACTIVITY DETAILS MODAL */}
+      {viewingUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] my-auto">
+            
+            {/* Modal Top Header */}
+            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/50">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <User className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">গ্রাহক প্রোফাইল ও অ্যাক্টিভিটি হিস্ট্রি</h3>
+                  <p className="text-[11px] text-slate-400">গ্রাহকের ড্যাশবোর্ডের মতো বিস্তারিত তথ্য, অর্ডার পরিসংখ্যান ও ট্র্যাকিং</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingUser(null)}
+                className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs">
+              
+              {/* Profile Card Banner (Same as User Dashboard Header) */}
+              <div className="bg-gradient-to-r from-slate-950 via-emerald-950/60 to-slate-950 rounded-2xl p-4 sm:p-5 border border-amber-900/40 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-emerald-700 text-slate-950 font-black text-xl flex items-center justify-center shadow-md ring-2 ring-amber-400/40 shrink-0">
+                    {viewingUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <h4 className="text-base font-black text-white">{viewingUser.name}</h4>
+                      <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                        {viewingUser.loyalty_tier || 'Gold VIP Patron'}
+                      </span>
+                      {viewingUser.is_blocked ? (
+                        <span className="text-[10px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
+                          🚫 স্থগিত / সাসপেন্ড
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          ✓ সক্রিয় অ্যাকাউন্ট
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-300 mt-1 font-mono text-[11px]">
+                      📞 {viewingUser.phone || 'ফোন নেই'} {viewingUser.email ? `• ✉️ ${viewingUser.email}` : ''}
+                    </p>
+                    {viewingUser.created_at && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        🗓️ নিবন্ধিত: {new Date(viewingUser.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">ডিজিটাল লয়ালটি কার্ড</span>
+                  <p className="font-mono font-bold text-amber-400 text-xs mt-0.5">
+                    💳 {viewingUser.loyalty_card_number || `ANSAR-VIP-${viewingUser.id.slice(0, 4)}-2026`}
+                  </p>
+                  <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                    ⭐ {viewingUser.loyalty_points || 100} পয়েন্ট অর্জিত
+                  </p>
+                </div>
+              </div>
+
+              {/* Delivery Address & Qard Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 flex items-center uppercase tracking-wider">
+                    <MapPin className="w-3.5 h-3.5 mr-1 text-amber-400" /> ডিফল্ট ডেলিভারি ঠিকানা
+                  </span>
+                  <p className="text-white font-medium text-xs pt-0.5">
+                    {viewingUser.address || 'ঠিকানা দেওয়া হয়নি'}
+                  </p>
+                  <p className="text-slate-400 font-mono text-[11px]">
+                    শহর/জেলা: <strong className="text-slate-200">{viewingUser.city || 'অনির্দিষ্ট'}</strong> {viewingUser.postal_code ? `• পোস্টকোড: ${viewingUser.postal_code}` : ''}
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 flex items-center uppercase tracking-wider">
+                    <HandHeart className="w-3.5 h-3.5 mr-1 text-emerald-400" /> করযে হাসানা স্কিম লিমিট
+                  </span>
+                  <p className="text-emerald-400 font-black font-mono text-sm pt-0.5">
+                    ৳{(viewingUser.qard_credit_limit || 5000).toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    স্ট্যাটাস: <strong className="text-slate-200">{viewingUser.qard_status === 'Approved' ? '✓ অনুমোদিত' : 'সাধারণ স্কিম'}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Order Statistics 4-Card Overview */}
+              <div className="space-y-2">
+                <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center">
+                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> অর্ডার পরিসংখ্যান ও অ্যাক্টিভিটি
+                </h5>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 block">মোট অর্ডার</span>
+                    <span className="text-lg font-black text-white font-mono block mt-0.5">
+                      {viewingDetails?.stats?.total_orders ?? viewingUser.orders_count ?? 0} <span className="text-xs font-normal text-slate-400">টি</span>
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3 rounded-xl border border-rose-900/40 bg-rose-950/10">
+                    <span className="text-[10px] font-bold text-rose-400 block">বাতিলকৃত অর্ডার</span>
+                    <span className="text-lg font-black text-rose-400 font-mono block mt-0.5">
+                      {viewingDetails?.stats?.cancelled_orders ?? viewingUser.cancelled_orders_count ?? 0} <span className="text-xs font-normal text-rose-300">টি</span>
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3 rounded-xl border border-emerald-900/40 bg-emerald-950/10">
+                    <span className="text-[10px] font-bold text-emerald-400 block">সফল ডেলিভারি</span>
+                    <span className="text-lg font-black text-emerald-400 font-mono block mt-0.5">
+                      {viewingDetails?.stats?.delivered_orders ?? viewingUser.delivered_orders_count ?? 0} <span className="text-xs font-normal text-emerald-300">টি</span>
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3 rounded-xl border border-amber-900/40 bg-amber-950/10">
+                    <span className="text-[10px] font-bold text-amber-400 block">মোট কেনাকাটা</span>
+                    <span className="text-lg font-black text-amber-300 font-mono block mt-0.5">
+                      ৳{(viewingDetails?.stats?.total_spent ?? viewingUser.total_spent ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Cancelled Order Notice if > 0 */}
+                {(viewingDetails?.stats?.cancelled_orders > 0 || viewingUser.cancelled_orders_count > 0) && (
+                  <div className="p-2.5 bg-rose-950/40 border border-rose-800/40 rounded-xl text-rose-300 text-[11px] flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>
+                      ⚠️ <strong>ক্যান্সেলেশন অ্যালার্ট:</strong> এই গ্রাহক এ পর্যন্ত সর্বমোট <strong>{viewingDetails?.stats?.cancelled_orders ?? viewingUser.cancelled_orders_count} টি অর্ডার বাতিল</strong> করেছেন।
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* User Order List & Activity Log */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center">
+                    <Package className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> অর্ডারের বিস্তারিত ইতিহাস ({viewingDetails?.orders?.length || 0})
+                  </h5>
+                </div>
+
+                {loadingDetails ? (
+                  <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    <span>অর্ডার হিস্ট্রি লোড হচ্ছে...</span>
+                  </div>
+                ) : viewingDetails?.orders && viewingDetails.orders.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {viewingDetails.orders.map((ord) => (
+                      <div key={ord.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono font-black text-white text-xs">#{ord.order_code}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              ord.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                              ord.status === 'Delivered' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                              ord.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                              ord.status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                              ord.status === 'Confirmed' ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' :
+                              'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {ord.status}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-3 text-[11px]">
+                            <span className="text-slate-400 font-mono">
+                              {ord.created_at ? new Date(ord.created_at).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                            <span className="font-mono font-black text-amber-400">৳{ord.total_amount}</span>
+                            <span className="text-[10px] text-slate-400 uppercase bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                              {ord.payment_method}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Order Items List */}
+                        {Array.isArray(ord.items) && ord.items.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-800/60">
+                            {ord.items.map((it, idx) => (
+                              <div key={idx} className="flex items-center space-x-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[10px]">
+                                <span className="text-slate-200 font-medium truncate max-w-[150px]">{it.title}</span>
+                                <span className="text-amber-400 font-mono font-black">×{it.quantity || 1} টি</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-slate-500 text-xs bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
+                    এই গ্রাহকের এখনও কোনো অর্ডার রেকর্ড নেই।
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Bottom Footer */}
+            <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div>
+                {hasPermission('customers.delete') && viewingUser.role !== 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = viewingUser;
+                      setViewingUser(null);
+                      setDeletingUser(u);
+                    }}
+                    className="px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/40 transition-colors flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>অ্যাকাউন্ট মুছুন</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const u = viewingUser;
+                    setViewingUser(null);
+                    handleOpenEdit(u);
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                >
+                  তথ্য ও লিমিট এডিট
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingUser(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  বন্ধ করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN USER DELETE CONFIRMATION MODAL */}
+      {deletingUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-rose-900/50 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/10">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-black text-white">অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলতে চান?</h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                আপনি কি নিশ্চিত যে গ্রাহক <strong className="text-white font-bold">{deletingUser.name}</strong> ({deletingUser.phone || deletingUser.email}) এর অ্যাকাউন্টটি চিরতরে ডিলিট করতে চান?
+              </p>
+              <div className="mt-3 p-3 bg-rose-950/40 rounded-xl border border-rose-800/40 text-[11px] text-rose-300">
+                ⚠️ <strong>সতর্কতা:</strong> এই কাজটি ফিরিয়ে নেওয়া যাবে না। গ্রাহকের অ্যাকাউন্ট তথ্য স্থায়ীভাবে মুছে যাবে।
+              </div>
+            </div>
+
+            <div className="flex space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingUser(null)}
+                disabled={deletingLoading}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteUser}
+                disabled={deletingLoading}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-lg shadow-rose-600/20 cursor-pointer flex items-center justify-center space-x-1.5"
+              >
+                {deletingLoading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>স্থায়ীভাবে ডিলিট</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission } = require('../middleware/auth');
 
 // CREATE ORDER
 router.post('/', (req, res) => {
@@ -177,7 +177,7 @@ router.get('/:orderCodeOrId', (req, res) => {
 });
 
 // ADMIN: GET ALL ORDERS
-router.get('/', requireAdmin, (req, res) => {
+router.get('/', requirePermission('orders.view'), (req, res) => {
   try {
     let orders = db.getOrders() || [];
     const { status, payment_method, search } = req.query;
@@ -197,7 +197,8 @@ router.get('/', requireAdmin, (req, res) => {
         (o.customer_name || '').toLowerCase().includes(q) ||
         (o.customer_phone || '').toLowerCase().includes(q) ||
         (o.transaction_id && o.transaction_id.toLowerCase().includes(q)) ||
-        (o.consignment_id && o.consignment_id.toLowerCase().includes(q))
+        (o.consignment_id && o.consignment_id.toLowerCase().includes(q)) ||
+        (Array.isArray(o.items) && o.items.some(it => (it.title || '').toLowerCase().includes(q)))
       );
     }
 
@@ -218,8 +219,34 @@ router.put('/:id/status', requireAdmin, (req, res) => {
     const { id } = req.params;
     const { status, note, courier_name, consignment_id, courier_tracking_url } = req.body;
 
+    const existingOrder = db.getOrderById(id);
+    if (!existingOrder) {
+      return res.status(404).json({ success: false, message: 'Order not found to update.' });
+    }
+
+    // Granular permission check for staff
+    if (req.user.is_staff) {
+      const perms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+      const hasWildcard = perms.includes('*');
+      const hasStatusPerm = hasWildcard || perms.includes('orders.status_update');
+      const hasCourierPerm = hasWildcard || perms.includes('orders.courier_link');
+
+      const isChangingStatus = status && status !== existingOrder.status;
+      const isUpdatingCourier = courier_name !== undefined || consignment_id !== undefined || courier_tracking_url !== undefined;
+
+      if (isChangingStatus && !hasStatusPerm) {
+        return res.status(403).json({ success: false, message: 'অর্ডার স্ট্যাটাস পরিবর্তনের অনুমতি আপনার নেই।' });
+      }
+      if (isUpdatingCourier && !hasCourierPerm) {
+        return res.status(403).json({ success: false, message: 'কুরিয়ার ট্র্যাকিং ও লিংক পরিবর্তনের অনুমতি আপনার নেই।' });
+      }
+      if (!isChangingStatus && !isUpdatingCourier && !hasStatusPerm && !hasCourierPerm) {
+        return res.status(403).json({ success: false, message: 'অর্ডার পরিবর্তন করার অনুমতি আপনার নেই।' });
+      }
+    }
+
     const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-    if (!status || !validStatuses.includes(status)) {
+    if (status && !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
         message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
@@ -227,11 +254,25 @@ router.put('/:id/status', requireAdmin, (req, res) => {
     }
 
     const courierDetails = {};
-    if (courier_name !== undefined) courierDetails.courier_name = courier_name.trim();
-    if (consignment_id !== undefined) courierDetails.consignment_id = consignment_id.trim();
-    if (courier_tracking_url !== undefined) courierDetails.courier_tracking_url = courier_tracking_url.trim();
+    if (courier_name !== undefined) courierDetails.courier_name = (courier_name || '').trim();
+    if (consignment_id !== undefined) {
+      const cleanId = (consignment_id || '').trim();
+      courierDetails.consignment_id = cleanId;
+      courierDetails.tracking_code = cleanId;
+    }
+    if (courier_tracking_url !== undefined) {
+      const cleanUrl = (courier_tracking_url || '').trim();
+      courierDetails.courier_tracking_url = cleanUrl;
+      courierDetails.tracking_url = cleanUrl;
+    }
 
-    const updatedOrder = db.updateOrderStatus(id, status, note, courierDetails);
+    const updates = {
+      ...(note ? { note: note.trim() } : {}),
+      ...courierDetails
+    };
+
+    const targetStatus = status || existingOrder.status;
+    const updatedOrder = db.updateOrderStatus(id, targetStatus, updates);
     if (!updatedOrder) {
       return res.status(404).json({ success: false, message: 'Order not found to update.' });
     }

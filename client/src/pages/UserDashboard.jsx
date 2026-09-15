@@ -22,14 +22,15 @@ import {
   Award,
   QrCode,
   ShieldCheck,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
 import QardApplicationModal from '../components/QardApplicationModal';
 
 export default function UserDashboard({ initialTab = 'overview', onNavigate, onBack, onOpenInvoice }) {
-  const { user, token, updateProfile, changePassword } = useAuth();
+  const { user, token, updateProfile, changePassword, deleteAccount, refreshUser } = useAuth();
   const { siteSettings } = useCart();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [orders, setOrders] = useState([]);
@@ -37,6 +38,67 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
   const [qardModalOpen, setQardModalOpen] = useState(false);
   const [userLoyaltyStatus, setUserLoyaltyStatus] = useState(user?.loyalty_card_status || null);
+
+  // Self Account Delete & Appeal Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingSelf, setDeletingSelf] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [appealReason, setAppealReason] = useState('');
+  const [submittingAppeal, setSubmittingAppeal] = useState(false);
+  const [appealSuccess, setAppealSuccess] = useState(false);
+  const [appealError, setAppealError] = useState(null);
+
+  const handleConfirmDeleteAccount = async () => {
+    setDeletingSelf(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      setDeleteModalOpen(false);
+      if (onNavigate) onNavigate('home');
+    } catch (err) {
+      console.error('Account delete error:', err);
+      setDeleteError(err.message || 'অ্যাকাউন্ট ডিলিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      setDeletingSelf(false);
+    }
+  };
+
+  const handleSubmitDeleteAppeal = async (e) => {
+    e.preventDefault();
+    if (!appealReason.trim()) {
+      setAppealError('অনুগ্রহ করে অ্যাকাউন্ট বন্ধ করার কারণ লিখুন।');
+      return;
+    }
+    setSubmittingAppeal(true);
+    setAppealError(null);
+    try {
+      const res = await fetch('/api/auth/delete-appeal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: appealReason.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppealSuccess(true);
+        if (refreshUser) await refreshUser();
+        setTimeout(() => {
+          setDeleteModalOpen(false);
+          setAppealSuccess(false);
+          setAppealReason('');
+        }, 2000);
+      } else {
+        setAppealError(data.message || 'আবেদন পাঠাতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error('Delete appeal error:', err);
+      setAppealError('আবেদন পাঠানোর সময় ত্রুটি ঘটেছে। আবার চেষ্টা করুন।');
+    } finally {
+      setSubmittingAppeal(false);
+    }
+  };
 
   // Bengali digits converter helper - correctly handles 0 and empty values
   const toBengaliDigits = (str) => {
@@ -155,6 +217,8 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   const pointCashValue = loyaltyPoints * (Number(siteSettings?.reward_point_value_bdt) || 1);
   const qardLimit = isQardApproved ? (user?.qard_credit_limit || 5000) : 0;
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
+  const hasActiveCreditOrVip = isLoyaltyApproved || isQardApproved;
+  const pendingDeletionAppeal = user?.pending_deletion_appeal;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in font-sans">
@@ -1060,7 +1124,20 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteError(null);
+                      setAppealError(null);
+                      setDeleteModalOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center space-x-1 hover:underline cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{pendingDeletionAppeal ? 'বাতিলের আবেদন চলমান' : hasActiveCreditOrVip ? 'অ্যাকাউন্ট বাতিলের আবেদন' : 'অ্যাকাউন্ট মুছুন'}</span>
+                  </button>
+
                   <button
                     type="submit"
                     disabled={profileSaving}
@@ -1141,10 +1218,201 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                   </button>
                 </div>
               </form>
+
+              {/* Danger Zone: Permanent Account Deletion */}
+              <div className="pt-6 border-t border-rose-100">
+                <div className="bg-rose-50/70 rounded-2xl p-4 sm:p-5 border border-rose-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Trash2 className="w-4 h-4 text-rose-600" />
+                      <h4 className="text-xs font-black text-rose-950">
+                        অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন (Delete Account)
+                      </h4>
+                    </div>
+                    {pendingDeletionAppeal ? (
+                      <div className="mt-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center space-x-2">
+                        <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                        <span>আপনার অ্যাকাউন্ট বাতিলের আপিল আবেদন বর্তমানে অ্যাডমিন পর্যালোচনায় রয়েছে।</span>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-rose-700 mt-1 leading-relaxed">
+                        {hasActiveCreditOrVip
+                          ? 'আপনার অ্যাকাউন্টে সক্রিয় VIP মেম্বারশিপ কার্ড অথবা করযে হাসানা ক্রেডিট রয়েছে। অ্যাকাউন্ট মুছে ফেলতে চাইলে অ্যাডমিন বরাবরে আপিল আবেদন প্রয়োজন।'
+                          : 'আপনার অ্যাকাউন্টটি মুছে ফেললে প্রোফাইল তথ্য, ঠিকানা এবং সকল রেকর্ড চিরতরে মুছে যাবে।'}
+                      </p>
+                    )}
+                  </div>
+                  {pendingDeletionAppeal ? (
+                    <span className="px-3.5 py-2 bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-xl whitespace-nowrap self-start sm:self-auto shrink-0 flex items-center space-x-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>আপিল পর্যালোচনায়</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setAppealError(null);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-xs transition-all whitespace-nowrap cursor-pointer flex items-center justify-center space-x-1.5 self-start sm:self-auto shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{hasActiveCreditOrVip ? 'বাতিলের আপিল করুন' : 'অ্যাকাউন্ট মুছুন'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Customer Self Account Deletion Confirmation or Appeal Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4 border border-rose-200">
+            {hasActiveCreditOrVip ? (
+              /* Appeal Modal for VIP / Qard Holders */
+              <form onSubmit={handleSubmitDeleteAppeal} className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-inner shrink-0">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                      VIP / করযে হাসানা গ্রাহক
+                    </span>
+                    <h3 className="text-sm font-black text-slate-900 mt-1">
+                      অ্যাকাউন্ট বাতিলের আপিল আবেদন
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs space-y-2">
+                  <div className="flex items-start space-x-2 text-amber-900">
+                    <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      যেহেতু আপনার অ্যাকাউন্টে বর্তমানে <strong>{isLoyaltyApproved ? `সক্রিয় VIP লয়ালটি কার্ড (${toBengaliDigits(loyaltyPoints)} পয়েন্ট)` : ''}{isLoyaltyApproved && isQardApproved ? ' এবং ' : ''}{isQardApproved ? `করযে হাসানা ক্রেডিট (লিমিট ৳${toBengaliDigits(qardLimit.toLocaleString())})` : ''}</strong> সুবিধা চালু রয়েছে, তাই সরাসরি ডিলিট করা সম্ভব নয়।
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-600 pl-6">
+                    অ্যাকাউন্ট বাতিলের কারণ উল্লেখ করে আবেদন পাঠান। অ্যাডমিন প্যানেল থেকে আবেদন যাচাই করে চূড়ান্ত অনুমোদন দিলে অ্যাকাউন্টটি স্থায়ীভাবে ডিলিট করা হবে।
+                  </p>
+                </div>
+
+                {appealSuccess ? (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 font-bold flex items-center space-x-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>আপনার আপিল আবেদন সফলভাবে জমা হয়েছে! অ্যাডমিন পর্যালোচনায় রয়েছে।</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1 text-xs">
+                        অ্যাকাউন্ট বাতিলের কারণ বা মন্তব্য *
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={appealReason}
+                        onChange={(e) => setAppealReason(e.target.value)}
+                        placeholder="যেমন: আর সার্ভিসটি প্রয়োজন নেই বা অন্য কোনো কারণ..."
+                        className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium text-xs resize-none"
+                      />
+                    </div>
+
+                    {appealError && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-700 font-medium">
+                        {appealError}
+                      </div>
+                    )}
+
+                    <div className="flex space-x-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteModalOpen(false);
+                          setAppealError(null);
+                        }}
+                        disabled={submittingAppeal}
+                        className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingAppeal}
+                        className="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-black rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                      >
+                        {submittingAppeal ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>আবেদন পাঠান ➔</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            ) : (
+              /* Direct Delete Modal for Regular Users */
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-inner">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান?
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    অ্যাকাউন্ট মুছে ফেললে আপনার সকল পূর্বের অর্ডার হিস্ট্রি, সংরক্ষিত ডেলিভারি ঠিকানা এবং প্রোফাইল তথ্য চিরতরে মুছে যাবে। এই কাজটি আর ফিরিয়ে আনা সম্ভব হবে না।
+                  </p>
+
+                  {deleteError && (
+                    <div className="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-700 font-medium">
+                      {deleteError}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteModalOpen(false);
+                      setDeleteError(null);
+                    }}
+                    disabled={deletingSelf}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDeleteAccount}
+                    disabled={deletingSelf}
+                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-lg shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                  >
+                    {deletingSelf ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>স্থায়ীভাবে মুছুন</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Loyalty Application Popup Modal */}
       <LoyaltyApplicationModal

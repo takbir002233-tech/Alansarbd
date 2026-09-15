@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requirePermission } = require('../middleware/auth');
 
 // Helper to attach auto-calculated discount percent & savings to product object
 function enrichProduct(p) {
@@ -129,7 +129,7 @@ router.get('/:idOrSlug', (req, res) => {
 });
 
 // ADMIN: 1-CLICK STOCK IN / OUT TOGGLE
-router.post('/:id/toggle-stock', requireAdmin, (req, res) => {
+router.post('/:id/toggle-stock', requirePermission('products.edit'), (req, res) => {
   try {
     const { id } = req.params;
     const product = db.getProductById(id);
@@ -153,7 +153,7 @@ router.post('/:id/toggle-stock', requireAdmin, (req, res) => {
 });
 
 // ADMIN: DIRECT STOCK QUANTITY UPDATE
-router.put('/:id/stock', requireAdmin, (req, res) => {
+router.put('/:id/stock', requirePermission('products.edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { stock } = req.body;
@@ -179,7 +179,7 @@ router.put('/:id/stock', requireAdmin, (req, res) => {
 });
 
 // ADMIN: CREATE PRODUCT
-router.post('/', requireAdmin, (req, res) => {
+router.post('/', requirePermission('products.create'), (req, res) => {
   try {
     const { title, description, category_id, subcategory_id, price, discount_price, stock, thumbnail, images, specs, tags, is_featured, is_free_delivery, priority_order, delivery_time } = req.body;
 
@@ -217,7 +217,7 @@ router.post('/', requireAdmin, (req, res) => {
 });
 
 // ADMIN: UPDATE PRODUCT
-router.put('/:id', requireAdmin, (req, res) => {
+router.put('/:id', requirePermission('products.edit'), (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -250,7 +250,7 @@ router.put('/:id', requireAdmin, (req, res) => {
 });
 
 // ADMIN: REORDER PRODUCT (Move Up / Down)
-router.post('/:id/reorder', requireAdmin, (req, res) => {
+router.post('/:id/reorder', requirePermission('products.edit'), (req, res) => {
   try {
     const { id } = req.params;
     const { direction } = req.body;
@@ -276,7 +276,7 @@ router.post('/:id/reorder', requireAdmin, (req, res) => {
 });
 
 // ADMIN: DELETE PRODUCT
-router.delete('/:id', requireAdmin, (req, res) => {
+router.delete('/:id', requirePermission('products.delete'), (req, res) => {
   try {
     const { id } = req.params;
     const deleted = db.deleteProduct(id);
