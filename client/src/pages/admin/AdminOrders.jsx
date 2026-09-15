@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Package, 
@@ -13,17 +13,237 @@ import {
   Check,
   ExternalLink,
   Edit,
-  X
+  X,
+  MapPin,
+  Sparkles,
+  LayoutGrid,
+  ListFilter,
+  CheckCheck
 } from 'lucide-react';
 
-export default function AdminOrders({ onOpenInvoice }) {
+// Bangladesh 8 Divisions in Alphabetical Sequence with FULL BOX Color Themes
+const DIVISION_CONFIGS = [
+  {
+    id: 'barishal',
+    letter: 'B',
+    nameEn: 'Barishal',
+    nameBn: 'বরিশাল বিভাগ',
+    keywords: ['barishal', 'বরিশাল', 'barguna', 'বরগুনা', 'bhola', 'ভোলা', 'jhalokati', 'jhalakati', 'ঝালকাঠি', 'patuakhali', 'পটুয়াখালী', 'pirojpur', 'পিরোজপুর'],
+    theme: {
+      letterBg: 'bg-blue-600 text-white border-2 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.6)]',
+      boxBorder: 'border-2 border-blue-500/80 shadow-[0_0_35px_rgba(59,130,246,0.25)]',
+      boxBg: 'bg-gradient-to-b from-blue-950/80 via-blue-950/50 to-slate-950',
+      headerBg: 'bg-blue-900/60 border-b border-blue-700/60',
+      titleColor: 'text-blue-300 font-black',
+      badgeBg: 'bg-blue-500/30 text-blue-200 border border-blue-400/50',
+      accentDot: 'bg-blue-400 shadow-blue-400 shadow',
+      tableHeadBg: 'bg-blue-950/90 text-blue-200 border-b border-blue-800/80',
+      rowHover: 'divide-blue-800/40 hover:bg-blue-900/25',
+      codeColor: 'text-blue-400'
+    }
+  },
+  {
+    id: 'chattogram',
+    letter: 'C',
+    nameEn: 'Chattogram',
+    nameBn: 'চট্টগ্রাম বিভাগ',
+    keywords: ['chattogram', 'chittagong', 'চট্টগ্রাম', 'coxsbazar', "cox's bazar", 'কক্সবাজার', 'cumilla', 'comilla', 'কুমিল্লা', 'brahmanbaria', 'ব্রাহ্মণবাড়িয়া', 'chandpur', 'চাঁদপুর', 'noakhali', 'নোয়াখালী', 'feni', 'ফেনী', 'lakshmipur', 'লক্ষ্মীপুর', 'rangamati', 'রাঙ্গামাটি', 'bandarban', 'বান্দরবান', 'khagrachhari', 'খাগড়াছড়ি'],
+    theme: {
+      letterBg: 'bg-teal-600 text-white border-2 border-teal-400 shadow-[0_0_20px_rgba(20,184,166,0.6)]',
+      boxBorder: 'border-2 border-teal-500/80 shadow-[0_0_35px_rgba(20,184,166,0.25)]',
+      boxBg: 'bg-gradient-to-b from-teal-950/80 via-teal-950/50 to-slate-950',
+      headerBg: 'bg-teal-900/60 border-b border-teal-700/60',
+      titleColor: 'text-teal-300 font-black',
+      badgeBg: 'bg-teal-500/30 text-teal-200 border border-teal-400/50',
+      accentDot: 'bg-teal-400 shadow-teal-400 shadow',
+      tableHeadBg: 'bg-teal-950/90 text-teal-200 border-b border-teal-800/80',
+      rowHover: 'divide-teal-800/40 hover:bg-teal-900/25',
+      codeColor: 'text-teal-400'
+    }
+  },
+  {
+    id: 'dhaka',
+    letter: 'D',
+    nameEn: 'Dhaka',
+    nameBn: 'ঢাকা বিভাগ',
+    keywords: ['dhaka', 'ঢাকা', 'gazipur', 'গাজীপুর', 'narayanganj', 'নারায়ণগঞ্জ', 'tangail', 'টাঙ্গাইল', 'narsingdi', 'নরসিংদী', 'faridpur', 'ফরিদপুর', 'manikganj', 'মানিকগঞ্জ', 'munshiganj', 'মুন্সীগঞ্জ', 'kishoreganj', 'কিশোরগঞ্জ', 'gopalganj', 'গোপালগঞ্জ', 'madaripur', 'মাদারীপুর', 'rajbari', 'রাজবাড়ী', 'shariatpur', 'শরীয়তপুর', 'uttara', 'মিরপুর', 'mirpur', 'dhanmondi', 'ধানমন্ডি', 'gulshan', 'গুলশান', 'banani', 'বনানী'],
+    theme: {
+      letterBg: 'bg-amber-600 text-white border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.6)]',
+      boxBorder: 'border-2 border-amber-500/80 shadow-[0_0_35px_rgba(245,158,11,0.25)]',
+      boxBg: 'bg-gradient-to-b from-amber-950/80 via-amber-950/50 to-slate-950',
+      headerBg: 'bg-amber-900/60 border-b border-amber-700/60',
+      titleColor: 'text-amber-300 font-black',
+      badgeBg: 'bg-amber-500/30 text-amber-200 border border-amber-400/50',
+      accentDot: 'bg-amber-400 shadow-amber-400 shadow',
+      tableHeadBg: 'bg-amber-950/90 text-amber-200 border-b border-amber-800/80',
+      rowHover: 'divide-amber-800/40 hover:bg-amber-900/25',
+      codeColor: 'text-amber-400'
+    }
+  },
+  {
+    id: 'khulna',
+    letter: 'K',
+    nameEn: 'Khulna',
+    nameBn: 'খুলনা বিভাগ',
+    keywords: ['khulna', 'খুলনা', 'jashore', 'jessore', 'যশোর', 'kushtia', 'কুষ্টিয়া', 'satkhira', 'সাতক্ষীরা', 'bagerhat', 'বাগেরহাট', 'chuadanga', 'চুয়াডাঙ্গা', 'meherpur', 'মেহেরপুর', 'jhenaidah', 'ঝিনাইদহ', 'narail', 'নড়াইল', 'magura', 'মাগুরা'],
+    theme: {
+      letterBg: 'bg-emerald-600 text-white border-2 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.6)]',
+      boxBorder: 'border-2 border-emerald-500/80 shadow-[0_0_35px_rgba(16,185,129,0.25)]',
+      boxBg: 'bg-gradient-to-b from-emerald-950/80 via-emerald-950/50 to-slate-950',
+      headerBg: 'bg-emerald-900/60 border-b border-emerald-700/60',
+      titleColor: 'text-emerald-300 font-black',
+      badgeBg: 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/50',
+      accentDot: 'bg-emerald-400 shadow-emerald-400 shadow',
+      tableHeadBg: 'bg-emerald-950/90 text-emerald-200 border-b border-emerald-800/80',
+      rowHover: 'divide-emerald-800/40 hover:bg-emerald-900/25',
+      codeColor: 'text-emerald-400'
+    }
+  },
+  {
+    id: 'mymensingh',
+    letter: 'M',
+    nameEn: 'Mymensingh',
+    nameBn: 'ময়মনসিংহ বিভাগ',
+    keywords: ['mymensingh', 'ময়মনসিংহ', 'jamalpur', 'জামালপুর', 'netrokona', 'নেত্রকোণা', 'sherpur', 'শেরপুর'],
+    theme: {
+      letterBg: 'bg-purple-600 text-white border-2 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.6)]',
+      boxBorder: 'border-2 border-purple-500/80 shadow-[0_0_35px_rgba(168,85,247,0.25)]',
+      boxBg: 'bg-gradient-to-b from-purple-950/80 via-purple-950/50 to-slate-950',
+      headerBg: 'bg-purple-900/60 border-b border-purple-700/60',
+      titleColor: 'text-purple-300 font-black',
+      badgeBg: 'bg-purple-500/30 text-purple-200 border border-purple-400/50',
+      accentDot: 'bg-purple-400 shadow-purple-400 shadow',
+      tableHeadBg: 'bg-purple-950/90 text-purple-200 border-b border-purple-800/80',
+      rowHover: 'divide-purple-800/40 hover:bg-purple-900/25',
+      codeColor: 'text-purple-400'
+    }
+  },
+  {
+    id: 'rajshahi',
+    letter: 'R',
+    nameEn: 'Rajshahi',
+    nameBn: 'রাজশাহী বিভাগ',
+    keywords: ['rajshahi', 'রাজশাহী', 'bogura', 'bogra', 'বগুড়া', 'pabna', 'পাবনা', 'sirajganj', 'সিরাজগঞ্জ', 'naogaon', 'নওগাঁ', 'natore', 'নাটোর', 'chapainawabganj', 'চাঁপাইনবাবগঞ্জ', 'joypurhat', 'জয়পুরহাট'],
+    theme: {
+      letterBg: 'bg-orange-600 text-white border-2 border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.6)]',
+      boxBorder: 'border-2 border-orange-500/80 shadow-[0_0_35px_rgba(249,115,22,0.25)]',
+      boxBg: 'bg-gradient-to-b from-orange-950/80 via-orange-950/50 to-slate-950',
+      headerBg: 'bg-orange-900/60 border-b border-orange-700/60',
+      titleColor: 'text-orange-300 font-black',
+      badgeBg: 'bg-orange-500/30 text-orange-200 border border-orange-400/50',
+      accentDot: 'bg-orange-400 shadow-orange-400 shadow',
+      tableHeadBg: 'bg-orange-950/90 text-orange-200 border-b border-orange-800/80',
+      rowHover: 'divide-orange-800/40 hover:bg-orange-900/25',
+      codeColor: 'text-orange-400'
+    }
+  },
+  {
+    id: 'rangpur',
+    letter: 'R',
+    nameEn: 'Rangpur',
+    nameBn: 'রংপুর বিভাগ',
+    keywords: ['rangpur', 'রংপুর', 'dinajpur', 'দিনাজপুর', 'gaibandha', 'গাইবান্ধা', 'kurigram', 'কুড়িগ্রাম', 'lalmonirhat', 'লালমনিরহাট', 'nilphamari', 'নীলফামারী', 'panchagarh', 'পঞ্চগড়', 'thakurgaon', 'ঠাকুরগাঁও'],
+    theme: {
+      letterBg: 'bg-rose-600 text-white border-2 border-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.6)]',
+      boxBorder: 'border-2 border-rose-500/80 shadow-[0_0_35px_rgba(244,63,94,0.25)]',
+      boxBg: 'bg-gradient-to-b from-rose-950/80 via-rose-950/50 to-slate-950',
+      headerBg: 'bg-rose-900/60 border-b border-rose-700/60',
+      titleColor: 'text-rose-300 font-black',
+      badgeBg: 'bg-rose-500/30 text-rose-200 border border-rose-400/50',
+      accentDot: 'bg-rose-400 shadow-rose-400 shadow',
+      tableHeadBg: 'bg-rose-950/90 text-rose-200 border-b border-rose-800/80',
+      rowHover: 'divide-rose-800/40 hover:bg-rose-900/25',
+      codeColor: 'text-rose-400'
+    }
+  },
+  {
+    id: 'sylhet',
+    letter: 'S',
+    nameEn: 'Sylhet',
+    nameBn: 'সিলেট বিভাগ',
+    keywords: ['sylhet', 'সিলেট', 'moulvibazar', 'মৌলভীবাজার', 'habiganj', 'হবিগঞ্জ', 'sunamganj', 'সুনামগঞ্জ'],
+    theme: {
+      letterBg: 'bg-indigo-600 text-white border-2 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.6)]',
+      boxBorder: 'border-2 border-indigo-500/80 shadow-[0_0_35px_rgba(99,102,241,0.25)]',
+      boxBg: 'bg-gradient-to-b from-indigo-950/80 via-indigo-950/50 to-slate-950',
+      headerBg: 'bg-indigo-900/60 border-b border-indigo-700/60',
+      titleColor: 'text-indigo-300 font-black',
+      badgeBg: 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/50',
+      accentDot: 'bg-indigo-400 shadow-indigo-400 shadow',
+      tableHeadBg: 'bg-indigo-950/90 text-indigo-200 border-b border-indigo-800/80',
+      rowHover: 'divide-indigo-800/40 hover:bg-indigo-900/25',
+      codeColor: 'text-indigo-400'
+    }
+  }
+];
+
+// Helper to determine division from order
+function getOrderDivision(order) {
+  const cityStr = (order.shipping_city || '').toLowerCase();
+  const addrStr = (order.shipping_address || '').toLowerCase();
+
+  // 1. First priority: Check shipping_city directly
+  for (const div of DIVISION_CONFIGS) {
+    for (const kw of div.keywords) {
+      if (kw !== 'inside_dhaka' && cityStr.includes(kw.toLowerCase())) {
+        return div;
+      }
+    }
+  }
+
+  // 2. Second priority: Check shipping_address
+  for (const div of DIVISION_CONFIGS) {
+    for (const kw of div.keywords) {
+      if (kw !== 'inside_dhaka' && addrStr.includes(kw.toLowerCase())) {
+        return div;
+      }
+    }
+  }
+
+  // 3. Third priority: Check delivery_zone only for inside_dhaka
+  if ((order.delivery_zone || '').toLowerCase() === 'inside_dhaka') {
+    const dhakaDiv = DIVISION_CONFIGS.find(d => d.id === 'dhaka');
+    if (dhakaDiv) return dhakaDiv;
+  }
+
+  return {
+    id: 'other',
+    letter: 'O',
+    nameEn: 'Other Locations',
+    nameBn: 'অন্যান্য জেলা / আন-অ্যাসাইনড',
+    theme: {
+      letterBg: 'bg-slate-700 text-white border-2 border-slate-500 shadow-lg',
+      boxBorder: 'border-2 border-slate-700 shadow-xl',
+      boxBg: 'bg-slate-900',
+      headerBg: 'bg-slate-800/80 border-b border-slate-700',
+      titleColor: 'text-slate-300 font-black',
+      badgeBg: 'bg-slate-800 text-slate-300 border border-slate-700',
+      accentDot: 'bg-slate-400',
+      tableHeadBg: 'bg-slate-850 text-slate-300 border-b border-slate-700',
+      rowHover: 'divide-slate-800 hover:bg-slate-800/40',
+      codeColor: 'text-slate-300'
+    }
+  };
+}
+
+export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
   const { token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(initialStatus || 'all');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [copiedTrx, setCopiedTrx] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [viewMode, setViewMode] = useState('division'); // 'division' | 'flat'
+  const [confirmingId, setConfirmingId] = useState(null);
+
+  // Sync initialStatus when changed from dashboard
+  useEffect(() => {
+    if (initialStatus) {
+      setStatusFilter(initialStatus);
+    }
+  }, [initialStatus]);
 
   // Courier Link Assignment Modal State
   const [editingCourierOrder, setEditingCourierOrder] = useState(null);
@@ -35,6 +255,11 @@ export default function AdminOrders({ onOpenInvoice }) {
     note: ''
   });
   const [updating, setUpdating] = useState(false);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -62,10 +287,49 @@ export default function AdminOrders({ onOpenInvoice }) {
     fetchOrders();
   }, [token, statusFilter, paymentFilter]);
 
+  // 1-Click Order Confirmation (Moves order from Pending to Confirmed)
+  const handleConfirmOrder = async (order) => {
+    setConfirmingId(order.id);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'Confirmed',
+          note: 'Order confirmed by Admin in Orders & Trace'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`অর্ডার #${order.order_code} সফলভাবে কনফার্ম করা হয়েছে!`);
+        
+        // Optimistic update
+        setOrders(prev => {
+          // If current tab is 'pending', removing it makes it disappear immediately!
+          if (statusFilter === 'pending') {
+            return prev.filter(o => o.id !== order.id);
+          }
+          // Otherwise update its status
+          return prev.map(o => o.id === order.id ? data.order : o);
+        });
+      } else {
+        alert(data.message || 'অর্ডার কনফার্ম করতে সমস্যা হয়েছে');
+      }
+    } catch (err) {
+      console.error('Error confirming order:', err);
+      alert('অর্ডার কনফার্ম করার সময় ত্রুটি ঘটেছে');
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   const handleOpenCourierModal = (order) => {
     setEditingCourierOrder(order);
     setCourierForm({
-      status: order.status,
+      status: order.status === 'Pending' ? 'Processing' : (order.status || 'Shipped'),
       courier_name: order.courier_name || 'Steadfast Courier',
       consignment_id: order.consignment_id || '',
       courier_tracking_url: order.courier_tracking_url || '',
@@ -89,6 +353,7 @@ export default function AdminOrders({ onOpenInvoice }) {
       });
       const data = await res.json();
       if (data.success) {
+        showToast(`অর্ডার #${editingCourierOrder.order_code} এর কুরিয়ার ট্র্যাকিং লিংক যুক্ত হয়েছে!`);
         setOrders(prev =>
           prev.map(o => (o.id === editingCourierOrder.id ? data.order : o))
         );
@@ -116,9 +381,14 @@ export default function AdminOrders({ onOpenInvoice }) {
       });
       const data = await res.json();
       if (data.success) {
-        setOrders(prev =>
-          prev.map(o => (o.id === orderId ? data.order : o))
-        );
+        showToast(`স্ট্যাটাস পরিবর্তন করা হয়েছে: ${newStatus}`);
+        setOrders(prev => {
+          // If viewing specific status, and status changes away, remove it
+          if (statusFilter !== 'all' && statusFilter.toLowerCase() !== newStatus.toLowerCase()) {
+            return prev.filter(o => o.id !== orderId);
+          }
+          return prev.map(o => (o.id === orderId ? data.order : o));
+        });
       }
     } catch (err) {
       console.error('Status change error:', err);
@@ -131,33 +401,341 @@ export default function AdminOrders({ onOpenInvoice }) {
     setTimeout(() => setCopiedTrx(null), 2000);
   };
 
+  // Dedicated Tab Navigation Configurations
+  const tabConfigs = [
+    { id: 'pending', labelBn: 'অপেক্ষমান অর্ডার', labelEn: 'Pending' },
+    { id: 'confirmed', labelBn: 'কনফার্মড অর্ডার', labelEn: 'Confirmed' },
+    { id: 'processing', labelBn: 'প্রসেসিং', labelEn: 'Processing' },
+    { id: 'shipped', labelBn: 'কুরিয়ারে অন-ওয়ে', labelEn: 'Shipped' },
+    { id: 'delivered', labelBn: 'ডেলিভার্ড', labelEn: 'Delivered' },
+    { id: 'cancelled', labelBn: 'বাতিল', labelEn: 'Cancelled' },
+    { id: 'all', labelBn: 'সকল অর্ডার', labelEn: 'All Orders' }
+  ];
+
   const statuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
+  // Group orders by Division in Alphabetical Sequence
+  const divisionGroupedOrders = useMemo(() => {
+    const groups = {};
+    
+    // Initialize all 8 divisions
+    DIVISION_CONFIGS.forEach(div => {
+      groups[div.id] = { config: div, orders: [] };
+    });
+    groups['other'] = {
+      config: {
+        id: 'other',
+        letter: 'O',
+        nameEn: 'Other Locations',
+        nameBn: 'অন্যান্য জেলা / আন-অ্যাসাইনড',
+        theme: {
+          letterBg: 'bg-slate-700 text-white border-2 border-slate-500 shadow-lg',
+          boxBorder: 'border-2 border-slate-700 shadow-xl',
+          boxBg: 'bg-slate-900',
+          headerBg: 'bg-slate-800/80 border-b border-slate-700',
+          titleColor: 'text-slate-300 font-black',
+          badgeBg: 'bg-slate-800 text-slate-300 border border-slate-700',
+          accentDot: 'bg-slate-400',
+          tableHeadBg: 'bg-slate-850 text-slate-300 border-b border-slate-700',
+          rowHover: 'divide-slate-800 hover:bg-slate-800/40',
+          codeColor: 'text-slate-300'
+        }
+      },
+      orders: []
+    };
+
+    // Distribute orders into division buckets
+    orders.forEach(order => {
+      const divInfo = getOrderDivision(order);
+      if (groups[divInfo.id]) {
+        groups[divInfo.id].orders.push(order);
+      } else {
+        groups['other'].orders.push(order);
+      }
+    });
+
+    return groups;
+  }, [orders]);
+
+  // Render a Single Order Row with division theme styling
+  const renderOrderRow = (order, theme = null) => {
+    const isPending = order.status?.toLowerCase() === 'pending';
+    const codeColor = theme?.codeColor || 'text-amber-400';
+
+    return (
+      <tr key={order.id} className="hover:bg-white/5 transition-colors">
+        
+        {/* Code, Date & Time */}
+        <td className="p-4 align-top whitespace-nowrap">
+          <span className={`font-mono font-black block text-xs ${codeColor}`}>
+            #{order.order_code}
+          </span>
+          <span className="text-[11px] text-slate-200 font-semibold block mt-0.5">
+            {new Date(order.created_at).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            })}
+          </span>
+          <span className="text-[10px] text-slate-400 font-mono block">
+            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </td>
+
+        {/* Customer & Location */}
+        <td className="p-4 align-top max-w-xs">
+          <p className="font-bold text-white text-xs">{order.customer_name}</p>
+          <p className="text-slate-300 font-mono text-[11px] mt-0.5">{order.customer_phone}</p>
+          <p className="text-slate-300 text-[11px] mt-1 leading-snug">
+            {order.shipping_address}, <strong className="text-white font-bold">{order.shipping_city}</strong>
+          </p>
+          {order.notes && (
+            <p className="text-[10px] text-amber-300 italic mt-1">নোট: "{order.notes}"</p>
+          )}
+        </td>
+
+        {/* Payment & TrxID */}
+        <td className="p-4 align-top">
+          <div className="space-y-1">
+            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+              order.payment_method === 'bkash'
+                ? 'bg-pink-950 text-pink-300 border border-pink-700'
+                : order.payment_method === 'nagad'
+                ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                : order.payment_method === 'rocket'
+                ? 'bg-purple-950 text-purple-300 border border-purple-700'
+                : order.payment_method === 'upay'
+                ? 'bg-sky-950 text-sky-300 border border-sky-700'
+                : order.payment_method === 'cellfin'
+                ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                : order.payment_method === 'bank'
+                ? 'bg-blue-950 text-blue-300 border border-blue-700'
+                : 'bg-slate-800 text-slate-300 border border-slate-700'
+            }`}>
+              {order.payment_method}
+            </span>
+
+            {order.sender_number ? (
+              <p className="text-[10px] text-slate-300 font-mono">
+                From: <span className="text-white font-bold">{order.sender_number}</span>
+              </p>
+            ) : null}
+
+            {order.transaction_id ? (
+              <div className="flex items-center space-x-1.5 mt-1">
+                <span className="font-mono font-bold text-white bg-slate-900/80 px-2 py-0.5 rounded border border-slate-700 text-[11px]">
+                  {order.transaction_id}
+                </span>
+                <button
+                  onClick={() => copyTrx(order.transaction_id)}
+                  className="text-slate-300 hover:text-white p-1 cursor-pointer"
+                  title="Copy TrxID"
+                >
+                  {copiedTrx === order.transaction_id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            ) : null}
+
+            <p className="text-xs font-black text-white mt-1">
+              ৳{order.total_amount?.toLocaleString()}
+            </p>
+          </div>
+        </td>
+
+        {/* Courier Link & Consignment */}
+        <td className="p-4 align-top max-w-xs">
+          {order.courier_tracking_url ? (
+            <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/80">
+              <p className="text-[11px] font-bold text-emerald-400 flex items-center">
+                <Truck className="w-3.5 h-3.5 mr-1" /> {order.courier_name || 'Courier'}
+              </p>
+              {order.consignment_id && (
+                <p className="text-[10px] font-mono text-slate-300">
+                  ID: {order.consignment_id}
+                </p>
+              )}
+              <a
+                href={order.courier_tracking_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-bold text-amber-300 hover:underline flex items-center"
+              >
+                <span>Live Courier Link</span>
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleOpenCourierModal(order)}
+              className="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-850 text-amber-300 text-[11px] font-bold rounded-lg border border-amber-500/40 flex items-center space-x-1 cursor-pointer shadow"
+            >
+              <Truck className="w-3 h-3 text-amber-400" />
+              <span>+ কুরিয়ার লিংক দিন</span>
+            </button>
+          )}
+        </td>
+
+        {/* Status & 1-Click Confirmation */}
+        <td className="p-4 align-top">
+          <div className="space-y-2">
+            
+            {/* 1-Click Order Confirmation for Pending */}
+            {isPending && (
+              <button
+                type="button"
+                disabled={confirmingId === order.id}
+                onClick={() => handleConfirmOrder(order)}
+                className="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-600/40 flex items-center justify-center space-x-1.5 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="অর্ডার কনফার্ম করুন"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>{confirmingId === order.id ? 'কনফার্ম হচ্ছে...' : 'অর্ডার কনফার্ম করুন'}</span>
+              </button>
+            )}
+
+            {/* Status Dropdown */}
+            <select
+              value={order.status}
+              onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
+              className={`w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border outline-none cursor-pointer ${
+                order.status === 'Confirmed'
+                  ? 'bg-blue-950 text-blue-300 border-blue-700'
+                  : order.status === 'Processing'
+                  ? 'bg-indigo-950 text-indigo-300 border-indigo-700'
+                  : order.status === 'Shipped'
+                  ? 'bg-amber-950 text-amber-300 border-amber-700'
+                  : order.status === 'Delivered'
+                  ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                  : order.status === 'Cancelled'
+                  ? 'bg-rose-950 text-rose-300 border-rose-700'
+                  : 'bg-amber-950 text-amber-300 border-amber-700'
+              }`}
+            >
+              {statuses.map(s => (
+                <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
+              ))}
+            </select>
+          </div>
+        </td>
+
+        {/* Actions */}
+        <td className="p-4 align-top text-right">
+          <div className="flex items-center justify-end space-x-2">
+            <button
+              onClick={() => handleOpenCourierModal(order)}
+              className="p-2 bg-slate-900/80 hover:bg-slate-800 text-amber-400 rounded-xl cursor-pointer border border-slate-700"
+              title="Assign Courier Partner & Link"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => onOpenInvoice(order)}
+              className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-xl flex items-center space-x-1 border border-slate-700 cursor-pointer"
+              title="Print / View Invoice"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-400" />
+              <span>চালান</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in">
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2.5 animate-in slide-in-from-top text-xs font-bold border border-emerald-400">
+          <CheckCircle2 className="w-5 h-5 text-white" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
-          <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Fulfillment & Logistics</span>
+          <span className="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center">
+            <Sparkles className="w-3.5 h-3.5 mr-1" /> Fulfillment & Logistics
+          </span>
           <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">Orders & Courier Link Management</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Verify TrxIDs, assign Steadfast/RedX/Pathao tracking links, and manage dispatches</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            বিভাগ অনুযায়ী বর্ণানুক্রমিক অর্ডার ভিউ (পুরো বক্সে বিভাগের কালার থিম), কনফার্মেশন ও ট্র্যাকিং
+          </p>
         </div>
 
-        <button
-          onClick={fetchOrders}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors"
-        >
-          Refresh Orders
-        </button>
+        <div className="flex items-center space-x-3">
+          
+          {/* View Mode Switcher */}
+          <div className="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center space-x-1">
+            <button
+              onClick={() => setViewMode('division')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'division'
+                  ? 'bg-amber-500 text-slate-950 font-black shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="বিভাগ অনুযায়ী ভিউ (B, C, D... বর্ণানুক্রমিক)"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>বিভাগ অনুযায়ী ভিউ</span>
+            </button>
+            <button
+              onClick={() => setViewMode('flat')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'flat'
+                  ? 'bg-amber-500 text-slate-950 font-black shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="সাধারণ টেবিল ভিউ"
+            >
+              <ListFilter className="w-3.5 h-3.5" />
+              <span>সাধারণ টেবিল</span>
+            </button>
+          </div>
+
+          <button
+            onClick={fetchOrders}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+          >
+            রিফ্রেশ
+          </button>
+        </div>
       </div>
 
-      {/* Filters Bar */}
+      {/* DEDICATED HIGH-VISIBILITY STATUS TABS */}
+      <div className="bg-slate-900 p-2 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-1.5">
+        {tabConfigs.map(tab => {
+          const isActive = statusFilter.toLowerCase() === tab.id.toLowerCase();
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+                isActive
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <span>{tab.labelBn}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+                isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {tab.labelEn}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filters & Search Bar */}
       <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="w-full md:w-80 relative">
+        <div className="w-full md:w-96 relative">
           <input
             type="text"
-            placeholder="Search by Code, Customer, TrxID, Consignment..."
+            placeholder="অর্ডার কোড, গ্রাহক, ফোন, জেলা বা TrxID লিখে খুঁজুন..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
@@ -166,20 +744,7 @@ export default function AdminOrders({ onOpenInvoice }) {
         </div>
 
         <div className="flex items-center space-x-3 w-full md:w-auto overflow-x-auto">
-          <div className="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-            <span className="text-slate-400">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs"
-            >
-              <option value="all" className="bg-slate-800 text-white">All Statuses</option>
-              {statuses.map(s => (
-                <option key={s} value={s.toLowerCase()} className="bg-slate-800 text-white">{s}</option>
-              ))}
-            </select>
-          </div>
-
+          {/* Payment Method Selector */}
           <div className="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
             <span className="text-slate-400">Payment:</span>
             <select
@@ -197,19 +762,104 @@ export default function AdminOrders({ onOpenInvoice }) {
               <option value="cod" className="bg-slate-800 text-white">Cash on Delivery</option>
             </select>
           </div>
+
+          <span className="text-xs font-bold text-slate-400">
+            মোট অর্ডার: <strong className="text-white">{orders.length}</strong>
+          </span>
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
-        {loading ? (
-          <div className="py-16 text-center text-slate-400 text-xs">Loading orders...</div>
-        ) : orders.length === 0 ? (
-          <div className="py-16 text-center space-y-2">
-            <Package className="w-12 h-12 text-slate-700 mx-auto" />
-            <h4 className="text-sm font-bold text-slate-300">No orders match criteria</h4>
-          </div>
-        ) : (
+      {/* ORDERS CONTENT AREA */}
+      {loading ? (
+        <div className="py-20 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-3 bg-slate-900 rounded-3xl border border-slate-800">
+          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>অর্ডার লোড হচ্ছে...</span>
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="py-20 text-center space-y-3 bg-slate-900 rounded-3xl border border-slate-800">
+          <Package className="w-12 h-12 text-slate-700 mx-auto" />
+          <h4 className="text-sm font-bold text-slate-300">কোন অর্ডার পাওয়া যায়নি</h4>
+          <p className="text-xs text-slate-500">
+            {statusFilter !== 'all' 
+              ? `"${statusFilter}" ক্যাটাগরিতে বর্তমানে কোন অর্ডার নেই।`
+              : 'নতুন অর্ডারের জন্য অপেক্ষা করুন।'}
+          </p>
+        </div>
+      ) : viewMode === 'division' ? (
+        
+        /* -------------------------------------------------------------
+           DIVISION GROUPED VIEW (PER USER SKETCH media_1789453015223.jpg)
+           - Centered Letter Box atop each section: [ B ], [ C ], [ D ]...
+           - ENTIRE BOX COLORED IN DIVISION'S DISTINCT COLOR THEME
+           ------------------------------------------------------------- */
+        <div className="space-y-12">
+          {Object.keys(divisionGroupedOrders).map((divId) => {
+            const group = divisionGroupedOrders[divId];
+            const divOrders = group.orders;
+            const config = group.config;
+
+            // Only show divisions that have orders
+            if (divOrders.length === 0) return null;
+
+            return (
+              <div key={config.id} className="space-y-3.5 animate-in fade-in">
+                
+                {/* 1. CENTERED LETTER BOX (Exactly per user drawing in 123.pdf sketch) */}
+                <div className="flex justify-center">
+                  <div className={`px-8 py-2 rounded-2xl font-black text-xl uppercase tracking-widest flex items-center justify-center transition-transform hover:scale-110 cursor-default ${config.theme.letterBg}`}>
+                    {config.letter}
+                  </div>
+                </div>
+
+                {/* 2. DIVISION CONTAINER BOX - FULL BOX COLORED WITH DIVISION'S THEME */}
+                <div className={`rounded-3xl ${config.theme.boxBorder} ${config.theme.boxBg} overflow-hidden transition-all`}>
+                  
+                  {/* Division Header Banner */}
+                  <div className={`p-4 sm:px-6 ${config.theme.headerBg} flex flex-col sm:flex-row sm:items-center justify-between gap-2`}>
+                    <div className="flex items-center space-x-3">
+                      <span className={`w-3.5 h-3.5 rounded-full ${config.theme.accentDot}`}></span>
+                      <h3 className={`text-lg tracking-wide ${config.theme.titleColor}`}>
+                        {config.nameEn} ({config.nameBn})
+                      </h3>
+                      <span className={`text-xs px-3 py-1 rounded-full font-black ${config.theme.badgeBg}`}>
+                        {divOrders.length} টি অর্ডার
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-300 font-semibold flex items-center space-x-2">
+                      <span>বিভাগীয় অর্ডার তালিকা</span>
+                    </div>
+                  </div>
+
+                  {/* Division Orders Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className={config.theme.tableHeadBg}>
+                        <tr>
+                          <th className="p-4">Order Code & Date</th>
+                          <th className="p-4">Customer & Location</th>
+                          <th className="p-4">Payment & TrxID</th>
+                          <th className="p-4">Courier Link & Consignment</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y ${config.theme.rowHover}`}>
+                        {divOrders.map(order => renderOrderRow(order, config.theme))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        
+        /* -------------------------------------------------------------
+           STANDARD FLAT TABLE VIEW
+           ------------------------------------------------------------- */
+        <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-800/80 text-slate-400 uppercase font-semibold border-b border-slate-700">
@@ -223,168 +873,12 @@ export default function AdminOrders({ onOpenInvoice }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-800/40 transition-colors">
-                    
-                    {/* Code & Date */}
-                    <td className="p-4 align-top">
-                      <span className="font-mono font-bold text-amber-400 block text-xs">
-                        #{order.order_code}
-                      </span>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">
-                        {new Date(order.created_at).toLocaleDateString('en-GB')}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block">
-                        {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </td>
-
-                    {/* Customer */}
-                    <td className="p-4 align-top max-w-xs">
-                      <p className="font-bold text-white text-xs">{order.customer_name}</p>
-                      <p className="text-slate-400 font-mono text-[11px] mt-0.5">{order.customer_phone}</p>
-                      <p className="text-slate-400 text-[11px] mt-1 leading-snug">
-                        {order.shipping_address}, <strong className="text-slate-300">{order.shipping_city}</strong>
-                      </p>
-                      {order.notes && (
-                        <p className="text-[10px] text-amber-400/80 italic mt-1">Gift Note: "{order.notes}"</p>
-                      )}
-                    </td>
-
-                    {/* Payment & TrxID */}
-                    <td className="p-4 align-top">
-                      <div className="space-y-1">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                          order.payment_method === 'bkash'
-                            ? 'bg-pink-950 text-pink-400 border border-pink-800'
-                            : order.payment_method === 'nagad'
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                            : order.payment_method === 'rocket'
-                            ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                            : order.payment_method === 'upay'
-                            ? 'bg-sky-950 text-sky-400 border border-sky-800'
-                            : order.payment_method === 'cellfin'
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                            : order.payment_method === 'bank'
-                            ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                            : 'bg-slate-800 text-slate-300 border border-slate-700'
-                        }`}>
-                          {order.payment_method}
-                        </span>
-
-                        {order.sender_number ? (
-                          <p className="text-[10px] text-slate-400 font-mono">
-                            From: <span className="text-slate-200 font-bold">{order.sender_number}</span>
-                          </p>
-                        ) : null}
-
-                        {order.transaction_id ? (
-                          <div className="flex items-center space-x-1.5 mt-1">
-                            <span className="font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-[11px]">
-                              {order.transaction_id}
-                            </span>
-                            <button
-                              onClick={() => copyTrx(order.transaction_id)}
-                              className="text-slate-400 hover:text-white p-1"
-                              title="Copy TrxID"
-                            >
-                              {copiedTrx === order.transaction_id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                        ) : null}
-
-                        <p className="text-xs font-black text-white mt-1">
-                          ৳{order.total_amount?.toLocaleString()}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* COURIER LINK & CONSIGNMENT COLUMN */}
-                    <td className="p-4 align-top max-w-xs">
-                      {order.courier_tracking_url ? (
-                        <div className="space-y-1.5 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700">
-                          <p className="text-[11px] font-bold text-emerald-400 flex items-center">
-                            <Truck className="w-3.5 h-3.5 mr-1" /> {order.courier_name || 'Courier'}
-                          </p>
-                          {order.consignment_id && (
-                            <p className="text-[10px] font-mono text-slate-300">
-                              ID: {order.consignment_id}
-                            </p>
-                          )}
-                          <a
-                            href={order.courier_tracking_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[11px] font-bold text-amber-400 hover:underline flex items-center"
-                          >
-                            <span>Live Courier Link</span>
-                            <ExternalLink className="w-3 h-3 ml-1" />
-                          </a>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenCourierModal(order)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-bold rounded-lg border border-amber-900/40 flex items-center space-x-1"
-                        >
-                          <Truck className="w-3 h-3 text-amber-400" />
-                          <span>+ Add Courier Link</span>
-                        </button>
-                      )}
-                    </td>
-
-                    {/* Status Dropdown */}
-                    <td className="p-4 align-top">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
-                        className={`w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border outline-none cursor-pointer ${
-                          order.status === 'Confirmed'
-                            ? 'bg-blue-950 text-blue-300 border-blue-700'
-                            : order.status === 'Processing'
-                            ? 'bg-indigo-950 text-indigo-300 border-indigo-700'
-                            : order.status === 'Shipped'
-                            ? 'bg-amber-950 text-amber-300 border-amber-700'
-                            : order.status === 'Delivered'
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                            : order.status === 'Cancelled'
-                            ? 'bg-rose-950 text-rose-300 border-rose-700'
-                            : 'bg-slate-800 text-slate-300 border-slate-700'
-                        }`}
-                      >
-                        {statuses.map(s => (
-                          <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-4 align-top text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleOpenCourierModal(order)}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl"
-                          title="Assign Courier Partner & Link"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => onOpenInvoice(order)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center space-x-1 border border-slate-700"
-                          title="Print / View Invoice"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Invoice</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {orders.map(order => renderOrderRow(order))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Courier Assignment Modal */}
       {editingCourierOrder && (
@@ -399,7 +893,7 @@ export default function AdminOrders({ onOpenInvoice }) {
               </div>
               <button
                 onClick={() => setEditingCourierOrder(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -407,7 +901,7 @@ export default function AdminOrders({ onOpenInvoice }) {
 
             <form onSubmit={handleSaveCourierDetails} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Courier Partner Name *</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">কুরিয়ার কোম্পানির নাম *</label>
                 <select
                   value={courierForm.courier_name}
                   onChange={(e) => setCourierForm({ ...courierForm, courier_name: e.target.value })}
@@ -423,10 +917,10 @@ export default function AdminOrders({ onOpenInvoice }) {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Consignment ID / Tracking Number</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Consignment ID / ট্র্যাকিং নম্বর</label>
                 <input
                   type="text"
-                  placeholder="e.g. SF-88301948 or REDX-12345"
+                  placeholder="যেমন: SF-88301948 অথবা REDX-12345"
                   value={courierForm.consignment_id}
                   onChange={(e) => setCourierForm({ ...courierForm, consignment_id: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono"
@@ -434,30 +928,30 @@ export default function AdminOrders({ onOpenInvoice }) {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Direct Courier Tracking Web Link (URL) *</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">কুরিয়ার লাইভ ট্র্যাকিং ওয়েব লিংক (URL) *</label>
                 <input
                   type="url"
                   required
-                  placeholder="https://steadfast.com.bd/t/SF88301948 or https://redx.com.bd/track/..."
+                  placeholder="https://steadfast.com.bd/t/SF88301948 অথবা https://redx.com.bd/track/..."
                   value={courierForm.courier_tracking_url}
                   onChange={(e) => setCourierForm({ ...courierForm, courier_tracking_url: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono text-[11px]"
                 />
                 <span className="text-[10px] text-amber-400 mt-1 block">
-                  Customer will see a direct "Track on Courier Website" button linking to this URL!
+                  গ্রাহক তার ড্যাশবোর্ড ও ট্রেস পেজে এই লিংকে সরাসরি ক্লিক করে লাইভ পার্সেল দেখতে পারবেন!
                 </span>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Fulfillment Status</label>
+                <label className="text-xs font-bold text-slate-300 block mb-1">ফুলফিলমেন্ট স্ট্যাটাস</label>
                 <select
                   value={courierForm.status}
                   onChange={(e) => setCourierForm({ ...courierForm, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="Processing">Processing (Packaging)</option>
-                  <option value="Shipped">Shipped (Handed to Courier)</option>
-                  <option value="Delivered">Delivered</option>
+                  <option value="Processing">Processing (প্যাকেজিং চলছে)</option>
+                  <option value="Shipped">Shipped (কুরিয়ারে হস্তান্তর করা হয়েছে)</option>
+                  <option value="Delivered">Delivered (ডেলিভার্ড সম্পন্ন)</option>
                 </select>
               </div>
 
@@ -465,16 +959,16 @@ export default function AdminOrders({ onOpenInvoice }) {
                 <button
                   type="button"
                   onClick={() => setEditingCourierOrder(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
                 >
-                  Cancel
+                  বাতিল
                 </button>
                 <button
                   type="submit"
                   disabled={updating}
-                  className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 font-black text-xs rounded-xl shadow-lg"
+                  className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-slate-950 font-black text-xs rounded-xl shadow-lg cursor-pointer"
                 >
-                  {updating ? 'Saving...' : 'Save & Publish Courier Link'}
+                  {updating ? 'সংরক্ষণ হচ্ছে...' : 'কুরিয়ার লিংক সংরক্ষণ ও প্রকাশ'}
                 </button>
               </div>
             </form>

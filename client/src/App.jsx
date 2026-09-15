@@ -97,6 +97,7 @@ function MainApp() {
 
   // Admin Tab Navigation
   const [adminTab, setAdminTab] = useState('dashboard');
+  const [adminOrderFilter, setAdminOrderFilter] = useState('all');
 
   // Handle native browser back and mobile phone hardware/gesture back buttons
   useEffect(() => {
@@ -218,8 +219,21 @@ function MainApp() {
       />
     ) : (
       <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onNavigate={navigate}>
-        {adminTab === 'dashboard' && <AdminDashboard onNavigateTab={setAdminTab} onOpenInvoice={handleOpenInvoice} />}
-        {adminTab === 'orders' && <AdminOrders onOpenInvoice={handleOpenInvoice} />}
+        {adminTab === 'dashboard' && (
+          <AdminDashboard 
+            onNavigateTab={(tab, status) => {
+              setAdminTab(tab);
+              if (status) setAdminOrderFilter(status);
+            }} 
+            onOpenInvoice={handleOpenInvoice} 
+          />
+        )}
+        {adminTab === 'orders' && (
+          <AdminOrders 
+            initialStatus={adminOrderFilter} 
+            onOpenInvoice={handleOpenInvoice} 
+          />
+        )}
         {adminTab === 'products' && <AdminProducts />}
         {adminTab === 'categories' && <AdminCategories />}
         {adminTab === 'vouchers' && <AdminVouchers />}

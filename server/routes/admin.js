@@ -10,9 +10,29 @@ router.get('/stats', requireAdmin, (req, res) => {
     const products = db.getProducts();
     const users = db.getUsers();
 
-    // Calculate revenue from non-cancelled orders
+    // Calculate revenue from non-cancelled orders by time range
     const validOrders = orders.filter(o => o.status !== 'Cancelled');
     const totalRevenue = validOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekStart = todayStart - 6 * 24 * 60 * 60 * 1000;
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+
+    const revenueToday = validOrders
+      .filter(o => new Date(o.created_at).getTime() >= todayStart)
+      .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const revenueWeek = validOrders
+      .filter(o => new Date(o.created_at).getTime() >= weekStart)
+      .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const revenueMonth = validOrders
+      .filter(o => new Date(o.created_at).getTime() >= monthStart)
+      .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const revenueYear = validOrders
+      .filter(o => new Date(o.created_at).getTime() >= yearStart)
+      .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const revenueAll = totalRevenue;
 
     const pendingOrders = orders.filter(o => o.status === 'Pending').length;
     const confirmedOrders = orders.filter(o => o.status === 'Confirmed').length;
@@ -23,13 +43,20 @@ router.get('/stats', requireAdmin, (req, res) => {
 
     const lowStockProducts = products.filter(p => p.stock <= 5);
 
-    // Group sales by recent days for chart
-    const recentOrders = orders.slice(0, 7);
+    // Group sales by recent days for chart (up to 30 recent orders)
+    const recentOrders = orders.slice(0, 30);
 
     return res.json({
       success: true,
       stats: {
         total_revenue: totalRevenue,
+        revenue_by_period: {
+          today: revenueToday,
+          week: revenueWeek,
+          month: revenueMonth,
+          year: revenueYear,
+          all: revenueAll
+        },
         total_orders: orders.length,
         pending_orders: pendingOrders,
         confirmed_orders: confirmedOrders,
