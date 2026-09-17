@@ -860,6 +860,30 @@ class Database {
         if (!this.data.site_settings.admin_notification_email) {
           this.data.site_settings.admin_notification_email = 'alansar.bd@hotmail.com';
         }
+        if (!this.data.site_settings.smtp_host) {
+          this.data.site_settings.smtp_host = 'smtp-mail.outlook.com';
+        }
+        if (!this.data.site_settings.smtp_port) {
+          this.data.site_settings.smtp_port = 587;
+        }
+        if (!this.data.site_settings.smtp_user) {
+          this.data.site_settings.smtp_user = 'alansar.bd@hotmail.com';
+        }
+        if (this.data.site_settings.smtp_pass === undefined) {
+          this.data.site_settings.smtp_pass = '';
+        }
+        if (!this.data.site_settings.custom_order_notif_msg) {
+          this.data.site_settings.custom_order_notif_msg = 'নতুন অর্ডার জমা পড়েছে! অনুগ্রহ করে দ্রুত প্রসেস করুন।';
+        }
+        if (!this.data.site_settings.custom_qard_notif_msg) {
+          this.data.site_settings.custom_qard_notif_msg = 'নতুন করযে হাসানা আবেদন জমা পড়েছে। ভেরিফিকেশন সম্পন্ন করুন।';
+        }
+        if (!this.data.site_settings.custom_vip_notif_msg) {
+          this.data.site_settings.custom_vip_notif_msg = 'নতুন ভিআইপি মেম্বারশিপ আবেদন জমা পড়েছে।';
+        }
+        if (!this.data.site_settings.custom_welcome_email_msg) {
+          this.data.site_settings.custom_welcome_email_msg = 'আল আনসার সুপার শপে রেজিস্ট্রেশন করার জন্য আপনাকে আন্তরিক ধন্যবাদ।';
+        }
         
         // Ensure VIP account exists
         if (!this.data.users.find(u => u.phone === '01700112233' || u.id === 'usr_vip_member')) {

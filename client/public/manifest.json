@@ -1,0 +1,21 @@
+{
+  "name": "AL ANSAR SUPER SHOP | আল আনসার সুপার শপ",
+  "short_name": "Al Ansar",
+  "description": "প্রিমিয়াম ইসলামিক পণ্য, মধু, ঘি, আতর ও করযে হাসানা সেবা",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

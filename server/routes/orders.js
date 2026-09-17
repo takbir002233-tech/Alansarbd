@@ -171,9 +171,10 @@ router.post('/', (req, res) => {
     });
 
     // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const customOrderPrefix = siteSettings?.custom_order_notif_msg || 'নতুন অর্ডার এসেছে';
     const notif = db.createAdminNotification({
       type: 'order',
-      title: '🛒 নতুন অর্ডার এসেছে',
+      title: `🛒 ${customOrderPrefix}`,
       message: `অর্ডার #${newOrder.order_code} - ${newOrder.customer_name} (৳${Number(newOrder.total_amount).toLocaleString()})`,
       link_tab: 'orders',
       data: { order_id: newOrder.id, order_code: newOrder.order_code, total_amount: newOrder.total_amount }
@@ -195,8 +196,8 @@ router.post('/', (req, res) => {
     const itemsSummary = verifiedItems.map(i => `${i.title} (${i.quantity}টি)`).join(', ');
     mailService.sendAdminAlert({
       type: 'order',
-      title: `নতুন অর্ডার #${newOrder.order_code} (৳${Number(newOrder.total_amount).toLocaleString()})`,
-      message: `${newOrder.customer_name} একটি নতুন অর্ডার সফলভাবে সম্পন্ন করেছেন।`,
+      title: `${customOrderPrefix} #${newOrder.order_code} (৳${Number(newOrder.total_amount).toLocaleString()})`,
+      message: `${customOrderPrefix}: ${newOrder.customer_name} একটি নতুন অর্ডার সম্পন্ন করেছেন।`,
       details: {
         'অর্ডার নম্বর': '#' + newOrder.order_code,
         'গ্রাহকের নাম': newOrder.customer_name,

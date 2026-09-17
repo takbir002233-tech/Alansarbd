@@ -1114,30 +1114,79 @@ router.delete('/notifications', requireAdmin, (req, res) => {
 // TEST EMAIL DISPATCH (from Admin Settings)
 router.post('/test-email', requireAdmin, async (req, res) => {
   try {
-    const { target_email } = req.body;
+    const { target_email, custom_message } = req.body;
     const siteSettings = db.getSiteSettings() || {};
     const recipient = target_email || siteSettings.admin_notification_email || 'alansar.bd@hotmail.com';
     
-    const result = await mailService.sendAdminAlert({
-      type: 'order',
-      title: '🧪 টেস্ট ইমেইল নোটিফিকেশন (Test Alert)',
-      message: 'আল আনসার অ্যাডমিন প্যানেল থেকে টেস্ট নোটিফিকেশন সফলভাবে পাঠানো হয়েছে। আপনার ইমেইল কনফিগারেশন সক্রিয় রয়েছে।',
-      details: {
-        'পরীক্ষামূলক তারিখ': new Date().toLocaleString('bn-BD'),
-        'প্রেরক স্টোর': siteSettings.store_name || 'AL ANSAR SUPER SHOP',
-        'স্ট্যাটাস': 'সক্রিয় ও কার্যকর'
-      },
-      link: 'https://alansarbd.com/admin'
+    const result = await mailService.testSmtpAndSend({
+      targetEmail: recipient,
+      customMessage: custom_message
     });
+
+    return res.json(result);
+  } catch (err) {
+    console.error('Error sending test email:', err);
+    return res.status(500).json({ success: false, message: 'টেস্ট ইমেইল পাঠাতে সার্ভার ত্রুটি হয়েছে: ' + err.message });
+  }
+});
+
+// SEND CUSTOM NOTIFICATION (Mobile status bar, PC desktop & optional email)
+router.post('/send-custom-notification', requireAdmin, async (req, res) => {
+  try {
+    const { title, message, target, user_id, link, send_email } = req.body;
+    if (!title || !title.trim() || !message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'নোটিফিকেশনের শিরোনাম ও বার্তা উভয়ই আবশ্যক।' });
+    }
+
+    const cleanTitle = title.trim();
+    const cleanMsg = message.trim();
+    const cleanLink = (link && link.trim()) ? link.trim() : '/admin';
+
+    // 1. Create in-app admin notification record
+    const notif = db.createAdminNotification({
+      type: 'custom',
+      title: cleanTitle,
+      message: cleanMsg,
+      link: cleanLink,
+      link_tab: cleanLink.replace('/admin/', '').replace('/admin', '') || 'dashboard',
+      details: {
+        'বার্তা ধরণ': 'কাস্টম পুশ নোটিফিকেশন',
+        'প্রাপক লক্ষ্য': target === 'all_users' ? 'সকল গ্রাহক (Broadcast)' : (target === 'specific_user' ? `নির্দিষ্ট গ্রাহক (${user_id})` : 'সকল অ্যাডমিন ও স্টাফ'),
+        'প্রেরক অ্যাডমিন': req.user.name || 'Admin',
+        'তারিখ ও সময়': new Date().toLocaleString('bn-BD')
+      }
+    });
+
+    // 2. Real-time WebSocket emission (triggers Mobile Status Bar & PC Action Center toast)
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('admin_notification', notif);
+      if (target === 'all_users') {
+        io.emit('public_broadcast', { title: cleanTitle, message: cleanMsg, link: cleanLink });
+      }
+    }
+
+    // 3. Optional Email dispatch
+    let mailResult = null;
+    if (send_email) {
+      mailResult = await mailService.sendAdminAlert({
+        type: 'custom',
+        title: cleanTitle,
+        message: cleanMsg,
+        details: notif.details,
+        link: cleanLink
+      });
+    }
 
     return res.json({
       success: true,
-      message: `টেস্ট ইমেইল সফলভাবে পাঠানো হয়েছে (${recipient})!`,
-      details: result
+      message: 'কাস্টম নোটিফিকেশন সফলভাবে প্রেরণ করা হয়েছে (মোবাইল ও পিসিতে পুশ অ্যালার্ট পাঠানো হয়েছে)!',
+      notification: notif,
+      mailResult
     });
   } catch (err) {
-    console.error('Error sending test email:', err);
-    return res.status(500).json({ success: false, message: 'টেস্ট ইমেইল পাঠাতে সমস্যা হয়েছে।' });
+    console.error('Error sending custom notification:', err);
+    return res.status(500).json({ success: false, message: 'কাস্টম নোটিফিকেশন পাঠাতে সমস্যা হয়েছে।' });
   }
 });
 

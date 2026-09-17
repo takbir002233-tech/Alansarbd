@@ -19,23 +19,16 @@ function getTransporter() {
         port,
         secure,
         auth: { user, pass },
-        tls: { rejectUnauthorized: false }
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 12000,
+        greetingTimeout: 12000
       });
     } catch (err) {
       console.warn('⚠️ SMTP Transporter creation warning:', err.message);
     }
   }
 
-  // Safe fallback logger if SMTP credentials not fully provided
-  return {
-    sendMail: async (options) => {
-      console.log(`📧 [MAIL SERVICE - SIMULATED DISPATCH]:`);
-      console.log(`   To: ${options.to}`);
-      console.log(`   Subject: ${options.subject}`);
-      console.log(`   From: ${options.from}`);
-      return { messageId: 'sim_' + Date.now(), accepted: [options.to] };
-    }
-  };
+  return null;
 }
 
 /**
@@ -55,13 +48,110 @@ function getMailAddresses() {
  */
 async function sendSafeMail(mailOptions) {
   try {
+    const settings = db.getSiteSettings() || {};
+    const pass = settings.smtp_pass || process.env.SMTP_PASS || '';
+
+    if (!pass) {
+      console.warn(`⚠️ [MAIL SERVICE NOT CONFIGURED]: SMTP password is missing. Simulated dispatch to ${mailOptions.to} (${mailOptions.subject})`);
+      return { 
+        success: false, 
+        notConfigured: true, 
+        message: 'SMTP পাসওয়ার্ড দেওয়া নেই। ইমেইল পাঠাতে অ্যাডমিন সেটিংস থেকে অ্যাপ পাসওয়ার্ড প্রদান করুন।' 
+      };
+    }
+
     const transporter = getTransporter();
+    if (!transporter) {
+      return { success: false, error: 'Failed to initialize SMTP transporter.' };
+    }
+
     const result = await transporter.sendMail(mailOptions);
     console.log(`✉️ Email successfully dispatched to ${mailOptions.to} (${mailOptions.subject})`);
     return { success: true, result };
   } catch (error) {
     console.error(`❌ Mail dispatch failed to ${mailOptions.to}:`, error.message);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Real SMTP Verification & Test Email Dispatch (used by Admin Panel)
+ */
+async function testSmtpAndSend({ targetEmail, customMessage }) {
+  const settings = db.getSiteSettings() || {};
+  const host = settings.smtp_host || process.env.SMTP_HOST || 'smtp-mail.outlook.com';
+  const port = Number(settings.smtp_port || process.env.SMTP_PORT) || 587;
+  const user = settings.smtp_user || process.env.SMTP_USER || settings.admin_notification_email || 'alansar.bd@hotmail.com';
+  const pass = settings.smtp_pass || process.env.SMTP_PASS || '';
+  const recipient = targetEmail || settings.admin_notification_email || 'alansar.bd@hotmail.com';
+
+  if (!pass) {
+    return {
+      success: false,
+      notConfigured: true,
+      message: '⚠️ কোনো ইমেইল পাঠানো সম্ভব হয়নি! কারণ SMTP পাসওয়ার্ড বা অ্যাপ পাসওয়ার্ড দেওয়া হয়নি। Hotmail/Outlook অথবা Gmail-এর Security Settings থেকে তৈরি করা ১৬ ডিজিটের "App Password" প্রদান করে সংরক্ষণ করুন।'
+    };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 12000,
+      greetingTimeout: 12000
+    });
+
+    // 1. Verify SMTP handshake
+    await transporter.verify();
+
+    // 2. Dispatch real test email
+    const { fromAddress } = getMailAddresses();
+    const testHtml = wrapHtmlContent(
+      '🧪 টেস্ট ইমেইল নোটিফিকেশন',
+      'সার্ভার সংযোগ সফল',
+      `
+        <h2 style="color: #f8fafc; font-size: 18px; margin-top: 0;">🎉 আলহামদুলিল্লাহ! আপনার ইমেইল সফলভাবে সংযোগ হয়েছে।</h2>
+        <p style="color: #cbd5e1;">${customMessage || 'আল আনসার অ্যাডমিন প্যানেল থেকে টেস্ট নোটিফিকেশন সফলভাবে আপনার ইনবক্সে পৌঁছেছে।'}</p>
+        <div class="card">
+          <div style="font-weight: bold; color: #f59e0b; font-size: 12px; margin-bottom: 8px; text-transform: uppercase;">সংযোগের তথ্য বিবরণী</div>
+          <table class="table-data">
+            <tr><td class="label">প্রেরক (From):</td><td class="value">${user}</td></tr>
+            <tr><td class="label">প্রাপক (To):</td><td class="value">${recipient}</td></tr>
+            <tr><td class="label">SMTP হোস্ট:</td><td class="value">${host}:${port}</td></tr>
+            <tr><td class="label">তারিখ:</td><td class="value">${new Date().toLocaleString('bn-BD')}</td></tr>
+          </table>
+        </div>
+      `,
+      'অ্যাডমিন প্যানেল খুলুন',
+      'https://alansarbd.com/admin'
+    );
+
+    const result = await transporter.sendMail({
+      from: fromAddress,
+      to: recipient,
+      subject: '🧪 [AL ANSAR TEST] ইমেইল নোটিফিকেশন টেস্ট সফল হয়েছে!',
+      html: testHtml
+    });
+
+    return {
+      success: true,
+      message: `🎉 চমৎকার! টেস্ট ইমেইল সফলভাবে ${recipient} এ পাঠানো হয়েছে। আপনার ইনবক্স/স্প্যাম ফোল্ডার চেক করুন।`,
+      result
+    };
+  } catch (err) {
+    let friendlyError = err.message;
+    if (err.message.includes('535') || err.message.includes('Authentication') || err.message.includes('Username and Password not accepted')) {
+      friendlyError = `অথেনটিকেশন ব্যর্থ (Authentication Unsuccessful)। হটমেইল বা জিমেইলের ক্ষেত্রে অ্যাকাউন্টের সাধারণ পাসওয়ার্ড নয়, বরং সিকিউরিটি সেটিংস থেকে তৈরি করা ১৬ ডিজিটের ‘App Password’ ব্যবহার করা আবশ্যক।`;
+    } else if (err.code === 'ETIMEDOUT' || err.code === 'ECONNREFUSED') {
+      friendlyError = `SMTP সার্ভারে সংযোগের সময় পার হয়ে গেছে (${host}:${port})। হোস্ট ও পোর্ট নম্বর সঠিক কিনা যাচাই করুন।`;
+    }
+    return {
+      success: false,
+      message: `❌ ইমেইল প্রেরণে ত্রুটি: ${friendlyError}`
+    };
   }
 }
 
@@ -178,12 +268,13 @@ async function sendAdminAlert({ type, title, message, details = {}, link = '' })
  */
 async function sendWelcomeEmail(user) {
   if (!user || !user.email) return;
-  const { fromAddress } = getMailAddresses();
+  const { fromAddress, settings } = getMailAddresses();
+  const customWelcome = settings?.custom_welcome_email_msg || 'আল আনসার সুপার শপ-এ আপনাকে আন্তরিক মোবারকবাদ। আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।';
 
   const innerHtml = `
     <h2 style="color: #f8fafc; font-size: 18px; margin-top: 0;">আসসালামু আলাইকুম, ${user.name}!</h2>
     <p style="color: #cbd5e1;">
-      <strong>আল আনসার সুপার শপ</strong>-এ আপনাকে আন্তরিক মোবারকবাদ। আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।
+      <strong>${customWelcome}</strong>
     </p>
     <div class="card">
       <div style="font-weight: bold; color: #f59e0b; font-size: 12px; text-transform: uppercase; margin-bottom: 8px;">আপনার অ্যাকাউন্ট তথ্য</div>
@@ -374,5 +465,6 @@ module.exports = {
   sendVipApprovedEmail,
   sendRefundApprovedEmail,
   sendAppealApprovedEmail,
-  sendSafeMail
+  sendSafeMail,
+  testSmtpAndSend
 };

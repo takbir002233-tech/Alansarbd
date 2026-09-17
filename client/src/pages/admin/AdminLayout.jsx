@@ -25,7 +25,12 @@ import {
   VolumeX,
   AlertTriangle,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  Send,
+  Smartphone,
+  Laptop,
+  Megaphone,
+  Radio
 } from 'lucide-react';
 
 function playNotificationChime() {
@@ -61,6 +66,133 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [incomingToast, setIncomingToast] = useState(null);
   const drawerRef = useRef(null);
+
+  // OS-level Push Notification & Custom Message States
+  const [notifPermission, setNotifPermission] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission;
+    }
+    return 'default';
+  });
+  const [showCustomNotifModal, setShowCustomNotifModal] = useState(false);
+  const [customNotifForm, setCustomNotifForm] = useState({
+    title: '',
+    message: '',
+    link_tab: 'orders',
+    send_email: true
+  });
+  const [sendingCustomNotif, setSendingCustomNotif] = useState(false);
+  const [customNotifFeedback, setCustomNotifFeedback] = useState(null);
+
+  // Trigger Native Mobile Status Bar & PC Action Center Notification
+  const triggerSystemNotification = (notif) => {
+    if (!notif) return;
+    const title = notif.title || 'আল আনসার নোটিফিকেশন';
+    const body = notif.message || '';
+    const notifUrl = window.location.origin + '/admin#' + (notif.link_tab || 'orders');
+
+    try {
+      // 1. Service Worker Notification (Primary: Popups in Android drawer & Windows Action Center)
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SHOW_NOTIFICATION',
+          title,
+          body,
+          icon: '/logo.jpg',
+          badge: '/logo.jpg',
+          data: { url: notifUrl }
+        });
+      } else if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          if (reg && reg.showNotification) {
+            reg.showNotification(title, {
+              body,
+              icon: '/logo.jpg',
+              badge: '/logo.jpg',
+              vibrate: [250, 100, 250, 100, 250],
+              tag: 'alansar-notif-' + Date.now(),
+              renotify: true,
+              requireInteraction: true,
+              data: { url: notifUrl }
+            });
+          }
+        }).catch(() => {});
+      } else if ('Notification' in window && Notification.permission === 'granted') {
+        // Fallback standard Web Notification
+        const n = new Notification(title, {
+          body,
+          icon: '/logo.jpg',
+          badge: '/logo.jpg'
+        });
+        n.onclick = () => {
+          window.focus();
+          if (notif.link_tab) setActiveTab(notif.link_tab);
+          n.close();
+        };
+      }
+
+      // 2. Hardware Vibration for Mobile devices
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 300]);
+      }
+    } catch (err) {
+      console.warn('System push display error:', err);
+    }
+  };
+
+  // Request Push Permission from Browser / Mobile OS
+  const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      alert('আপনার বর্তমান ব্রাউজারে সিস্টেম নোটিফিকেশন সাপোর্ট করে না। অনুগ্রহ করে গুগল ক্রোম বা এজ ব্যবহার করুন।');
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        triggerSystemNotification({
+          title: '🎉 পুশ নোটিফিকেশন সক্রিয় হয়েছে!',
+          message: 'এখন থেকে নতুন অর্ডার, করযে হাসানা ও রিফান্ড নোটিফিকেশন আপনার মোবাইল ও পিসির স্ক্রিনে সরাসরি আসবে।'
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Dispatch Custom Notification (Push + Email)
+  const handleSendCustomNotif = async (e) => {
+    e.preventDefault();
+    if (!customNotifForm.title.trim() || !customNotifForm.message.trim()) return;
+    setSendingCustomNotif(true);
+    setCustomNotifFeedback(null);
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      const res = await fetch('/api/admin/send-custom-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(customNotifForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomNotifFeedback({ success: true, message: data.message || 'নোটিফিকেশন সফলভাবে পাঠানো হয়েছে!' });
+        setTimeout(() => {
+          setShowCustomNotifModal(false);
+          setCustomNotifFeedback(null);
+          setCustomNotifForm({ title: '', message: '', link_tab: 'orders', send_email: true });
+        }, 1800);
+      } else {
+        setCustomNotifFeedback({ success: false, message: data.message || 'ব্যর্থ হয়েছে' });
+      }
+    } catch (err) {
+      setCustomNotifFeedback({ success: false, message: 'সার্ভার যোগাযোগে ত্রুটি হয়েছে।' });
+    } finally {
+      setSendingCustomNotif(false);
+    }
+  };
 
   const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
@@ -133,6 +265,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
         playNotificationChime();
       }
       setIncomingToast(notif);
+      triggerSystemNotification(notif);
       setTimeout(() => {
         setIncomingToast(curr => (curr?.id === notif.id ? null : curr));
       }, 7000);
@@ -413,6 +546,35 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl bg-slate-950 flex flex-col relative" style={{ backgroundColor: '#020617' }}>
         
+        {/* Browser / OS Push Notification Permission Prompt (Mobile & PC) */}
+        {notifPermission !== 'granted' && (
+          <div className="mb-5 bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/10 border-2 border-amber-500/50 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl animate-in fade-in">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 shrink-0 border border-amber-500/40">
+                <Bell className="w-5 h-5 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-white flex items-center space-x-2">
+                  <span>📱 মোবাইল ও পিসির স্ক্রিনে সরাসরি নোটিফিকেশন অন করুন</span>
+                  <span className="px-2 py-0.5 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full">সুপার ফাস্ট</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                  ওয়েবসাইট বা ব্রাউজার বন্ধ থাকলেও নতুন অর্ডার, করযে হাসানা, ভিআইপি আবেদন ও রিফান্ডের নোটিফিকেশন আপনার মোবাইল স্ট্যাটাস বার / লকস্ক্রিন ও পিসি উইন্ডোজ অ্যাকশন সেন্টারে রিংটোন ও ভাইব্রেশন সহ সরাসরি প্রদর্শিত হবে।
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
+              <button
+                onClick={requestNotificationPermission}
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <Bell className="w-4 h-4" />
+                <span>নোটিফিকেশন চালু করুন (Allow)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Desktop Top Header Bar with Live Notification Center */}
         <div className="hidden md:flex items-center justify-between pb-5 mb-6 border-b border-slate-800/80">
           <div>
@@ -425,9 +587,34 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
             </p>
           </div>
 
-          {/* Action Tools: Sound + Bell */}
+          {/* Action Tools: Custom Msg + Test Push + Sound + Bell */}
           <div className="flex items-center space-x-2 relative">
             
+            {/* Custom Notification Trigger */}
+            <button
+              onClick={() => setShowCustomNotifModal(true)}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+              title="কাস্টম নোটিফিকেশন ও মেসেজ পাঠান"
+            >
+              <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+              <span>কাস্টম মেসেজ</span>
+            </button>
+
+            {/* Test Push Trigger */}
+            <button
+              onClick={() => {
+                triggerSystemNotification({
+                  title: '🧪 টেস্ট পুশ নোটিফিকেশন',
+                  message: 'মোবাইল ও পিসির নোটিফিকেশন সফলভাবে সক্রিয় হয়েছে!'
+                });
+              }}
+              className="flex items-center space-x-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              title="মোবাইল বা পিসির স্ক্রিনে সরাসরি টেস্ট নোটিফিকেশন পরীক্ষা করুন"
+            >
+              <Radio className="w-3.5 h-3.5 text-emerald-400" />
+              <span>টেস্ট পুশ</span>
+            </button>
+
             {/* Audio Toggle */}
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
@@ -504,6 +691,35 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
               </div>
             </div>
 
+            {/* Quick Drawer Action Bar */}
+            <div className="px-3.5 py-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDrawer(false);
+                  setShowCustomNotifModal(true);
+                }}
+                className="flex-1 py-1.5 px-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+                <span>কাস্টম বার্তা পাঠান</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerSystemNotification({
+                    title: '🧪 টেস্ট নোটিফিকেশন',
+                    message: 'মোবাইল ও পিসির পুশ নোটিফিকেশন সক্রিয় আছে!'
+                  });
+                }}
+                className="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-300 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 transition-colors cursor-pointer"
+                title="সরাসরি মোবাইল বা পিসির স্ক্রিনে টেস্ট নোটিফিকেশন দেখুন"
+              >
+                <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                <span>টেস্ট পুশ</span>
+              </button>
+            </div>
+
             {/* Notification List */}
             <div className="max-h-96 overflow-y-auto divide-y divide-slate-800/60">
               {notifications.length === 0 ? (
@@ -554,6 +770,121 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
         )}
 
         {children}
+
+        {/* CUSTOM NOTIFICATION MODAL */}
+        {showCustomNotifModal && (
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white">📢 কাস্টম পুশ ও বার্তা প্রেরণ</h3>
+                    <p className="text-[11px] text-slate-400">মোবাইল ও পিসির নোটিফিকেশন এবং অ্যাডমিন ইমেইলে বার্তা পাঠান</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCustomNotifModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSendCustomNotif} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">নোটিফিকেশন শিরোনাম (Title) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customNotifForm.title}
+                    onChange={(e) => setCustomNotifForm({ ...customNotifForm, title: e.target.value })}
+                    placeholder="যেমন: জরুরি নোটিশ / নতুন অফার / অর্ডার রিভিউ"
+                    className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">বিস্তারিত বার্তা (Message) *</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={customNotifForm.message}
+                    onChange={(e) => setCustomNotifForm({ ...customNotifForm, message: e.target.value })}
+                    placeholder="নোটিফিকেশনের বিস্তারিত বিষয়বস্তু এখানে লিখুন..."
+                    className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">ক্লিক করলে নিয়ে যাবে (Target Tab)</label>
+                    <select
+                      value={customNotifForm.link_tab}
+                      onChange={(e) => setCustomNotifForm({ ...customNotifForm, link_tab: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="orders">অর্ডার তালিকা (Orders)</option>
+                      <option value="qard">করযে হাসানা আবেদন (Qard)</option>
+                      <option value="loyalty">ভিআইপি কার্ড আবেদন (VIP)</option>
+                      <option value="refunds">রিফান্ড ও রিটার্ন (Refunds)</option>
+                      <option value="users">গ্রাহক তালিকা (Users)</option>
+                      <option value="settings">গ্লোবাল সেটিংস (Settings)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center space-x-2 text-xs font-bold text-amber-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={customNotifForm.send_email}
+                        onChange={(e) => setCustomNotifForm({ ...customNotifForm, send_email: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-500 bg-slate-800 border-slate-700 focus:ring-0"
+                      />
+                      <span>ইমেইলে ও কপি পাঠান</span>
+                    </label>
+                  </div>
+                </div>
+
+                {customNotifFeedback && (
+                  <div className={`p-3 rounded-xl text-xs font-bold border animate-in fade-in ${
+                    customNotifFeedback.success 
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' 
+                      : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+                  }`}>
+                    {customNotifFeedback.message}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomNotifModal(false)}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingCustomNotif}
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-600/25 flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {sendingCustomNotif ? (
+                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>🚀 নোটিফিকেশন পাঠান</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

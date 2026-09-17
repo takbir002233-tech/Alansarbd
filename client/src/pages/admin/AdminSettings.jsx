@@ -26,7 +26,13 @@ import {
   Phone,
   HelpCircle,
   Image as ImageIcon,
-  ExternalLink
+  ExternalLink,
+  Mail,
+  Send,
+  Eye,
+  EyeOff,
+  Smartphone,
+  Laptop
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -39,6 +45,7 @@ export default function AdminSettings() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState(null);
   const [showSmtpAdvanced, setShowSmtpAdvanced] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
 
   const [form, setForm] = useState({
     store_name: 'AL ANSAR',
@@ -52,6 +59,10 @@ export default function AdminSettings() {
     smtp_port: 587,
     smtp_user: 'alansar.bd@hotmail.com',
     smtp_pass: '',
+    custom_order_notif_msg: 'নতুন অর্ডার জমা পড়েছে! অনুগ্রহ করে দ্রুত প্রসেস করুন।',
+    custom_qard_notif_msg: 'নতুন করযে হাসানা আবেদন জমা পড়েছে। ভেরিফিকেশন সম্পন্ন করুন।',
+    custom_vip_notif_msg: 'নতুন ভিআইপি মেম্বারশিপ আবেদন জমা পড়েছে।',
+    custom_welcome_email_msg: 'আল আনসার সুপার শপে রেজিস্ট্রেশন করার জন্য আপনাকে আন্তরিক ধন্যবাদ।',
     store_address: 'আল আনসার প্লাজা, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
     showroom_address: 'আল আনসার ফ্ল্যাগশিপ শোরুম, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
     whatsapp_number: '+880 1711-223344',
@@ -410,6 +421,7 @@ export default function AdminSettings() {
     { id: 'footer', label: '১১. ফুটার ও কপিরাইট', icon: Layers },
     { id: 'payment', label: '১২. পেমেন্ট ও ডেলিভারি ফি', icon: CreditCard },
     { id: 'contact', label: '১৩. যোগাযোগ পেজ CMS', icon: Phone },
+    { id: 'notifications', label: '১৪. ইমেইল ও নোটিফিকেশন কনফিগারেশন', icon: Bell },
   ];
 
   return (
@@ -2278,6 +2290,282 @@ export default function AdminSettings() {
                     />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* SECTION 14: EMAIL & SYSTEM PUSH NOTIFICATIONS CONFIGURATION */}
+            {activeSection === 'notifications' && (
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-amber-500/30 space-y-6 shadow-xl animate-in fade-in">
+                
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center">
+                      <Bell className="w-4 h-4 mr-2 text-amber-400" /> ১৪. ইমেইল ও নোটিফিকেশন কনফিগারেশন
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      অ্যাডমিন অ্যালার্ট ইমেইল, SMTP কনফিগারেশন, অ্যাপ পাসওয়ার্ড ও কাস্টম নোটিফিকেশন টেমপ্লেট
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold rounded-full flex items-center space-x-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                      <span>সরাসরি সংযোগ সক্রিয়</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Receiver Email Card */}
+                <div className="bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-amber-300 flex items-center">
+                      <Mail className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+                      অ্যাডমিন নোটিফিকেশন রিসিভার ইমেইল (Target Admin Email) *
+                    </label>
+                    <span className="text-[10px] text-slate-400">নতুন অর্ডার, করযে হাসানা, রিফান্ড ও আপিল অ্যালার্ট এখানে যাবে</span>
+                  </div>
+                  <input
+                    type="email"
+                    name="admin_notification_email"
+                    required
+                    value={form.admin_notification_email || 'alansar.bd@hotmail.com'}
+                    onChange={handleChange}
+                    placeholder="alansar.bd@hotmail.com"
+                    className="w-full px-4 py-3 bg-slate-900 text-xs rounded-xl border border-amber-500/50 text-white font-mono font-bold focus:outline-none focus:border-amber-400"
+                  />
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    💡 যেকোনো সময় এই ইমেইল পরিবর্তন করতে পারবেন। সেভ করার পর সকল অটোমেটিক অ্যালার্ট সাথে সাথে নতুন ইমেইলে যাওয়া শুরু হবে।
+                  </p>
+                </div>
+
+                {/* SMTP Credentials & Server Connection */}
+                <div className="bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                    <div>
+                      <h4 className="text-xs font-black text-white flex items-center">
+                        <span>ইমেইল প্রেরক (SMTP Server Credentials)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        যে ইমেইল বা সার্ভার থেকে গ্রাহকদের এবং অ্যাডমিনকে স্বয়ংক্রিয় মেইল পাঠানো হবে
+                      </p>
+                    </div>
+                    {/* Quick Presets */}
+                    <div className="flex items-center space-x-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold text-slate-400 mr-1">প্রিসেট:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            smtp_host: 'smtp-mail.outlook.com',
+                            smtp_port: 587,
+                            smtp_user: p.smtp_user || 'alansar.bd@hotmail.com'
+                          }));
+                        }}
+                        className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        Hotmail / Outlook
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            smtp_host: 'smtp.gmail.com',
+                            smtp_port: 465,
+                            smtp_user: p.smtp_user || ''
+                          }));
+                        }}
+                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        Gmail
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            smtp_host: 'smtp-relay.brevo.com',
+                            smtp_port: 587
+                          }));
+                        }}
+                        className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        Brevo
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* App Password Instructions Notice */}
+                  <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                    <div className="flex items-center space-x-1.5 text-amber-400 font-bold text-xs">
+                      <span>⚠️ হটমেইল / আউটলুক / জিমেইল ব্যবহারকারীদের জন্য জরুরি নির্দেশিকা:</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      মাইক্রোসফট ও গুগল অ্যাকাউন্ট আধুনিক সিকিউরিটিতে সাধারণ লগইন পাসওয়ার্ড দিয়ে সরাসরি ইমেইল পাঠাতে দেয় না। 
+                      আপনার অ্যাকাউন্টের <strong>Two-Step Verification</strong> চালু করে <strong>Security &gt; App Passwords</strong> থেকে একটি <strong>১৬ অক্ষরের অ্যাপ পাসওয়ার্ড</strong> তৈরি করুন এবং নিচের পাসওয়ার্ড বক্সে বসিয়ে সংরক্ষণ করুন।
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">SMTP হোস্ট (Server Host)</label>
+                      <input
+                        type="text"
+                        name="smtp_host"
+                        value={form.smtp_host || 'smtp-mail.outlook.com'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">SMTP পোর্ট (Port)</label>
+                      <input
+                        type="number"
+                        name="smtp_port"
+                        value={form.smtp_port || 587}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">SMTP ইউজার / প্রেরক ইমেইল (User / From)</label>
+                      <input
+                        type="email"
+                        name="smtp_user"
+                        value={form.smtp_user || 'alansar.bd@hotmail.com'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-amber-300">SMTP অ্যাপ পাসওয়ার্ড (App Password) *</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowSmtpPass(!showSmtpPass)}
+                          className="text-[10px] text-amber-400 hover:underline flex items-center space-x-1 cursor-pointer"
+                        >
+                          {showSmtpPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          <span>{showSmtpPass ? 'লুকান' : 'দেখুন'}</span>
+                        </button>
+                      </div>
+                      <input
+                        type={showSmtpPass ? 'text' : 'password'}
+                        name="smtp_pass"
+                        value={form.smtp_pass || ''}
+                        onChange={handleChange}
+                        placeholder="১৬ অক্ষরের অ্যাপ পাসওয়ার্ড দিন"
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Test Connection Button & Status */}
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={handleTestEmail}
+                      disabled={testingEmail}
+                      className="px-5 py-2.5 bg-slate-800 hover:bg-slate-750 text-amber-400 border border-amber-500/40 hover:border-amber-500 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-sm"
+                    >
+                      {testingEmail ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          <span>সংযোগ পরীক্ষা ও টেস্ট ইমেইল পাঠানো হচ্ছে...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>🧪 টেস্ট ইমেইল পাঠান ও সংযোগ পরীক্ষা করুন</span>
+                        </>
+                      )}
+                    </button>
+
+                    <span className="text-[11px] text-slate-400">
+                      লক্ষ্য: <span className="font-mono text-amber-300 font-bold">{form.admin_notification_email}</span>
+                    </span>
+                  </div>
+
+                  {/* Test Email Result Banner */}
+                  {testEmailResult && (
+                    <div className={`p-4 rounded-xl text-xs font-semibold border animate-in fade-in leading-relaxed ${
+                      testEmailResult.success 
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' 
+                        : 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                    }`}>
+                      {testEmailResult.message}
+                    </div>
+                  )}
+                </div>
+
+                {/* Custom Message Templates CMS */}
+                <div className="bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="pb-2 border-b border-slate-800">
+                    <h4 className="text-xs font-black text-white">কাস্টম নোটিফিকেশন ও মেসেজ টেমপ্লেট CMS</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      অর্ডার আসলে, করযে হাসানা বা ভিআইপি আবেদন জমা পড়লে ও নতুন অ্যাকাউন্ট খোলার পর প্রদর্শিত বার্তা
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">
+                        ১. নতুন অর্ডার নোটিফিকেশন বার্তা (New Order Alert Message)
+                      </label>
+                      <input
+                        type="text"
+                        name="custom_order_notif_msg"
+                        value={form.custom_order_notif_msg || 'নতুন অর্ডার জমা পড়েছে! অনুগ্রহ করে দ্রুত প্রসেস করুন।'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-emerald-400 block mb-1">
+                        ২. করযে হাসানা আবেদন নোটিফিকেশন বার্তা (Qard Application Alert Message)
+                      </label>
+                      <input
+                        type="text"
+                        name="custom_qard_notif_msg"
+                        value={form.custom_qard_notif_msg || 'নতুন করযে হাসানা আবেদন জমা পড়েছে। ভেরিফিকেশন সম্পন্ন করুন।'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-amber-300 block mb-1">
+                        ৩. ভিআইপি কার্ড আবেদন নোটিফিকেশন বার্তা (VIP Card Application Message)
+                      </label>
+                      <input
+                        type="text"
+                        name="custom_vip_notif_msg"
+                        value={form.custom_vip_notif_msg || 'নতুন ভিআইপি মেম্বারশিপ আবেদন জমা পড়েছে।'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-sky-400 block mb-1">
+                        ৪. নতুন ইউজার স্বাগতম ইমেইল বার্তা (Welcome Email Intro Message)
+                      </label>
+                      <textarea
+                        rows={2}
+                        name="custom_welcome_email_msg"
+                        value={form.custom_welcome_email_msg || 'আল আনসার সুপার শপে রেজিস্ট্রেশন করার জন্য আপনাকে আন্তরিক ধন্যবাদ।'}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
