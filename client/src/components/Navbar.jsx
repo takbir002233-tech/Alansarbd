@@ -85,6 +85,16 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
     return (str || '').toString().replace(/[0-9]/g, (w) => bengaliDigits[+w]);
   };
 
+  const isQardApproved = Boolean(
+    user && (
+      (user.qard_status && user.qard_status.toLowerCase() === 'approved') ||
+      user.is_qard_eligible ||
+      (Number(user.qard_credit_limit) > 0) ||
+      (Number(user.qard_limit) > 0)
+    )
+  );
+  const qardLimit = isQardApproved ? (Number(user?.qard_credit_limit) || Number(user?.qard_limit) || 5000) : 0;
+
   // Live real-time clock in Bengali
   useEffect(() => {
     const updateTime = () => {
@@ -373,9 +383,6 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
             >
               <HandHeart className="w-3.5 h-3.5 mr-1 text-amber-300 flex-shrink-0" />
               <span>করযে হাসানা</span>
-              <span className="ml-1 px-1 py-0.2 bg-emerald-600 text-white text-[8px] font-black rounded hidden 2xl:inline">
-                ১০% ধার
-              </span>
             </button>
 
             {/* Dedicated VIP Loyalty Credit Card Button - Desktop Only */}

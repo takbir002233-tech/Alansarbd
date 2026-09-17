@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const mailService = require('../services/mailService');
 const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 
 // Phone regex for Bangladesh (e.g. 01712345678, 018..., 019..., 013..., 014..., 015..., 016...)
@@ -70,6 +71,10 @@ router.post('/register', (req, res) => {
 
     const safeUser = { ...newUser };
     delete safeUser.password_hash;
+
+    // Send customer welcome email
+    mailService.sendWelcomeEmail(newUser)
+      .catch(err => console.error('Customer welcome email error:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -164,10 +169,18 @@ router.get('/me', authenticateToken, (req, res) => {
 // UPDATE PROFILE
 router.put('/profile', authenticateToken, (req, res) => {
   try {
-    const { name, phone, address, city, postal_code } = req.body;
+    const { name, phone, email, address, city, postal_code } = req.body;
     const updates = {};
 
     if (name && name.trim()) updates.name = name.trim();
+    if (email && email.trim()) {
+      const cleanEmail = email.trim().toLowerCase();
+      const existingEmailUser = db.getUserByEmail(cleanEmail);
+      if (existingEmailUser && existingEmailUser.id !== req.user.id) {
+        return res.status(400).json({ success: false, message: 'এই ইমেইলটি ইতিমধ্যে অন্য একজন গ্রাহকের অ্যাকাউন্টে ব্যবহৃত হচ্ছে।' });
+      }
+      updates.email = cleanEmail;
+    }
     if (phone && BD_PHONE_REGEX.test(phone.trim())) {
       const cleanPhone = phone.trim().replace(/^(\+88|88)/, '');
       const existingPhoneUser = db.getUserByPhone(cleanPhone);
@@ -327,10 +340,43 @@ router.delete('/me', authenticateToken, (req, res) => {
       });
     }
 
+    const userName = user.name;
+    const userPhone = user.phone;
+    const userEmail = user.email;
+
     const success = db.deleteUser(userId);
     if (!success) {
       return res.status(500).json({ success: false, message: 'Could not delete user account.' });
     }
+
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'user_delete',
+      title: '⚠️ অ্যাকাউন্ট স্থায়ীভাবে ডিলিট',
+      message: `ব্যবহারকারী ${userName} (${userPhone || userEmail}) তার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলেছেন।`,
+      link_tab: 'users',
+      data: { user_id: userId, name: userName, phone: userPhone, email: userEmail }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_notification', notif);
+      io.to('admin_channel').emit('user_deleted', { userId });
+    }
+
+    // Send admin email alert
+    mailService.sendAdminAlert({
+      type: 'user_delete',
+      title: `অ্যাকাউন্ট ডিলিট: ${userName}`,
+      message: `একজন গ্রাহক তার অ্যাকাউন্ট সফলভাবে ডিলিট করেছেন।`,
+      details: {
+        'গ্রাহকের নাম': userName,
+        'মোবাইল নম্বর': userPhone || 'N/A',
+        'ইমেইল': userEmail || 'N/A',
+        'সময়': new Date().toLocaleString('bn-BD')
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('Delete account admin email error:', err.message));
 
     return res.json({
       success: true,
@@ -384,6 +430,37 @@ router.post('/delete-appeal', authenticateToken, (req, res) => {
       qard_limit: user.qard_credit_limit || 0,
       status: 'Under Review'
     });
+
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'appeal',
+      title: '🛡️ অ্যাকাউন্ট বাতিলের আপিল আবেদন',
+      message: `${user.name} (${user.phone || user.email}) অ্যাকাউন্ট স্থায়ীভাবে বন্ধ করতে আপিল জমা দিয়েছেন।`,
+      link_tab: 'users',
+      data: { appeal_id: appeal.id, name: user.name, phone: user.phone }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_notification', notif);
+      io.to('admin_channel').emit('new_account_appeal', appeal);
+    }
+
+    // Send admin email alert
+    mailService.sendAdminAlert({
+      type: 'appeal',
+      title: `অ্যাকাউন্ট বাতিলের আপিল: ${user.name}`,
+      message: `একজন গ্রাহক তার সক্রিয় একাউন্ট মুছে ফেলার জন্য বিশেষ আপিল করেছেন।`,
+      details: {
+        'গ্রাহকের নাম': user.name,
+        'মোবাইল নম্বর': user.phone,
+        'ইমেইল': user.email || 'N/A',
+        'ভিআইপি স্ট্যাটাস': hasVip ? 'সক্রিয় VIP' : 'না',
+        'করযে হাসানা স্ট্যাটাস': hasQard ? 'সক্রিয় ঋণ সুবিধা' : 'না',
+        'আপিলের কারণ': reason.trim()
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('Delete appeal admin email error:', err.message));
 
     return res.status(201).json({
       success: true,

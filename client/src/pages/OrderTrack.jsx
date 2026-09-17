@@ -19,6 +19,7 @@ export default function OrderTrack({
   initialOrderNumber = '', 
   initialOrder = null, 
   onNavigate, 
+  onBack,
   onOpenInvoice 
 }) {
   const targetCode = initialCode || initialOrderNumber || (initialOrder ? initialOrder.order_code : '');

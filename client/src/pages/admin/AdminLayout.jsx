@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { 
   LayoutDashboard, 
   Package, 
@@ -12,20 +13,230 @@ import {
   Store, 
   Tag, 
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  RotateCcw,
+  HandHeart,
+  CreditCard,
+  Bell,
+  CheckCheck,
+  Trash2,
+  X,
+  Volume2,
+  VolumeX,
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 
+function playNotificationChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    const now = ctx.currentTime;
+    osc.frequency.setValueAtTime(587.33, now); // D5
+    osc.frequency.setValueAtTime(880, now + 0.12); // A5
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc.start(now);
+    osc.stop(now + 0.5);
+  } catch (e) {}
+}
+
 export default function AdminLayout({ children, activeTab, setActiveTab, onNavigate }) {
-  const { user, logout, isSuperAdmin, hasPermission } = useAuth();
+  const { user, logout, isSuperAdmin, hasPermission, token } = useAuth();
+  const { socket } = useSocket();
+  const [counts, setCounts] = useState({});
+
+  // Notification Center States
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [incomingToast, setIncomingToast] = useState(null);
+  const drawerRef = useRef(null);
+
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
+
+  const formatTimeAgo = (isoStr) => {
+    if (!isoStr) return '';
+    const diffMs = Date.now() - new Date(isoStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'এইমাত্র';
+    if (mins < 60) return `${toBn(mins)} মি. আগে`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${toBn(hours)} ঘণ্টা আগে`;
+    const days = Math.floor(hours / 24);
+    return `${toBn(days)} দিন আগে`;
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      if (!authToken) return;
+      const res = await fetch('/api/admin/stats', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      const d = await res.json();
+      if (d.success && d.stats) {
+        setCounts({
+          pending_orders: d.stats.pending_orders || 0,
+          pending_refunds_count: d.stats.pending_refunds_count || 0,
+          pending_qard_count: d.stats.pending_qard_count || 0,
+          pending_loyalty_count: d.stats.pending_loyalty_count || 0
+        });
+      }
+    } catch (e) {}
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      if (!authToken) return;
+      const res = await fetch('/api/admin/notifications', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      const d = await res.json();
+      if (d.success) {
+        setNotifications(d.notifications || []);
+        setUnreadCount(d.unread_count || 0);
+      }
+    } catch (e) {}
+  };
+
+  // Fetch initial counts and notifications
+  useEffect(() => {
+    fetchCounts();
+    fetchNotifications();
+    const interval = setInterval(() => {
+      fetchCounts();
+      fetchNotifications();
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  // Real-time WebSocket event listener for incoming admin alerts
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleAdminNotif = (notif) => {
+      setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
+      setUnreadCount(prev => prev + 1);
+      if (soundEnabled) {
+        playNotificationChime();
+      }
+      setIncomingToast(notif);
+      setTimeout(() => {
+        setIncomingToast(curr => (curr?.id === notif.id ? null : curr));
+      }, 7000);
+      fetchCounts();
+    };
+
+    socket.on('admin_notification', handleAdminNotif);
+
+    return () => {
+      socket.off('admin_notification', handleAdminNotif);
+    };
+  }, [socket, soundEnabled]);
+
+  // Click outside to close drawer
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target) && !e.target.closest('.notif-bell-btn')) {
+        setShowDrawer(false);
+      }
+    };
+    if (showDrawer) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDrawer]);
+
+  const handleMarkAsRead = async (notif) => {
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      if (authToken) {
+        fetch(`/api/admin/notifications/${notif.id}/read`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${authToken}` }
+        }).catch(() => {});
+      }
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (notif.link_tab) {
+        setActiveTab(notif.link_tab);
+        setShowDrawer(false);
+      }
+    } catch (e) {}
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      if (authToken) {
+        await fetch('/api/admin/notifications/mark-all-read', {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+      }
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (e) {}
+  };
+
+  const handleClearAll = async () => {
+    if (!window.confirm('আপনি কি সব নোটিফিকেশন মুছে ফেলতে চান?')) return;
+    try {
+      const authToken = token || localStorage.getItem('nexus_token');
+      if (authToken) {
+        await fetch('/api/admin/notifications', {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+      }
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (e) {}
+  };
+
+  const getNotifIcon = (type) => {
+    switch (type) {
+      case 'order':
+        return <Package className="w-4 h-4 text-amber-400" />;
+      case 'qard':
+        return <HandHeart className="w-4 h-4 text-emerald-400" />;
+      case 'loyalty':
+        return <CreditCard className="w-4 h-4 text-amber-300" />;
+      case 'refund':
+        return <RotateCcw className="w-4 h-4 text-rose-400" />;
+      case 'user_delete':
+        return <AlertTriangle className="w-4 h-4 text-red-400" />;
+      case 'appeal':
+        return <ShieldCheck className="w-4 h-4 text-sky-400" />;
+      default:
+        return <Bell className="w-4 h-4 text-amber-400" />;
+    }
+  };
 
   const allNavigation = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard, perm: 'dashboard.view' },
-    { id: 'orders', label: 'Orders & Courier Trace', icon: Package, perm: 'orders.view' },
+    { id: 'orders', label: 'Orders & Courier Trace', icon: Package, perm: 'orders.view', badgeKey: 'pending_orders' },
+    { id: 'refunds', label: 'রিফান্ড ও রিটার্ন ডেস্ক', icon: RotateCcw, perm: 'refunds.manage', badgeKey: 'pending_refunds_count' },
+    { id: 'qard', label: 'করযে হাসানা আবেদন', icon: HandHeart, perm: 'customers.qard_applications', badgeKey: 'pending_qard_count' },
+    { id: 'loyalty', label: 'ভিআইপি কার্ড আবেদন', icon: CreditCard, perm: 'customers.loyalty_applications', badgeKey: 'pending_loyalty_count' },
     { id: 'products', label: 'Perfumes & Inventory', icon: ShoppingBag, perm: 'products.view' },
     { id: 'categories', label: 'Categories & Sub-Categories', icon: Layers, perm: 'categories.manage' },
     { id: 'vouchers', label: 'Vouchers & Promo Codes', icon: Tag, perm: 'vouchers.manage' },
     { id: 'users', label: 'Customer Management', icon: Users, perm: 'customers.view' },
     { id: 'chat', label: 'Live Support Desk', icon: MessageSquare, perm: 'chat.manage' },
+    { id: 'team_chat', label: 'টিম গ্রুপ চ্যাট', icon: Users, perm: 'dashboard.view' },
     { id: 'settings', label: 'Global CMS & Settings', icon: Settings, perm: 'settings.manage' },
     { id: 'staff', label: 'স্টাফ ও পারমিশন কন্ট্রোল', icon: ShieldCheck, superOnly: true },
   ];
@@ -37,7 +248,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   });
 
   // Auto-redirect to first available tab if current active tab is unauthorized
-  React.useEffect(() => {
+  useEffect(() => {
     if (navigation.length > 0 && !navigation.some(n => n.id === activeTab)) {
       setActiveTab(navigation[0].id);
     }
@@ -45,31 +256,89 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
   return (
     <div 
-      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row selection:bg-amber-500 selection:text-slate-950 font-sans"
+      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row selection:bg-amber-500 selection:text-slate-950 font-sans relative"
       style={{ backgroundColor: '#020617' }}
     >
       
+      {/* Floating Incoming Notification Toast Alert */}
+      {incomingToast && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-slate-900 border-2 border-amber-500/80 rounded-2xl shadow-2xl p-4 animate-in slide-in-from-top duration-300 text-white flex items-start space-x-3">
+          <div className="p-2 bg-amber-500/20 rounded-xl shrink-0 mt-0.5 border border-amber-500/40">
+            {getNotifIcon(incomingToast.type)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black text-amber-300 truncate">{incomingToast.title}</h4>
+              <span className="text-[10px] text-slate-400 ml-1">এখন</span>
+            </div>
+            <p className="text-xs text-slate-200 mt-1 leading-snug line-clamp-2">{incomingToast.message}</p>
+            <div className="mt-2.5 flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  handleMarkAsRead(incomingToast);
+                  setIncomingToast(null);
+                }}
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black rounded-lg transition-colors flex items-center space-x-1 cursor-pointer"
+              >
+                <span>দেখুন</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setIncomingToast(null)}
+                className="px-2 py-1 text-slate-400 hover:text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIncomingToast(null)}
+            className="text-slate-400 hover:text-white p-1"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="w-full md:w-72 bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           
-          {/* Brand Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(navigation[0]?.id || 'dashboard')}>
-            <img 
-              src="/logo.jpg" 
-              alt="AL ANSAR" 
-              className="h-12 w-12 object-contain rounded-2xl border border-amber-500/40 shadow-lg shadow-amber-500/10" 
-            />
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-black text-white text-lg tracking-tight">AL ANSAR</span>
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                  PORTAL
-                </span>
+          {/* Brand Logo & Mobile Bell */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(navigation[0]?.id || 'dashboard')}>
+              <img 
+                src="/logo.jpg" 
+                alt="AL ANSAR" 
+                className="h-12 w-12 object-contain rounded-2xl border border-amber-500/40 shadow-lg shadow-amber-500/10" 
+              />
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-black text-white text-lg tracking-tight">AL ANSAR</span>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    PORTAL
+                  </span>
+                </div>
+                <p className="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">
+                  {user?.is_staff ? (user.custom_role || 'Staff Control') : 'Admin Master Control'}
+                </p>
               </div>
-              <p className="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">
-                {user?.is_staff ? (user.custom_role || 'Staff Control') : 'Admin Master Control'}
-              </p>
+            </div>
+
+            {/* Mobile Notification Bell Trigger */}
+            <div className="flex md:hidden items-center space-x-1">
+              <button
+                onClick={() => setShowDrawer(!showDrawer)}
+                className="notif-bell-btn relative p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-amber-400 hover:border-amber-500/50 transition-all cursor-pointer"
+                title="নোটিফিকেশন"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-md">
+                    {toBn(unreadCount)}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -88,8 +357,15 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
+                  <span className="truncate">{item.label}</span>
+                  {item.badgeKey && counts[item.badgeKey] > 0 && (
+                    <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 shadow-xs ${
+                      isActive ? 'bg-slate-950 text-amber-400' : 'bg-amber-500 text-slate-950'
+                    }`}>
+                      {toBn(counts[item.badgeKey])}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -135,7 +411,148 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl bg-slate-950" style={{ backgroundColor: '#020617' }}>
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl bg-slate-950 flex flex-col relative" style={{ backgroundColor: '#020617' }}>
+        
+        {/* Desktop Top Header Bar with Live Notification Center */}
+        <div className="hidden md:flex items-center justify-between pb-5 mb-6 border-b border-slate-800/80">
+          <div>
+            <h1 className="text-lg font-black text-white tracking-tight flex items-center space-x-2">
+              <span>{navigation.find(n => n.id === activeTab)?.label || 'অ্যাডমিন ড্যাশবোর্ড'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" title="লাইভ সংযোগ সক্রিয়" />
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              আল আনসার সুপার শপ • অ্যাডমিন পোর্টাল (অর্ডার, করযে হাসানা, ভিআইপি, রিফান্ড ও আপিল নোটিফিকেশন সক্রিয়)
+            </p>
+          </div>
+
+          {/* Action Tools: Sound + Bell */}
+          <div className="flex items-center space-x-2 relative">
+            
+            {/* Audio Toggle */}
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                soundEnabled 
+                  ? 'bg-slate-900 border-slate-700 text-amber-400 hover:border-amber-500' 
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু আছে' : 'সাউন্ড অ্যালার্ট বন্ধ'}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+
+            {/* Notification Bell with Badge */}
+            <button
+              onClick={() => setShowDrawer(!showDrawer)}
+              className="notif-bell-btn relative flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-700 hover:border-amber-500/60 rounded-xl text-slate-200 transition-all cursor-pointer shadow-sm"
+              title="নোটিফিকেশন সেন্টার"
+            >
+              <Bell className={`w-4 h-4 ${unreadCount > 0 ? 'text-amber-400 animate-bounce' : 'text-slate-400'}`} />
+              <span className="text-xs font-bold">নোটিফিকেশন</span>
+              {unreadCount > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full shadow-xs">
+                  {toBn(unreadCount)}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* NOTIFICATION CENTER DROPDOWN / DRAWER (PC + Mobile) */}
+        {showDrawer && (
+          <div 
+            ref={drawerRef}
+            className="absolute top-16 right-4 md:right-8 z-50 w-80 sm:w-96 bg-slate-900 border-2 border-slate-700 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          >
+            {/* Drawer Header */}
+            <div className="p-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Bell className="w-4 h-4 text-amber-400" />
+                <h3 className="text-xs font-black text-white">নোটিফিকেশন সেন্টার</h3>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded-full border border-amber-500/30">
+                    {toBn(unreadCount)} টি অপঠিত
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-1">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    title="সব পঠিত করুন"
+                  >
+                    <CheckCheck className="w-4 h-4" />
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    title="সব মুছে ফেলুন"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDrawer(false)}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Notification List */}
+            <div className="max-h-96 overflow-y-auto divide-y divide-slate-800/60">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-2">
+                  <Bell className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p className="text-xs font-bold">নতুন কোনো নোটিফিকেশন নেই</p>
+                  <p className="text-[10px] text-slate-500">অর্ডার, করযে হাসানা, রিফান্ড বা আপিল আসলে এখানে প্রদর্শিত হবে।</p>
+                </div>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    onClick={() => handleMarkAsRead(notif)}
+                    className={`p-3.5 flex items-start space-x-3 transition-colors cursor-pointer ${
+                      notif.is_read ? 'bg-slate-900 hover:bg-slate-850' : 'bg-slate-850/80 hover:bg-slate-800 border-l-4 border-amber-500'
+                    }`}
+                  >
+                    <div className="p-2 bg-slate-800 rounded-xl shrink-0 mt-0.5 border border-slate-700">
+                      {getNotifIcon(notif.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className={`text-xs truncate ${notif.is_read ? 'font-bold text-slate-300' : 'font-black text-amber-300'}`}>
+                          {notif.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-500 shrink-0 ml-2">
+                          {formatTimeAgo(notif.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {notif.message}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            {notifications.length > 0 && (
+              <div className="p-2.5 bg-slate-950 text-center border-t border-slate-800">
+                <span className="text-[10px] text-slate-500 font-semibold">
+                  নোটিফিকেশনে ক্লিক করলে সরাসরি সংশ্লিষ্ট ডেস্কে নিয়ে যাবে
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {children}
       </main>
     </div>

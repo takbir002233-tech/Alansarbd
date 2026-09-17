@@ -26,8 +26,13 @@ import {
   Package,
   Calendar,
   TrendingUp,
-  PackageCheck
+  PackageCheck,
+  Printer,
+  Download,
+  PlusCircle
 } from 'lucide-react';
+import AdminCustomerProfileModal from '../../components/AdminCustomerProfileModal';
+import LuxuryLoyaltyCard from '../../components/LuxuryLoyaltyCard';
 
 export default function AdminUsers() {
   const { token, hasPermission } = useAuth();
@@ -70,6 +75,7 @@ export default function AdminUsers() {
   const [editingUser, setEditingUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     address: '',
     city: '',
@@ -85,6 +91,34 @@ export default function AdminUsers() {
   const [approvingApp, setApprovingApp] = useState(null);
   const [approvedLimitInput, setApprovedLimitInput] = useState(5000);
   const [approvedNotesInput, setApprovedNotesInput] = useState('');
+
+  // Selected VIP Review Modal
+  const [selectedVipApp, setSelectedVipApp] = useState(null);
+  const [vipAdminNotes, setVipAdminNotes] = useState('');
+
+  // Selected Qard Review Modal
+  const [selectedQardApp, setSelectedQardApp] = useState(null);
+  const [qardApproveLimit, setQardApproveLimit] = useState(5000);
+  const [qardAdminNotes, setQardAdminNotes] = useState('');
+
+  // VIP Print Modal
+  const [printCardUser, setPrintCardUser] = useState(null);
+
+  // Extend Due Date Modal
+  const [extendDueDateUser, setExtendDueDateUser] = useState(null);
+  const [extendMonths, setExtendMonths] = useState(1);
+  const [extendNotes, setExtendNotes] = useState('');
+
+  // Repay Debt Modal
+  const [repayDebtUser, setRepayDebtUser] = useState(null);
+  const [repayAmount, setRepayAmount] = useState('');
+  const [repayNotes, setRepayNotes] = useState('');
+
+  // Lightbox Zoom Photo
+  const [zoomPhoto, setZoomPhoto] = useState(null);
+
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -168,6 +202,7 @@ export default function AdminUsers() {
     setEditingUser(user);
     setEditFormData({
       name: user.name || '',
+      email: user.email || '',
       phone: user.phone || '',
       address: user.address || '',
       city: user.city || '',
@@ -400,6 +435,78 @@ export default function AdminUsers() {
     }
   };
 
+  // Extend debtor due date
+  const handleExtendDueDate = async () => {
+    if (!extendDueDateUser?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users/${extendDueDateUser.id}/extend-qard-due`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          additional_months: Number(extendMonths) || 1,
+          notes: extendNotes
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`গ্রাহক "${extendDueDateUser.name}" এর ঋণ পরিশোধের মেয়াদ আরও ${extendMonths} মাস বৃদ্ধি করা হয়েছে!`);
+        setExtendDueDateUser(null);
+        fetchData();
+      } else {
+        alert(data.message || 'মেয়াদ বৃদ্ধি করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Repay debtor Qard debt
+  const handleRepayDebt = async () => {
+    if (!repayDebtUser?.id || !repayAmount) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users/${repayDebtUser.id}/repay-qard`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amount: Number(repayAmount),
+          notes: repayNotes
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`গ্রাহক "${repayDebtUser.name}" এর ৳${Number(repayAmount).toLocaleString()} বকেয়া সফলভাবে সমন্বয় বা পরিশোধ করা হয়েছে!`);
+        setRepayDebtUser(null);
+        setRepayAmount('');
+        fetchData();
+      } else {
+        alert(data.message || 'ঋণ সমন্বয় করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const origTitle = document.title;
+    document.title = `AL_ANSAR_VIP_CARD_${printCardUser?.loyalty_card_number || 'CARD'}`;
+    window.print();
+    setTimeout(() => { document.title = origTitle; }, 1000);
+  };
+
   const filteredUsers = users.filter(
     u =>
       (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -531,132 +638,156 @@ export default function AdminUsers() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                   <tr>
-                    <th className="p-4">গ্রাহক ও কার্ড নম্বর</th>
-                    <th className="p-4">যোগাযোগ</th>
-                    <th className="p-4">ভিআইপি লয়ালটি টায়ার ও পয়েন্ট</th>
-                    <th className="p-4">করযে হাসানা ক্রেডিট লিমিট</th>
-                    <th className="p-4">মোট কেনাকাটা</th>
-                    <th className="p-4">স্ট্যাটাস</th>
+                    <th className="p-4">গ্রাহক</th>
+                    <th className="p-4">যোগাযোগ ও ঠিকানা</th>
+                    <th className="p-4">কেনাকাটা ও অর্ডার</th>
+                    <th className="p-4">অ্যাকাউন্ট স্ট্যাটাস</th>
                     <th className="p-4 text-right">অ্যাকশন</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-700 to-emerald-900 text-white flex items-center justify-center font-black shadow-md border border-amber-500/30">
-                            {u.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </div>
-                          <div>
-                            <p className="font-bold text-white flex items-center">
-                              {u.name}
-                              {u.role === 'admin' && (
-                                <span className="ml-2 px-2 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/30">
-                                  ADMIN
-                                </span>
+                  {filteredUsers.map((u) => {
+                    const userLoyaltyApp = loyaltyApps.find(a => a.user_id === u.id || (a.phone && u.phone && a.phone === u.phone));
+                    const userQardApp = qardApps.find(a => a.user_id === u.id || (a.phone && u.phone && a.phone === u.phone) || (a.nid_number && u.nid_number && a.nid_number === u.nid_number));
+                    const isVipApproved = u.loyalty_card_approved || u.loyalty_card_status === 'Approved';
+                    const isVipPending = u.loyalty_card_status === 'Pending' || userLoyaltyApp?.status === 'Pending';
+                    const isVipDeclined = u.loyalty_card_status === 'Declined' || u.loyalty_card_status === 'Rejected' || userLoyaltyApp?.status === 'Rejected';
+
+                    const isQardApproved = u.qard_status === 'Approved' || userQardApp?.status === 'Approved';
+                    const isQardPending = u.qard_status === 'Pending' || userQardApp?.status === 'Pending';
+                    const hasQardDebt = Boolean(u.has_unpaid_qard && u.qard_unpaid_amount > 0);
+
+                    return (
+                      <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
+                        {/* Customer & Card Number */}
+                        <td className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-700 to-emerald-900 text-white flex items-center justify-center font-black shadow-md border border-amber-500/30 shrink-0 overflow-hidden">
+                              {u.user_photo ? (
+                                <img
+                                  src={u.user_photo}
+                                  alt={u.name}
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-90"
+                                  onClick={() => setZoomPhoto(u.user_photo)}
+                                  title="ছবি বড় করে দেখুন"
+                                />
+                              ) : (
+                                u.name?.charAt(0)?.toUpperCase() || 'U'
                               )}
-                            </p>
-                            <p className="text-[10px] text-amber-300 font-mono font-bold">
-                              💳 {u.loyalty_card_number || `ANSAR-VIP-${u.id.slice(0, 4)}-2026`}
-                            </p>
+                            </div>
+                            <div>
+                              <p className="font-bold text-white flex items-center">
+                                {u.name}
+                                {u.role === 'admin' && (
+                                  <span className="ml-2 px-2 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/30">
+                                    ADMIN
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-amber-300 font-mono font-bold">
+                                💳 {u.loyalty_card_number || `ANSAR-VIP-${u.id.slice(0, 4)}-2026`}
+                              </p>
+                              {u.nid_number && (
+                                <p className="text-[10px] text-slate-400 font-mono">
+                                  NID: {u.nid_number}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="p-4">
-                        <p className="font-mono text-slate-200">{u.phone || 'ফোন নেই'}</p>
-                        <p className="text-[11px] text-slate-400 font-mono">{u.email}</p>
-                      </td>
+                        {/* Contact & Address */}
+                        <td className="p-4">
+                          <p className="font-mono text-slate-200 font-bold">{u.phone || 'ফোন নেই'}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">{u.email}</p>
+                          {u.address && (
+                            <p className="text-[10px] text-slate-400 mt-1 line-clamp-1" title={u.address}>
+                              📍 {u.address} {u.city ? `(${u.city})` : ''}
+                            </p>
+                          )}
+                        </td>
 
-                      <td className="p-4">
-                        <div className="space-y-0.5">
-                          <span className="font-black text-amber-400 block text-xs">
-                            {u.loyalty_points || 100} পয়েন্ট
+                        {/* Total Spent & Order Count */}
+                        <td className="p-4">
+                          <p className="font-bold text-white">৳{(u.total_spent || 0).toLocaleString()}</p>
+                          <div className="flex items-center space-x-1.5 mt-0.5">
+                            <span className="text-[10px] text-slate-300 font-mono font-bold">{u.orders_count || 0} টি অর্ডার</span>
+                            {u.cancelled_orders_count > 0 && (
+                              <span className="text-[10px] text-rose-400 font-mono font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25" title="গ্রাহক বাতিল করেছেন">
+                                {u.cancelled_orders_count} বাতিল
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Account Status */}
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            u.is_blocked ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          }`}>
+                            {u.is_blocked ? '🚫 স্থগিত / সাসপেন্ড' : '✓ সক্রিয় একাউন্ট'}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700 inline-block">
-                            ⭐ {u.loyalty_tier || 'Gold VIP'}
-                          </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="p-4">
-                        <span className="font-mono font-black text-emerald-400 text-xs block">
-                          ৳{(u.qard_credit_limit || 5000).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {u.qard_status === 'Approved' ? '✓ অনুমোদিত স্কিম' : 'স্ট্যান্ডার্ড লিমিট'}
-                        </span>
-                      </td>
-
-                      <td className="p-4">
-                        <p className="font-bold text-white">৳{(u.total_spent || 0).toLocaleString()}</p>
-                        <div className="flex items-center space-x-1.5 mt-0.5">
-                          <span className="text-[10px] text-slate-300 font-mono font-bold">{u.orders_count || 0} টি অর্ডার</span>
-                          {u.cancelled_orders_count > 0 && (
-                            <span className="text-[10px] text-rose-400 font-mono font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25" title="গ্রাহক বাতিল করেছেন">
-                              {u.cancelled_orders_count} বাতিল
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          u.is_blocked ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        }`}>
-                          {u.is_blocked ? '🚫 স্থগিত / সাসপেন্ড' : '✓ সক্রিয় একাউন্ট'}
-                        </span>
-                      </td>
-
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {/* View Profile & Order Activity Button */}
-                          <button
-                            onClick={() => handleOpenUserProfile(u)}
-                            className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition-colors flex items-center space-x-1 cursor-pointer"
-                            title="গ্রাহকের প্রোফাইল ও অর্ডার অ্যাক্টিভিটি দেখুন"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-amber-400" />
-                            <span>প্রোফাইল</span>
-                          </button>
-
-                          {hasPermission('customers.block') && u.role !== 'admin' && (
+                        {/* Comprehensive Actions */}
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end space-x-1.5 flex-wrap gap-y-1">
+                            {/* Profile Modal Button */}
                             <button
-                              onClick={() => handleToggleBlock(u.id, u.name, u.is_blocked)}
-                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                                u.is_blocked
-                                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                  : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50'
-                              }`}
+                              type="button"
+                              onClick={() => handleOpenUserProfile(u)}
+                              className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition-colors flex items-center space-x-1 cursor-pointer"
+                              title="গ্রাহকের সম্পূর্ণ প্রোফাইল, সংরক্ষিত ৩টি ছবি ও অর্ডার হিস্ট্রি দেখুন"
                             >
-                              {u.is_blocked ? 'আনব্লক' : 'সাসপেন্ড'}
+                              <Eye className="w-3.5 h-3.5 text-amber-400" />
+                              <span>প্রোফাইল</span>
                             </button>
-                          )}
 
-                          {hasPermission('customers.edit_limit') && (
-                            <button
-                              onClick={() => handleOpenEdit(u)}
-                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
-                              title="তথ্য ও লিমিট এডিট করুন"
-                            >
-                              এডিট
-                            </button>
-                          )}
+                            {/* Edit Button */}
+                            {hasPermission('customers.edit_limit') && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(u)}
+                                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer flex items-center space-x-1"
+                                title="তথ্য ও লিমিট এডিট করুন"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                <span>এডিট</span>
+                              </button>
+                            )}
 
-                          {hasPermission('customers.delete') && u.role !== 'admin' && (
-                            <button
-                              onClick={() => setDeletingUser(u)}
-                              className="p-1.5 bg-slate-800/80 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700 hover:border-rose-700/50 transition-colors cursor-pointer"
-                              title="অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            {/* Suspend / Unblock */}
+                            {hasPermission('customers.block') && u.role !== 'admin' && (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleBlock(u.id, u.name, u.is_blocked)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                                  u.is_blocked
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                    : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50'
+                                }`}
+                                title={u.is_blocked ? 'অ্যাকাউন্ট আনব্লক করুন' : 'অ্যাকাউন্ট সাসপেন্ড করুন'}
+                              >
+                                {u.is_blocked ? 'আনব্লক' : 'সাসপেন্ড'}
+                              </button>
+                            )}
+
+                            {/* Delete User Account Button */}
+                            {hasPermission('customers.delete') && u.role !== 'admin' && (
+                              <button
+                                type="button"
+                                onClick={() => setDeletingUser(u)}
+                                className="p-1.5 bg-slate-800/80 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700 hover:border-rose-700/50 transition-colors cursor-pointer"
+                                title="অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1077,15 +1208,28 @@ export default function AdminUsers() {
             </div>
 
             <form onSubmit={handleEditSubmit} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-bold text-slate-300 block mb-1">পূর্ণ নাম</label>
-                <input
-                  type="text"
-                  required
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-300 block mb-1">পূর্ণ নাম</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-300 block mb-1">ইমেইল অ্যাড্রেস</label>
+                  <input
+                    type="email"
+                    required
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white font-mono"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1166,256 +1310,610 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* USER PROFILE & ACTIVITY DETAILS MODAL */}
+      {/* FULL CUSTOMER PROFILE & DASHBOARD MODAL */}
       {viewingUser && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] my-auto">
-            
-            {/* Modal Top Header */}
-            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/50">
+        <AdminCustomerProfileModal
+          isOpen={Boolean(viewingUser)}
+          user={viewingUser}
+          onClose={() => setViewingUser(null)}
+        />
+      )}
+
+      {/* 👑 VIP LOYALTY APPLICATION REVIEW MODAL */}
+      {selectedVipApp && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950">
               <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                  <User className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                  <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white">গ্রাহক প্রোফাইল ও অ্যাক্টিভিটি হিস্ট্রি</h3>
-                  <p className="text-[11px] text-slate-400">গ্রাহকের ড্যাশবোর্ডের মতো বিস্তারিত তথ্য, অর্ডার পরিসংখ্যান ও ট্র্যাকিং</p>
+                  <h3 className="text-sm font-black text-white">ভিআইপি লয়ালটি মেম্বারশিপ আবেদন রিভিউ</h3>
+                  <p className="text-[11px] text-slate-400">গ্রাহকের ৩টি ছবি ও ৳{selectedVipApp.payment_amount || 500} ফি ভেরিফাই করে অনুমোদন করুন</p>
                 </div>
               </div>
               <button
-                onClick={() => setViewingUser(null)}
-                className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                type="button"
+                onClick={() => setSelectedVipApp(null)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs">
-              
-              {/* Profile Card Banner (Same as User Dashboard Header) */}
-              <div className="bg-gradient-to-r from-slate-950 via-emerald-950/60 to-slate-950 rounded-2xl p-4 sm:p-5 border border-amber-900/40 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center space-x-3.5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-emerald-700 text-slate-950 font-black text-xl flex items-center justify-center shadow-md ring-2 ring-amber-400/40 shrink-0">
-                    {viewingUser.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                      <h4 className="text-base font-black text-white">{viewingUser.name}</h4>
-                      <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                        {viewingUser.loyalty_tier || 'Gold VIP Patron'}
-                      </span>
-                      {viewingUser.is_blocked ? (
-                        <span className="text-[10px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
-                          🚫 স্থগিত / সাসপেন্ড
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          ✓ সক্রিয় অ্যাকাউন্ট
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-slate-300 mt-1 font-mono text-[11px]">
-                      📞 {viewingUser.phone || 'ফোন নেই'} {viewingUser.email ? `• ✉️ ${viewingUser.email}` : ''}
-                    </p>
-                    {viewingUser.created_at && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        🗓️ নিবন্ধিত: {new Date(viewingUser.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto max-h-[75vh] space-y-4 text-xs">
+              {/* Applicant Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-300">
+                <div>
+                  <span className="text-[10px] text-slate-500 block">আবেদনকারীর নাম:</span>
+                  <span className="font-bold text-white text-sm">{selectedVipApp.name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">মোবাইল নম্বর:</span>
+                  <span className="font-mono font-bold text-amber-300">{selectedVipApp.phone}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">জাতীয় পরিচয়পত্র (NID):</span>
+                  <span className="font-mono font-bold text-slate-200">{selectedVipApp.nid_number || 'উল্লেখ নেই'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">ঠিকানা ও শহর:</span>
+                  <span className="text-slate-200">{selectedVipApp.address || 'N/A'}, {selectedVipApp.city || 'ঢাকা'}</span>
+                </div>
+              </div>
+
+              {/* 3 Photos Grid */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center">
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                  সংযুক্ত ৩টি ছবি (NID Front, Back & Selfie)
+                </span>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedVipApp.nid_front_photo && setZoomPhoto(selectedVipApp.nid_front_photo)}
+                  >
+                    {selectedVipApp.nid_front_photo ? (
+                      <img
+                        src={selectedVipApp.nid_front_photo}
+                        alt="NID Front"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
                     )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি সামনে</span>
                   </div>
-                </div>
 
-                <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">ডিজিটাল লয়ালটি কার্ড</span>
-                  <p className="font-mono font-bold text-amber-400 text-xs mt-0.5">
-                    💳 {viewingUser.loyalty_card_number || `ANSAR-VIP-${viewingUser.id.slice(0, 4)}-2026`}
-                  </p>
-                  <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
-                    ⭐ {viewingUser.loyalty_points || 100} পয়েন্ট অর্জিত
-                  </p>
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedVipApp.nid_back_photo && setZoomPhoto(selectedVipApp.nid_back_photo)}
+                  >
+                    {selectedVipApp.nid_back_photo ? (
+                      <img
+                        src={selectedVipApp.nid_back_photo}
+                        alt="NID Back"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
+                    )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি পেছনে</span>
+                  </div>
+
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedVipApp.user_photo && setZoomPhoto(selectedVipApp.user_photo)}
+                  >
+                    {selectedVipApp.user_photo ? (
+                      <img
+                        src={selectedVipApp.user_photo}
+                        alt="Selfie"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
+                    )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">আবেদনকারীর ছবি</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Delivery Address & Qard Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 flex items-center uppercase tracking-wider">
-                    <MapPin className="w-3.5 h-3.5 mr-1 text-amber-400" /> ডিফল্ট ডেলিভারি ঠিকানা
+              {/* Payment Details */}
+              <div className="p-3.5 bg-amber-950/30 rounded-2xl border border-amber-500/30 space-y-1.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-bold text-amber-300">
+                    💳 আবেদন ফি: ৳{selectedVipApp.payment_amount || 500} ({selectedVipApp.payment_method?.toUpperCase() || 'MFS'})
                   </span>
-                  <p className="text-white font-medium text-xs pt-0.5">
-                    {viewingUser.address || 'ঠিকানা দেওয়া হয়নি'}
-                  </p>
-                  <p className="text-slate-400 font-mono text-[11px]">
-                    শহর/জেলা: <strong className="text-slate-200">{viewingUser.city || 'অনির্দিষ্ট'}</strong> {viewingUser.postal_code ? `• পোস্টকোড: ${viewingUser.postal_code}` : ''}
-                  </p>
-                </div>
-
-                <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 flex items-center uppercase tracking-wider">
-                    <HandHeart className="w-3.5 h-3.5 mr-1 text-emerald-400" /> করযে হাসানা স্কিম লিমিট
+                  <span className="text-[11px] text-slate-300 font-mono">
+                    প্রেরক: <strong className="text-white">{selectedVipApp.sender_number || 'N/A'}</strong>
                   </span>
-                  <p className="text-emerald-400 font-black font-mono text-sm pt-0.5">
-                    ৳{(viewingUser.qard_credit_limit || 5000).toLocaleString()}
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    স্ট্যাটাস: <strong className="text-slate-200">{viewingUser.qard_status === 'Approved' ? '✓ অনুমোদিত' : 'সাধারণ স্কিম'}</strong>
-                  </p>
+                </div>
+                <div className="flex items-center space-x-2 pt-1">
+                  <span className="text-[11px] text-slate-400">ট্রানজেকশন আইডি (TrxID):</span>
+                  <span className="px-2.5 py-0.5 bg-black/60 rounded-md font-mono font-black text-amber-300 text-xs border border-amber-500/30">
+                    {selectedVipApp.transaction_id || 'N/A'}
+                  </span>
                 </div>
               </div>
 
-              {/* Order Statistics 4-Card Overview */}
-              <div className="space-y-2">
-                <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center">
-                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> অর্ডার পরিসংখ্যান ও অ্যাক্টিভিটি
-                </h5>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 block">মোট অর্ডার</span>
-                    <span className="text-lg font-black text-white font-mono block mt-0.5">
-                      {viewingDetails?.stats?.total_orders ?? viewingUser.orders_count ?? 0} <span className="text-xs font-normal text-slate-400">টি</span>
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-rose-900/40 bg-rose-950/10">
-                    <span className="text-[10px] font-bold text-rose-400 block">বাতিলকৃত অর্ডার</span>
-                    <span className="text-lg font-black text-rose-400 font-mono block mt-0.5">
-                      {viewingDetails?.stats?.cancelled_orders ?? viewingUser.cancelled_orders_count ?? 0} <span className="text-xs font-normal text-rose-300">টি</span>
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-emerald-900/40 bg-emerald-950/10">
-                    <span className="text-[10px] font-bold text-emerald-400 block">সফল ডেলিভারি</span>
-                    <span className="text-lg font-black text-emerald-400 font-mono block mt-0.5">
-                      {viewingDetails?.stats?.delivered_orders ?? viewingUser.delivered_orders_count ?? 0} <span className="text-xs font-normal text-emerald-300">টি</span>
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-amber-900/40 bg-amber-950/10">
-                    <span className="text-[10px] font-bold text-amber-400 block">মোট কেনাকাটা</span>
-                    <span className="text-lg font-black text-amber-300 font-mono block mt-0.5">
-                      ৳{(viewingDetails?.stats?.total_spent ?? viewingUser.total_spent ?? 0).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Cancelled Order Notice if > 0 */}
-                {(viewingDetails?.stats?.cancelled_orders > 0 || viewingUser.cancelled_orders_count > 0) && (
-                  <div className="p-2.5 bg-rose-950/40 border border-rose-800/40 rounded-xl text-rose-300 text-[11px] flex items-center space-x-2">
-                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span>
-                      ⚠️ <strong>ক্যান্সেলেশন অ্যালার্ট:</strong> এই গ্রাহক এ পর্যন্ত সর্বমোট <strong>{viewingDetails?.stats?.cancelled_orders ?? viewingUser.cancelled_orders_count} টি অর্ডার বাতিল</strong> করেছেন।
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* User Order List & Activity Log */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <div className="flex items-center justify-between">
-                  <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center">
-                    <Package className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> অর্ডারের বিস্তারিত ইতিহাস ({viewingDetails?.orders?.length || 0})
-                  </h5>
-                </div>
-
-                {loadingDetails ? (
-                  <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
-                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                    <span>অর্ডার হিস্ট্রি লোড হচ্ছে...</span>
-                  </div>
-                ) : viewingDetails?.orders && viewingDetails.orders.length > 0 ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {viewingDetails.orders.map((ord) => (
-                      <div key={ord.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono font-black text-white text-xs">#{ord.order_code}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              ord.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                              ord.status === 'Delivered' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                              ord.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                              ord.status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                              ord.status === 'Confirmed' ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' :
-                              'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            }`}>
-                              {ord.status}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center space-x-3 text-[11px]">
-                            <span className="text-slate-400 font-mono">
-                              {ord.created_at ? new Date(ord.created_at).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                            </span>
-                            <span className="font-mono font-black text-amber-400">৳{ord.total_amount}</span>
-                            <span className="text-[10px] text-slate-400 uppercase bg-slate-800 px-1.5 py-0.5 rounded font-mono">
-                              {ord.payment_method}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Order Items List */}
-                        {Array.isArray(ord.items) && ord.items.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-800/60">
-                            {ord.items.map((it, idx) => (
-                              <div key={idx} className="flex items-center space-x-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[10px]">
-                                <span className="text-slate-200 font-medium truncate max-w-[150px]">{it.title}</span>
-                                <span className="text-amber-400 font-mono font-black">×{it.quantity || 1} টি</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-6 text-center text-slate-500 text-xs bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
-                    এই গ্রাহকের এখনও কোনো অর্ডার রেকর্ড নেই।
-                  </div>
-                )}
+              {/* Admin Notes */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">অ্যাডমিন নোট / বার্তা (ঐচ্ছিক)</label>
+                <input
+                  type="text"
+                  placeholder="যাচাই নোট লিখুন..."
+                  value={vipAdminNotes}
+                  onChange={(e) => setVipAdminNotes(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                />
               </div>
             </div>
 
-            {/* Modal Bottom Footer */}
-            <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/60">
-              <div>
-                {hasPermission('customers.delete') && viewingUser.role !== 'admin' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const u = viewingUser;
-                      setViewingUser(null);
-                      setDeletingUser(u);
-                    }}
-                    className="px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/40 transition-colors flex items-center space-x-1.5 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>অ্যাকাউন্ট মুছুন</span>
-                  </button>
-                )}
-              </div>
+            {/* Modal Actions */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedVipApp(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
 
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => {
-                    const u = viewingUser;
-                    setViewingUser(null);
-                    handleOpenEdit(u);
+                    handleLoyaltyStatusUpdate(selectedVipApp.id, 'Rejected', selectedVipApp.name);
+                    setSelectedVipApp(null);
                   }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/50 cursor-pointer"
                 >
-                  তথ্য ও লিমিট এডিট
+                  ✕ বাতিল করুন
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewingUser(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  onClick={() => {
+                    handleLoyaltyStatusUpdate(selectedVipApp.id, 'Approved', selectedVipApp.name);
+                    setSelectedVipApp(null);
+                  }}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-md cursor-pointer"
                 >
-                  বন্ধ করুন
+                  ✓ অনুমোদন ও কার্ড সক্রিয় করুন
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🤝 QARD-E-HASANA APPLICATION REVIEW MODAL */}
+      {selectedQardApp && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
+          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
+                  <HandHeart className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">করযে হাসানা আবেদন ও NID যাচাই</h3>
+                  <p className="text-[11px] text-slate-400">গ্রাহকের ৩টি ছবি ও তথ্যাদি যাচাই করে ক্রেডিট লিমিট অনুমোদন করুন</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedQardApp(null)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto max-h-[75vh] space-y-4 text-xs">
+              {/* Applicant Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-300">
+                <div>
+                  <span className="text-[10px] text-slate-500 block">আবেদনকারীর নাম:</span>
+                  <span className="font-bold text-white text-sm">{selectedQardApp.name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">মোবাইল নম্বর:</span>
+                  <span className="font-mono font-bold text-emerald-300">{selectedQardApp.phone}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">জাতীয় পরিচয়পত্র (NID):</span>
+                  <span className="font-mono font-bold text-amber-300">{selectedQardApp.nid_number}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">কাঙ্ক্ষিত লিমিট:</span>
+                  <span className="font-mono font-black text-emerald-400 text-sm">৳{(selectedQardApp.requested_limit || 5000).toLocaleString()}</span>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-[10px] text-slate-500 block">ঠিকানা:</span>
+                  <span className="text-slate-200">{selectedQardApp.address || 'N/A'}</span>
+                </div>
+              </div>
+
+              {/* 3 Photos Grid */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider flex items-center">
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                  সংযুক্ত ৩টি ছবি (NID Front, Back & Selfie)
+                </span>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedQardApp.nid_front_photo && setZoomPhoto(selectedQardApp.nid_front_photo)}
+                  >
+                    {selectedQardApp.nid_front_photo ? (
+                      <img
+                        src={selectedQardApp.nid_front_photo}
+                        alt="NID Front"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
+                    )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি সামনে</span>
+                  </div>
+
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedQardApp.nid_back_photo && setZoomPhoto(selectedQardApp.nid_back_photo)}
+                  >
+                    {selectedQardApp.nid_back_photo ? (
+                      <img
+                        src={selectedQardApp.nid_back_photo}
+                        alt="NID Back"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
+                    )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি পেছনে</span>
+                  </div>
+
+                  <div
+                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
+                    onClick={() => selectedQardApp.user_photo && setZoomPhoto(selectedQardApp.user_photo)}
+                  >
+                    {selectedQardApp.user_photo ? (
+                      <img
+                        src={selectedQardApp.user_photo}
+                        alt="Selfie"
+                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
+                    )}
+                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">আবেদনকারীর ছবি</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Details if applicable */}
+              {selectedQardApp.payment_amount > 0 && (
+                <div className="p-3.5 bg-emerald-950/30 rounded-2xl border border-emerald-500/30 space-y-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-bold text-emerald-300">
+                      💳 আবেদন ফি: ৳{selectedQardApp.payment_amount} ({selectedQardApp.payment_method?.toUpperCase() || 'MFS'})
+                    </span>
+                    <span className="text-[11px] text-slate-300 font-mono">
+                      প্রেরক: <strong className="text-white">{selectedQardApp.sender_number || 'N/A'}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-1">
+                    <span className="text-[11px] text-slate-400">ট্রানজেকশন আইডি (TrxID):</span>
+                    <span className="px-2.5 py-0.5 bg-black/60 rounded-md font-mono font-black text-amber-300 text-xs border border-amber-500/30">
+                      {selectedQardApp.transaction_id || 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Approved Limit Input */}
+              <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
+                <label className="text-xs font-bold text-emerald-400 block">
+                  মঞ্জুরিকৃত করযে হাসানা ক্রেডিট লিমিট (টাকা) *
+                </label>
+                <div className="relative max-w-xs">
+                  <input
+                    type="number"
+                    min="500"
+                    step="500"
+                    value={qardApproveLimit}
+                    onChange={(e) => setQardApproveLimit(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-800 rounded-xl border border-emerald-500/50 text-emerald-300 font-mono font-black text-sm focus:outline-none focus:border-emerald-400 pr-12"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">টাকা (৳)</span>
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">অ্যাডমিন নোট / অনুমোদন বার্তা</label>
+                <input
+                  type="text"
+                  placeholder="অনুমোদন বা ভেরিফিকেশন বার্তা লিখুন..."
+                  value={qardAdminNotes}
+                  onChange={(e) => setQardAdminNotes(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedQardApp(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleQardReject(selectedQardApp.id, selectedQardApp.name);
+                    setSelectedQardApp(null);
+                  }}
+                  className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/50 cursor-pointer"
+                >
+                  ✕ বাতিল
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/admin/qard-applications/${selectedQardApp.id}`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                          status: 'Approved',
+                          notes: qardAdminNotes || `এনআইডি (${selectedQardApp.nid_number}) সফলভাবে যাচাইকৃত। ৳${Number(qardApproveLimit).toLocaleString()} লিমিট মঞ্জুর হলো।`,
+                          requested_limit: Number(qardApproveLimit)
+                        })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast(`আবেদনকারী "${selectedQardApp.name}" এর করযে হাসানা ৳${Number(qardApproveLimit).toLocaleString()} লিমিট অনুমোদিত হয়েছে!`);
+                        setSelectedQardApp(null);
+                        fetchData();
+                      }
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
+                >
+                  ✓ ক্রেডিট অনুমোদন করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🖨️ VIP CARD PRINT & DOWNLOAD MODAL */}
+      {printCardUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl my-auto">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/40 to-slate-950">
+              <div className="flex items-center space-x-2">
+                <Printer className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-black text-white">গ্রাহক ভিআইপি কার্ড প্রিন্ট ও প্রিভিউ</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrintCardUser(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="flex justify-center">
+                <LuxuryLoyaltyCard user={printCardUser} />
+              </div>
+              <p className="text-center text-[11px] text-slate-400">
+                এই ডিজিটাল কার্ডটি গ্রাহকের প্রোফাইলেও সংরক্ষিত আছে। আপনি সরাসরি প্রিন্টার বা PDF হিসেবে সেভ করতে পারেন।
+              </p>
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setPrintCardUser(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-black rounded-xl flex items-center space-x-1.5 cursor-pointer shadow-md"
+              >
+                <Printer className="w-4 h-4" />
+                <span>প্রিন্ট / PDF সেভ করুন</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⏳ EXTEND QARD DUE DATE MODAL */}
+      {extendDueDateUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-black text-white">করযে হাসানা পরিশোধের মেয়াদ বৃদ্ধি</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExtendDueDateUser(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1 text-xs">
+              <p className="font-bold text-white">{extendDueDateUser.name} ({extendDueDateUser.phone})</p>
+              <p className="text-rose-400 font-mono font-bold">বর্তমান বকেয়া: ৳{Number(extendDueDateUser.qard_unpaid_amount || 0).toLocaleString()}</p>
+              {extendDueDateUser.qard_due_date && (
+                <p className="text-slate-400 font-mono text-[11px]">
+                  বর্তমান শেষ তারিখ: {new Date(extendDueDateUser.qard_due_date).toLocaleDateString('bn-BD', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-slate-300 block">অতিরিক্ত মেয়াদ যোগ করুন *</label>
+              <select
+                value={extendMonths}
+                onChange={(e) => setExtendMonths(Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 bg-slate-800 rounded-xl border border-slate-700 text-amber-300 font-bold focus:outline-none focus:border-amber-500"
+              >
+                <option value={1}>+ ১ মাস মেয়াদ বৃদ্ধি</option>
+                <option value={2}>+ ২ মাস মেয়াদ বৃদ্ধি</option>
+                <option value={3}>+ ৩ মাস মেয়াদ বৃদ্ধি</option>
+                <option value={6}>+ ৬ মাস মেয়াদ বৃদ্ধি</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-slate-300 block">অ্যাডমিন নোট / কারণ (ঐচ্ছিক)</label>
+              <input
+                type="text"
+                placeholder="মেয়াদ বৃদ্ধির কারণ লিখুন..."
+                value={extendNotes}
+                onChange={(e) => setExtendNotes(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div className="flex space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setExtendDueDateUser(null)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={handleExtendDueDate}
+                disabled={actionLoading}
+                className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs shadow-md cursor-pointer flex items-center justify-center space-x-1"
+              >
+                {actionLoading ? 'প্রসেসিং...' : '✓ মেয়াদ বৃদ্ধি সংরক্ষণ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 💰 REPAY QARD DEBT MODAL */}
+      {repayDebtUser && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-black text-white">করযে হাসানা বকেয়া ঋণ সমন্বয় ও পরিশোধ</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRepayDebtUser(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1 text-xs">
+              <p className="font-bold text-white">{repayDebtUser.name} ({repayDebtUser.phone})</p>
+              <p className="text-rose-400 font-mono font-bold">বর্তমান বকেয়া: ৳{Number(repayDebtUser.qard_unpaid_amount || 0).toLocaleString()}</p>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-emerald-400 block">পরিশোধিত টাকার পরিমাণ *</label>
+              <input
+                type="number"
+                min="1"
+                max={repayDebtUser.qard_unpaid_amount || 100000}
+                value={repayAmount}
+                onChange={(e) => setRepayAmount(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-800 rounded-xl border border-emerald-500/50 text-emerald-300 font-mono font-black text-sm focus:outline-none focus:border-emerald-400"
+              />
+              <p className="text-[10px] text-slate-400">সম্পূর্ণ পরিশোধ করতে ৳{repayDebtUser.qard_unpaid_amount} বা আংশিক কিস্তি লিখুন।</p>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-slate-300 block">পেমেন্ট মেমো / ট্রানজেকশন নোট (ঐচ্ছিক)</label>
+              <input
+                type="text"
+                placeholder="নগদ পরিশোধ / বিকাশ TrxID ইত্যাদি..."
+                value={repayNotes}
+                onChange={(e) => setRepayNotes(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="flex space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRepayDebtUser(null)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={handleRepayDebt}
+                disabled={actionLoading || !repayAmount}
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs shadow-md cursor-pointer flex items-center justify-center space-x-1"
+              >
+                {actionLoading ? 'সংরক্ষণ হচ্ছে...' : '✓ পরিশোধ সম্পন্ন করুন'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔍 PHOTO ZOOM LIGHTBOX */}
+      {zoomPhoto && (
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in"
+          onClick={() => setZoomPhoto(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={zoomPhoto}
+              alt="Zoomed document"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border-2 border-slate-700"
+            />
+            <button
+              type="button"
+              onClick={() => setZoomPhoto(null)}
+              className="absolute -top-3 -right-3 p-2 bg-slate-800 hover:bg-rose-600 text-white rounded-full shadow-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}

@@ -39,8 +39,12 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminVouchers from './pages/admin/AdminVouchers';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminChatDesk from './pages/admin/AdminChatDesk';
+import AdminTeamChat from './pages/admin/AdminTeamChat';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminStaffManagement from './pages/admin/AdminStaffManagement';
+import AdminRefunds from './pages/admin/AdminRefunds';
+import AdminQardDesk from './pages/admin/AdminQardDesk';
+import AdminLoyaltyDesk from './pages/admin/AdminLoyaltyDesk';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Zero loading spinners or delay indicators as requested by user
@@ -98,8 +102,17 @@ function MainApp() {
   const [historyStack, setHistoryStack] = useState([{ page: initialRoute.page, params: initialRoute.params || {} }]);
 
   // Admin Tab Navigation
-  const [adminTab, setAdminTab] = useState('dashboard');
+  const [adminTab, setAdminTab] = useState(() => {
+    const route = parseInitialRoute();
+    return route.params?.tab || localStorage.getItem('alansar_admin_tab') || 'dashboard';
+  });
   const [adminOrderFilter, setAdminOrderFilter] = useState('all');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('alansar_admin_tab', adminTab);
+    } catch (e) {}
+  }, [adminTab]);
 
   // Handle native browser back and mobile phone hardware/gesture back buttons
   useEffect(() => {
@@ -107,6 +120,9 @@ function MainApp() {
     if (route && route.page) {
       setCurrentPage(route.page);
       setPageParams(route.params || {});
+      if (route.params?.tab) {
+        setAdminTab(route.params.tab);
+      }
       if (route.params?.search !== undefined) {
         setSearchKeyword(route.params.search);
       }
@@ -237,11 +253,15 @@ function MainApp() {
               onOpenInvoice={handleOpenInvoice} 
             />
           )}
+          {adminTab === 'refunds' && <AdminRefunds />}
+          {adminTab === 'qard' && <AdminQardDesk onOpenInvoice={handleOpenInvoice} />}
+          {adminTab === 'loyalty' && <AdminLoyaltyDesk onOpenInvoice={handleOpenInvoice} />}
           {adminTab === 'products' && <AdminProducts />}
           {adminTab === 'categories' && <AdminCategories />}
           {adminTab === 'vouchers' && <AdminVouchers />}
           {adminTab === 'users' && <AdminUsers />}
           {adminTab === 'chat' && <AdminChatDesk />}
+          {adminTab === 'team_chat' && <AdminTeamChat />}
           {adminTab === 'settings' && <AdminSettings />}
           {adminTab === 'staff' && <AdminStaffManagement />}
           {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={handleCloseInvoice} />}
@@ -267,8 +287,9 @@ function MainApp() {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        <React.Suspense fallback={null}>
-          {currentPage === 'home' && (
+        <ErrorBoundary>
+          <React.Suspense fallback={null}>
+            {currentPage === 'home' && (
             <Home 
               onNavigate={navigate} 
               searchKeyword={searchKeyword} 
@@ -367,14 +388,16 @@ function MainApp() {
 
           {/* Safety Fallback: Render Home if unknown route is given so background is never empty */}
           {![
-            'home', 'catalog', 'product', 'cart', 'checkout', 'dashboard', 'contact',
-            'qard-hasana', 'qard', 'loyalty-card', 'loyalty', 'vip', 'vip-card',
-            'terms', 'reviews', 'login', 'register', 'forgot-password', 'al-ansar-admin'
+            'home', 'catalog', 'product-details', 'product', 'checkout', 'order-confirmation',
+            'track-order', 'dashboard', 'contact-us', 'contact', 'qard-hasana', 'qard',
+            'loyalty-card', 'loyalty', 'vip', 'vip-card', 'terms-conditions', 'terms',
+            'reviews', 'login', 'register', 'forgot-password', 'al-ansar-admin', 'admin'
           ].includes(currentPage) && (
             <Home onNavigate={navigate} />
           )}
         </React.Suspense>
-      </main>
+      </ErrorBoundary>
+    </main>
 
       {/* Global In-App Live Chat Widget */}
       <LiveChatWidget onNavigate={navigate} />

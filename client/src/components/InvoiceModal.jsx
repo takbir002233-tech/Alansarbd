@@ -200,28 +200,54 @@ export default function InvoiceModal({ order, onClose }) {
 
           {/* Summary Breakdown */}
           <div className="flex justify-end pt-2">
-            <div className="w-72 space-y-2 text-xs">
+            <div className="w-80 space-y-2 text-xs">
               <div className="flex justify-between text-slate-600">
                 <span>সাবটোটাল</span>
                 <span className="font-bold text-slate-800">৳{toBengaliDigits(order.subtotal?.toLocaleString())}</span>
               </div>
-              {order.discount_amount > 0 && (
+              {Number(order.discount_amount) > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold">
                   <span>ভাউচার ছাড় ({order.applied_voucher_code || 'PROMO'})</span>
                   <span>-৳{toBengaliDigits(order.discount_amount?.toLocaleString())}</span>
                 </div>
               )}
+              {Number(order.points_discount) > 0 && (
+                <div className="flex justify-between text-amber-700 font-bold">
+                  <span>ভিআইপি পয়েন্ট ছাড় ({toBengaliDigits(order.points_used)} পয়েন্ট)</span>
+                  <span>-৳{toBengaliDigits(order.points_discount?.toLocaleString())}</span>
+                </div>
+              )}
               <div className="flex justify-between text-slate-600">
                 <span>ডেলিভারি চার্জ</span>
-                <span className="font-semibold text-slate-800">৳{toBengaliDigits(order.delivery_fee?.toLocaleString())}</span>
+                <span className="font-semibold text-slate-800">
+                  {Number(order.delivery_fee) === 0 ? 'ফ্রি' : `৳${toBengaliDigits(order.delivery_fee?.toLocaleString())}`}
+                </span>
               </div>
               <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2">
-                <span>সর্বমোট প্রদেয় টাকা</span>
-                <span className="text-base text-amber-700">৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
+                <span>সর্বমোট অর্ডার মূল্য</span>
+                <span className="text-base text-slate-900">৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
               </div>
-              {order.payment_method === 'qard' && (
-                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-800 text-[11px] font-bold text-right border border-emerald-200">
-                  <span>করযে হাসানা বকেয়া: ৳{toBengaliDigits(Math.round(order.total_amount * 0.1).toLocaleString())} (১০%)</span>
+              {Number(order.qard_amount) > 0 && (
+                <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-900 text-[11px] font-bold border border-emerald-200 space-y-0.5">
+                  <div className="flex justify-between">
+                    <span>করযে হাসানা ঋণ ({toBengaliDigits(order.qard_percentage || 10)}%):</span>
+                    <span>-৳{toBengaliDigits(order.qard_amount?.toLocaleString())}</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700 font-normal">
+                    পরিশোধের নির্দিষ্ট সময়: ৬ মাস ({order.qard_due_date ? new Date(order.qard_due_date).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }) : 'সুদমুক্ত'})
+                  </p>
+                </div>
+              )}
+              {Number(order.qard_repayment_amount) > 0 && (
+                <div className="flex justify-between text-blue-700 font-bold">
+                  <span>বকেয়া ঋণ পরিশোধ সমন্বয়:</span>
+                  <span>+৳{toBengaliDigits(order.qard_repayment_amount?.toLocaleString())}</span>
+                </div>
+              )}
+              {order.payable_now !== undefined && (
+                <div className="flex justify-between text-sm font-black text-slate-900 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
+                  <span>নগদ / গেটওয়েতে প্রদেয়</span>
+                  <span className="text-base text-amber-900 font-mono">৳{toBengaliDigits(order.payable_now?.toLocaleString())}</span>
                 </div>
               )}
             </div>

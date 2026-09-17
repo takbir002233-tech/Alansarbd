@@ -23,7 +23,15 @@ import {
   QrCode,
   ShieldCheck,
   FileText,
-  Trash2
+  Trash2,
+  RotateCcw,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  UploadCloud,
+  Layers,
+  X,
+  Image as ImageIcon
 } from 'lucide-react';
 import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
@@ -38,6 +46,70 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
   const [qardModalOpen, setQardModalOpen] = useState(false);
   const [userLoyaltyStatus, setUserLoyaltyStatus] = useState(user?.loyalty_card_status || null);
+
+  // Qard Debt Repayment Modal State
+  const [repayModalOpen, setRepayModalOpen] = useState(false);
+  const [repayAmount, setRepayAmount] = useState('');
+  const [repayMethod, setRepayMethod] = useState('bKash');
+  const [repaySenderNumber, setRepaySenderNumber] = useState('');
+  const [repayTrxId, setRepayTrxId] = useState('');
+  const [repayNotes, setRepayNotes] = useState('');
+  const [submittingRepay, setSubmittingRepay] = useState(false);
+  const [repaySuccess, setRepaySuccess] = useState(false);
+  const [repayError, setRepayError] = useState(null);
+  const [copiedNumber, setCopiedNumber] = useState(false);
+
+  const handleConfirmRepay = async (e) => {
+    e.preventDefault();
+    if (!repayAmount || Number(repayAmount) <= 0) {
+      setRepayError('সঠিক পরিশোধের পরিমাণ প্রদান করুন।');
+      return;
+    }
+    if (!repaySenderNumber.trim()) {
+      setRepayError('প্রেরক মোবাইল নম্বর প্রদান করুন।');
+      return;
+    }
+    if (!repayTrxId.trim()) {
+      setRepayError('ট্রানজেকশন আইডি (TrxID) প্রদান করুন।');
+      return;
+    }
+    setSubmittingRepay(true);
+    setRepayError(null);
+    try {
+      const res = await fetch('/api/orders/repay-qard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amount: Number(repayAmount),
+          payment_method: repayMethod,
+          sender_number: repaySenderNumber.trim(),
+          transaction_id: repayTrxId.trim(),
+          notes: repayNotes.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRepaySuccess(true);
+        if (refreshUser) await refreshUser();
+        setTimeout(() => {
+          setRepaySuccess(false);
+          setRepayModalOpen(false);
+          setRepayTrxId('');
+          setRepayNotes('');
+        }, 2000);
+      } else {
+        setRepayError(data.message || 'পরিশোধ সম্পন্ন করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error('Repay error:', err);
+      setRepayError('সার্ভারে যোগাযোগ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      setSubmittingRepay(false);
+    }
+  };
 
   // Self Account Delete & Appeal Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -100,6 +172,220 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
     }
   };
 
+  // Refund & Return States
+  const [myRefunds, setMyRefunds] = useState([]);
+  const [loadingRefunds, setLoadingRefunds] = useState(false);
+  const [refundPolicy, setRefundPolicy] = useState(null);
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundOrder, setRefundOrder] = useState(null);
+  const [refundItemsSelection, setRefundItemsSelection] = useState({});
+  const [refundReason, setRefundReason] = useState('ক্ষতিগ্রস্ত বা ভাঙা পণ্য');
+  const [refundDetailedReason, setRefundDetailedReason] = useState('');
+  const [refundEvidenceImages, setRefundEvidenceImages] = useState([]);
+  const [refundUploadingImage, setRefundUploadingImage] = useState(false);
+  const [refundMethod, setRefundMethod] = useState('bkash');
+  const [refundAccount, setRefundAccount] = useState('');
+  const [refundBankDetails, setRefundBankDetails] = useState({
+    bank_name: '',
+    branch: '',
+    account_number: '',
+    account_holder: ''
+  });
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [refundSubmitSuccess, setRefundSubmitSuccess] = useState(false);
+  const [refundSubmitError, setRefundSubmitError] = useState(null);
+
+  const fetchUserRefunds = async () => {
+    if (!token) return;
+    try {
+      setLoadingRefunds(true);
+      const res = await fetch('/api/refunds/my', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMyRefunds(data.refunds || []);
+      }
+    } catch (err) {
+      console.error('Error fetching refunds:', err);
+    } finally {
+      setLoadingRefunds(false);
+    }
+  };
+
+  const fetchRefundPolicy = async () => {
+    try {
+      const res = await fetch('/api/refunds/policy');
+      const data = await res.json();
+      if (data.success) {
+        setRefundPolicy(data.policy);
+      }
+    } catch (err) {
+      console.error('Error fetching refund policy:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchUserRefunds();
+      fetchRefundPolicy();
+    }
+  }, [token]);
+
+  const handleOpenRefundModal = (order = null) => {
+    setRefundSubmitError(null);
+    setRefundSubmitSuccess(false);
+    setRefundEvidenceImages([]);
+    setRefundReason('ক্ষতিগ্রস্ত বা ভাঙা পণ্য');
+    setRefundDetailedReason('');
+    setRefundMethod('bkash');
+    setRefundAccount(user?.phone || '');
+
+    const targetOrder = order || orders.find(o => o.status === 'Delivered') || orders[0] || null;
+    setRefundOrder(targetOrder);
+
+    if (targetOrder && targetOrder.items) {
+      const initialSel = {};
+      targetOrder.items.forEach((item, idx) => {
+        initialSel[idx] = {
+          selected: true,
+          quantity: item.quantity || 1
+        };
+      });
+      setRefundItemsSelection(initialSel);
+    } else {
+      setRefundItemsSelection({});
+    }
+
+    setRefundModalOpen(true);
+  };
+
+  const handleSelectOrderForRefund = (orderId) => {
+    const targetOrder = orders.find(o => o.id === orderId);
+    setRefundOrder(targetOrder);
+    if (targetOrder && targetOrder.items) {
+      const initialSel = {};
+      targetOrder.items.forEach((item, idx) => {
+        initialSel[idx] = {
+          selected: true,
+          quantity: item.quantity || 1
+        };
+      });
+      setRefundItemsSelection(initialSel);
+    }
+  };
+
+  const handleUploadEvidencePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRefundUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: reader.result, filename: file.name })
+          });
+          const data = await res.json();
+          if (data.success && data.url) {
+            setRefundEvidenceImages(prev => [...prev, data.url]);
+          } else {
+            alert(data.message || 'ছবি আপলোড করতে সমস্যা হয়েছে।');
+          }
+        } catch (err) {
+          console.error('Evidence upload error:', err);
+          alert('ছবি আপলোড করতে ব্যর্থ হয়েছে।');
+        } finally {
+          setRefundUploadingImage(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setRefundUploadingImage(false);
+    }
+  };
+
+  const handleSubmitRefund = async (e) => {
+    e.preventDefault();
+    if (!refundOrder) {
+      setRefundSubmitError('অনুগ্রহ করে একটি অর্ডার নির্বাচন করুন।');
+      return;
+    }
+
+    const selectedItems = [];
+    refundOrder.items?.forEach((item, idx) => {
+      const sel = refundItemsSelection[idx];
+      if (sel && sel.selected && sel.quantity > 0) {
+        selectedItems.push({
+          product_id: item.product_id || item.id || '',
+          title: item.title,
+          price: item.price,
+          quantity: sel.quantity,
+          image: item.image || item.thumbnail || ''
+        });
+      }
+    });
+
+    if (selectedItems.length === 0) {
+      setRefundSubmitError('অন্তত একটি পণ্য নির্বাচন করুন রিফান্ডের জন্য।');
+      return;
+    }
+
+    if (refundMethod !== 'bank' && !refundAccount.trim()) {
+      setRefundSubmitError('টাকা ফেরত পাওয়ার মোবাইল ব্যাংকিং নম্বর প্রদান করুন।');
+      return;
+    }
+
+    if (refundMethod === 'bank' && (!refundBankDetails.account_number || !refundBankDetails.account_number.trim())) {
+      setRefundSubmitError('সঠিক ব্যাংক একাউন্ট নম্বর প্রদান করুন।');
+      return;
+    }
+
+    setSubmittingRefund(true);
+    setRefundSubmitError(null);
+    try {
+      const payload = {
+        order_id: refundOrder.id,
+        items: selectedItems,
+        reason: refundReason,
+        detailed_reason: refundDetailedReason,
+        evidence_images: refundEvidenceImages,
+        preferred_method: refundMethod,
+        payout_account: refundAccount.trim(),
+        bank_details: refundMethod === 'bank' ? refundBankDetails : null
+      };
+
+      const res = await fetch('/api/refunds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRefundSubmitSuccess(true);
+        fetchUserRefunds();
+        setTimeout(() => {
+          setRefundModalOpen(false);
+          setRefundSubmitSuccess(false);
+          setActiveTab('refunds');
+        }, 1500);
+      } else {
+        setRefundSubmitError(data.message || 'রিফান্ড আবেদন জমা দেওয়া যায়নি।');
+      }
+    } catch (err) {
+      console.error('Submit refund error:', err);
+      setRefundSubmitError('সার্ভারে যোগাযোগ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      setSubmittingRefund(false);
+    }
+  };
+
   // Bengali digits converter helper - correctly handles 0 and empty values
   const toBengaliDigits = (str) => {
     if (str === null || str === undefined || str === '') return '০';
@@ -110,6 +396,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
+    email: user?.email || '',
     phone: user?.phone || '',
     address: user?.address || '',
     city: user?.city || '',
@@ -133,6 +420,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
     if (user) {
       setProfileForm({
         name: user.name || '',
+        email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
         city: user.city || '',
@@ -216,6 +504,18 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
     : 0;
   const pointCashValue = loyaltyPoints * (Number(siteSettings?.reward_point_value_bdt) || 1);
   const qardLimit = isQardApproved ? (user?.qard_credit_limit || 5000) : 0;
+  const unpaidQard = Number(user?.qard_unpaid_amount || 0);
+  const totalRepaidQard = Number(user?.qard_total_repaid || 0);
+  const totalBorrowedQard = unpaidQard + totalRepaidQard;
+  const hasUnpaidQardDebt = Boolean(user?.has_unpaid_qard && unpaidQard > 0);
+  let qardDaysRemaining = null;
+  let isQardOverdue = false;
+  if (user?.qard_due_date) {
+    const due = new Date(user.qard_due_date);
+    const now = new Date();
+    qardDaysRemaining = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    isQardOverdue = qardDaysRemaining < 0;
+  }
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
   const hasActiveCreditOrVip = isLoyaltyApproved || isQardApproved;
   const pendingDeletionAppeal = user?.pending_deletion_appeal;
@@ -353,7 +653,13 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
 
         {/* Stat 4: Qard Limit */}
         <div 
-          onClick={() => isQardApproved ? null : setQardModalOpen(true)}
+          onClick={() => {
+            if (isQardApproved) {
+              if (onNavigate) onNavigate('qard-hasana');
+            } else {
+              setQardModalOpen(true);
+            }
+          }}
           className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group flex flex-col justify-between min-h-[112px] sm:min-h-[122px]"
         >
           <div className="flex items-center justify-between">
@@ -398,6 +704,18 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
         >
           <Package className="w-3.5 h-3.5" />
           <span>অর্ডার ({toBengaliDigits(orders.length)})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('refunds')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+            activeTab === 'refunds'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200'
+          }`}
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>রিফান্ড ও রিটার্ন ({toBengaliDigits(myRefunds.length)})</span>
         </button>
 
         <button
@@ -451,6 +769,18 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
               }`}
             >
               <span className="flex items-center"><Package className="w-4 h-4 mr-2.5" /> আমার অর্ডার ও ইনভয়েস ({toBengaliDigits(orders.length)})</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab('refunds')}
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                activeTab === 'refunds'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20'
+                  : 'text-slate-700 hover:bg-amber-50'
+              }`}
+            >
+              <span className="flex items-center"><RotateCcw className="w-4 h-4 mr-2.5" /> রিফান্ড ও রিটার্ন সহায়তা ({toBengaliDigits(myRefunds.length)})</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
@@ -708,45 +1038,125 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
 
               {/* 2. CONDITIONAL QARD-E-HASANA (করযে হাসানা) DISPLAY */}
               {isQardApproved ? (
-                <div className="bg-gradient-to-r from-[#04261d] via-[#073629] to-[#04261d] p-6 rounded-3xl border-2 border-emerald-500/40 text-white shadow-xl space-y-4">
+                <div className="bg-gradient-to-r from-[#04261d] via-[#073629] to-[#04261d] p-5 sm:p-6 rounded-3xl border-2 border-emerald-500/40 text-white shadow-xl space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-700/50 pb-3">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-700/60 border border-emerald-400/30 flex items-center justify-center text-amber-300">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-700/60 border border-emerald-400/30 flex items-center justify-center text-amber-300 shadow-inner">
                         <HandHeart className="w-5 h-5" />
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                          ✓ অনুমোদিত সুবিধা (Approved)
+                          ✓ সক্রিয় সুবিধা (Active Credit)
                         </span>
-                        <h3 className="text-sm sm:text-base font-black text-white mt-1">করযে হাসানা ডিজিটাল ক্রেডিট লিমিট</h3>
+                        <h3 className="text-sm sm:text-base font-black text-white mt-1">করযে হাসানা ডিজিটাল হিসাব ও বকেয়া</h3>
                       </div>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <span className="text-[10px] text-emerald-200 block font-bold uppercase">অনুমোদিত ঋণ সীমা</span>
-                      <span className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
+                    {hasUnpaidQardDebt && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRepayAmount(String(unpaidQard));
+                          setRepaySenderNumber(user?.phone || '');
+                          setRepayError(null);
+                          setRepayModalOpen(true);
+                        }}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center space-x-1.5 self-start sm:self-auto"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>💳 বকেয়া ঋণ পরিশোধ করুন</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 4-Stat Subgrid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30 space-y-0.5">
+                      <span className="text-emerald-300 text-[10px] font-bold block uppercase">অনুমোদিত ঋণ সীমা</span>
+                      <span className="text-lg font-black text-emerald-300 font-mono block">
                         ৳{toBengaliDigits(qardLimit.toLocaleString())}
+                      </span>
+                      <span className="text-[10px] text-emerald-400/80">০% সুদমুক্ত ধার</span>
+                    </div>
+
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30 space-y-0.5">
+                      <span className="text-emerald-300 text-[10px] font-bold block uppercase">মোট গৃহীত ঋণ</span>
+                      <span className="text-lg font-black text-amber-300 font-mono block">
+                        ৳{toBengaliDigits(totalBorrowedQard.toLocaleString())}
+                      </span>
+                      <span className="text-[10px] text-slate-300">কেনাকাটায় ব্যবহৃত</span>
+                    </div>
+
+                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30 space-y-0.5">
+                      <span className="text-emerald-300 text-[10px] font-bold block uppercase">মোট পরিশোধিত ঋণ</span>
+                      <span className="text-lg font-black text-cyan-300 font-mono block">
+                        ৳{toBengaliDigits(totalRepaidQard.toLocaleString())}
+                      </span>
+                      <span className="text-[10px] text-slate-300">কিস্তি ও সরাসরি</span>
+                    </div>
+
+                    <div className={`p-3 rounded-2xl border space-y-0.5 ${
+                      hasUnpaidQardDebt ? 'bg-rose-950/70 border-rose-500/60 text-rose-200' : 'bg-emerald-950/60 border-emerald-600/30'
+                    }`}>
+                      <span className="text-[10px] font-bold block uppercase opacity-80">বর্তমান বকেয়া ঋণ</span>
+                      <span className="text-lg font-black font-mono block text-rose-300">
+                        ৳{toBengaliDigits(unpaidQard.toLocaleString())}
+                      </span>
+                      <span className="text-[10px] font-bold block">
+                        {hasUnpaidQardDebt ? 'পরিশোধযোগ্য বকেয়া' : '✓ কোনো বকেয়া নেই'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
-                      <span className="text-emerald-300 font-bold block">সুদের হার</span>
-                      <span className="text-sm font-black text-white">০% (সম্পূর্ণ সুদমুক্ত)</span>
-                    </div>
-                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
-                      <span className="text-emerald-300 font-bold block">ব্যবহার পদ্ধতি</span>
-                      <span className="text-sm font-black text-white">চেকআউটে 'করযে হাসানা' সিলেক্ট</span>
-                    </div>
-                    <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30">
-                      <span className="text-emerald-300 font-bold block">পরিশোধের মেয়াদ</span>
-                      <span className="text-sm font-black text-white">সুবিধাজনক কিস্তি বা ৩০ দিন</span>
-                    </div>
-                  </div>
+                  {/* Due Date & Remaining Days Alert Banner */}
+                  {hasUnpaidQardDebt ? (
+                    <div className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 ${
+                      isQardOverdue ? 'bg-rose-950/80 border-rose-500 text-rose-100' : 'bg-amber-950/50 border-amber-500/50 text-amber-100'
+                    }`}>
+                      <div className="flex items-center space-x-2.5">
+                        <Clock className="w-5 h-5 shrink-0 text-amber-300" />
+                        <div>
+                          <span className="font-bold text-xs block">
+                            পরিশোধের শেষ সময়: {user?.qard_due_date ? new Date(user.qard_due_date).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' }) : 'নির্ধারিত হয়নি'}
+                          </span>
+                          <p className="text-[11px] opacity-80">
+                            পরবর্তী কেনাকাটায় স্বয়ংক্রিয় ২% হারে এবং ড্যাশবোর্ড থেকে যেকোনো সময় সরাসরি পরিশোধ করতে পারেন।
+                          </p>
+                        </div>
+                      </div>
 
-                  <p className="text-xs text-emerald-100/90 leading-relaxed">
-                    💡 আপনি যেকোনো অর্ডারে সর্বোচ্চ ১০% পর্যন্ত করযে হাসানা ধার সুবিধা ব্যবহার করে অবশিষ্ট টাকা ক্যাশ অন ডেলিভারিতে দিতে পারবেন।
-                  </p>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded-xl text-xs font-mono font-black border ${
+                          isQardOverdue ? 'bg-rose-600 text-white border-rose-400 animate-pulse' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        }`}>
+                          {isQardOverdue
+                            ? `🚨 মেয়াদ উত্তীর্ণ (${toBengaliDigits(Math.abs(qardDaysRemaining))} দিন অতিবাহিত)`
+                            : qardDaysRemaining === 0
+                            ? '⚠️ আজই শেষ দিন'
+                            : `⏳ আর মাত্র ${toBengaliDigits(qardDaysRemaining)} দিন বাকি`}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRepayAmount(String(unpaidQard));
+                            setRepaySenderNumber(user?.phone || '');
+                            setRepayError(null);
+                            setRepayModalOpen(true);
+                          }}
+                          className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer whitespace-nowrap"
+                        >
+                          পরিশোধ ➔
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-950/40 border border-emerald-600/40 rounded-2xl text-emerald-200 text-xs flex items-center space-x-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>
+                        ✓ <strong>হিসাব নিয়মিত:</strong> আপনার কোনো বকেয়া করযে হাসানা ঋণ নেই। আলহামদুলিল্লাহ! পরবর্তী অর্ডারে সর্বোচ্চ ১০% পর্যন্ত ধার নিতে পারবেন।
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : isQardDeclined ? (
                 /* Declined Status Banner */
@@ -1026,18 +1436,256 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                             </span>
                           )}
                         </div>
-                        <button
-                          onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
-                          className="px-4 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all"
-                        >
-                          <Truck className="w-3.5 h-3.5 text-amber-200" />
-                          <span>লাইভ স্ট্যাটাস টাইমলাইন</span>
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenRefundModal(order)}
+                            className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 hover:border-amber-300 font-bold rounded-xl flex items-center space-x-1.5 cursor-pointer transition-all text-xs"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                            <span>রিফান্ড আবেদন</span>
+                          </button>
+                          <button
+                            onClick={() => onNavigate('track-order', { code: order.order_code, orderNumber: order.order_code, order })}
+                            className="px-4 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all"
+                          >
+                            <Truck className="w-3.5 h-3.5 text-amber-200" />
+                            <span>লাইভ স্ট্যাটাস টাইমলাইন</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: REFUND & RETURNS */}
+          {activeTab === 'refunds' && (
+            <div className="space-y-6">
+              
+              {/* Top Banner & Quick Action */}
+              <div className="bg-gradient-to-r from-amber-900/90 via-slate-900 to-amber-950 p-6 sm:p-8 rounded-3xl border border-amber-500/30 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                <div className="absolute -right-8 -bottom-8 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="space-y-2 max-w-xl relative z-10">
+                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{refundPolicy?.badge || 'সহজ ও ১০০% নিরাপদ রিটার্ন সেবা'}</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {refundPolicy?.title || 'রিফান্ড ও রিটার্ন সহায়তা কেন্দ্র'}
+                  </h3>
+                  <p className="text-xs text-amber-100/80 leading-relaxed text-slate-300">
+                    ডেলিভারি পাওয়ার সর্বোচ্চ <span className="text-amber-400 font-bold">{toBengaliDigits(refundPolicy?.window_days || 7)} দিনের</span> মধ্যে ভুল, নষ্ট বা ক্ষতিগ্রস্ত পণ্যের জন্য রিফান্ড বা রিপ্লেসমেন্ট আবেদন করতে পারেন।
+                  </p>
+                </div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => handleOpenRefundModal(null)}
+                    className="px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black rounded-2xl shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center space-x-2 shrink-0"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>নতুন রিফান্ড আবেদন করুন</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Policy Terms & 4-Step Process Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Card 1: Official Terms */}
+                <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-2xs space-y-4">
+                  <div className="flex items-center space-x-2.5 text-amber-900 font-black text-sm border-b border-amber-50 pb-3">
+                    <FileText className="w-4 h-4 text-amber-600" />
+                    <span>রিফান্ড পাওয়ার মূল শর্তাবলী</span>
+                  </div>
+                  <div className="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+                    {(refundPolicy?.terms || `১. ডেলিভারি গ্রহণের সর্বোচ্চ ৭ দিনের মধ্যে আবেদন করতে হবে।\n২. পণ্যটি অব্যবহৃত ও আসল প্যাকেজিংসহ অক্ষত থাকতে হবে।\n৩. ক্ষতিগ্রস্ত পণ্যের ছবি বা প্রমাণপত্র প্রদান করতে হবে।\n৪. যাচাই শেষে সরাসরি বিকাশ/নগদ/ব্যাংকে টাকা ফেরত দেওয়া হবে।`)
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((term, i) => (
+                        <div key={i} className="flex items-start space-x-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>{term}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Card 2: 4-Step Process */}
+                <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-2xs space-y-4">
+                  <div className="flex items-center space-x-2.5 text-amber-900 font-black text-sm border-b border-amber-50 pb-3">
+                    <Layers className="w-4 h-4 text-amber-600" />
+                    <span>রিফান্ড পাওয়ার ধারাবাহিক ধাপসমূহ</span>
+                  </div>
+                  <div className="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+                    {(refundPolicy?.process_steps || `১. অর্ডার নির্বাচন করে রিফান্ড ফর্ম পূরণ করুন।\n২. রিফান্ডের কারণ ও পেমেন্ট নম্বর দিন।\n৩. আমাদের কোয়ালিটি টিম ২৪ ঘণ্টার মধ্যে যাচাই করবে।\n৪. অনুমোদিত হলে সরাসরি একাউন্টে টাকা পাঠানো হবে।`)
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((step, i) => (
+                        <div key={i} className="flex items-start space-x-2">
+                          <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                            {toBengaliDigits(i + 1)}
+                          </span>
+                          <span>{step}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Customer's Refund History Tickets */}
+              <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-amber-50 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <h4 className="text-sm font-bold text-slate-900">আমার রিফান্ড আবেদনসমূহ ({toBengaliDigits(myRefunds.length)})</h4>
+                  </div>
+                  <button
+                    onClick={fetchUserRefunds}
+                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-amber-600 transition-colors"
+                    title="রিফ্রেশ করুন"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingRefunds ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+
+                {loadingRefunds ? (
+                  <div className="p-8 text-center text-slate-400 space-y-2">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-amber-600" />
+                    <p className="text-xs">আবেদন লোড হচ্ছে...</p>
+                  </div>
+                ) : myRefunds.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+                      <RotateCcw className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">আপনার কোনো রিফান্ড আবেদন নেই</p>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                      কোনো পণ্যে সমস্যা থাকলে 'নতুন রিফান্ড আবেদন' বোতামে ক্লিক করে আবেদন করতে পারেন।
+                    </p>
+                    <button
+                      onClick={() => handleOpenRefundModal(null)}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs inline-flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>আবেদন করুন</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {myRefunds.map(refund => (
+                      <div 
+                        key={refund.id} 
+                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-amber-200 transition-all space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-2.5">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono font-bold text-xs text-amber-800">#{refund.id}</span>
+                              <span className="text-[10px] text-slate-500">
+                                অর্ডার: <span className="font-mono font-bold text-slate-700">{refund.order_code}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              আবেদনের তারিখ: {new Date(refund.created_at).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </span>
+                          </div>
+
+                          <div>
+                            {refund.status === 'Pending' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                <Clock className="w-3 h-3 mr-1" />
+                                ⏳ পর্যালোচনায় (Pending)
+                              </span>
+                            )}
+                            {refund.status === 'Approved' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                ✓ অনুমোদিত (Approved)
+                              </span>
+                            )}
+                            {refund.status === 'Processing' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                                <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                                🔄 প্রসেসিং (Processing)
+                              </span>
+                            )}
+                            {refund.status === 'Completed' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <Check className="w-3 h-3 mr-1" />
+                                🎉 সম্পন্ন / টাকা ফেরত দেওয়া হয়েছে
+                              </span>
+                            )}
+                            {refund.status === 'Rejected' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                <X className="w-3 h-3 mr-1" />
+                                ✕ বাতিল (Rejected)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Items & Amount */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="space-y-1">
+                            {refund.items?.map((item, idx) => (
+                              <div key={idx} className="flex items-center space-x-2">
+                                {item.image && (
+                                  <img src={item.image} alt={item.title} className="w-7 h-7 rounded-lg object-cover border border-slate-200" />
+                                )}
+                                <span className="font-bold text-slate-800">{item.title}</span>
+                                <span className="text-slate-500 font-mono text-[11px]">(×{toBengaliDigits(item.quantity)})</span>
+                              </div>
+                            ))}
+                            <p className="text-[11px] text-slate-600 mt-1">
+                              <span className="font-bold text-slate-700">কারণ:</span> {refund.reason}
+                              {refund.detailed_reason ? ` • ${refund.detailed_reason}` : ''}
+                            </p>
+                          </div>
+
+                          <div className="text-left sm:text-right shrink-0">
+                            <span className="text-[10px] text-slate-500 block">মোট রিফান্ড প্রাপ্য</span>
+                            <span className="font-mono font-black text-amber-700 text-base">
+                              ৳{toBengaliDigits(refund.total_refund_amount?.toLocaleString())}
+                            </span>
+                            <span className="text-[10px] text-slate-500 block font-mono">
+                              {refund.preferred_method?.toUpperCase()} • {refund.payout_account}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* If Completed with Trx ID */}
+                        {refund.refund_trx_id && (
+                          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex items-center space-x-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <div>
+                              <span className="font-bold text-emerald-900 block">টাকা পাঠানো সম্পন্ন হয়েছে!</span>
+                              <span className="text-emerald-700 text-[11px] font-mono">
+                                ট্রানজেকশন আইডি (TrxID): <strong className="text-emerald-950">{refund.refund_trx_id}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* If Rejected */}
+                        {refund.rejection_reason && (
+                          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs flex items-start space-x-2">
+                            <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold text-rose-900 block">আবেদনটি বাতিল করা হয়েছে</span>
+                              <span className="text-rose-700 text-[11px]">{refund.rejection_reason}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 
@@ -1075,6 +1723,17 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                       value={profileForm.name}
                       onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">ইমেইল অ্যাড্রেস *</label>
+                    <input
+                      type="email"
+                      required
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 font-mono font-medium"
                     />
                   </div>
 
@@ -1409,6 +2068,507 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Refund Application Modal */}
+      {refundModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-5 animate-fadeIn">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <RotateCcw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">পণ্য রিফান্ড ও রিটার্ন আবেদন</h3>
+                  <p className="text-xs text-slate-500">ভুল বা ক্ষতিগ্রস্ত পণ্যের জন্য সহজেই রিফান্ড গ্রহণ করুন</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRefundModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {refundSubmitSuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Check className="w-7 h-7" />
+                </div>
+                <h4 className="text-base font-bold text-slate-900">আবেদন সফলভাবে জমা হয়েছে!</h4>
+                <p className="text-xs text-slate-600 max-w-xs mx-auto">
+                  আমাদের কোয়ালিটি টিম ২৪ ঘণ্টার মধ্যে পর্যালোচনা করে আপনার সাথে যোগাযোগ করবে।
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitRefund} className="space-y-4">
+                
+                {refundSubmitError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{refundSubmitError}</span>
+                  </div>
+                )}
+
+                {/* 1. Select Order */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    অর্ডার নির্বাচন করুন <span className="text-rose-500">*</span>
+                  </label>
+                  {orders.length === 0 ? (
+                    <p className="text-xs text-rose-600">আপনার কোনো অর্ডার নেই।</p>
+                  ) : (
+                    <select
+                      value={refundOrder?.id || ''}
+                      onChange={(e) => handleSelectOrderForRefund(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-amber-500"
+                      required
+                    >
+                      {orders.map(o => (
+                        <option key={o.id} value={o.id}>
+                          {o.order_code} — ৳{o.total_amount} ({o.status})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* 2. Select Items to Refund */}
+                {refundOrder && refundOrder.items && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700">
+                      রিফান্ডের জন্য পণ্য নির্বাচন করুন <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                      {refundOrder.items.map((item, idx) => {
+                        const sel = refundItemsSelection[idx] || { selected: false, quantity: 1 };
+                        return (
+                          <div 
+                            key={idx}
+                            onClick={() => {
+                              setRefundItemsSelection(prev => ({
+                                ...prev,
+                                [idx]: {
+                                  selected: !sel.selected,
+                                  quantity: sel.quantity || 1
+                                }
+                              }));
+                            }}
+                            className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                              sel.selected
+                                ? 'bg-amber-50/60 border-amber-300'
+                                : 'bg-slate-50 border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2.5">
+                              <input
+                                type="checkbox"
+                                checked={sel.selected}
+                                onChange={() => {}} // handled by parent div
+                                className="rounded text-amber-600 focus:ring-0 cursor-pointer"
+                              />
+                              {item.image && (
+                                <img src={item.image} alt={item.title} className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0" />
+                              )}
+                              <div>
+                                <span className="text-xs font-bold text-slate-800 block line-clamp-1">{item.title}</span>
+                                <span className="text-[11px] text-slate-500 font-mono">৳{toBengaliDigits(item.price)} প্রতি ইউনিট</span>
+                              </div>
+                            </div>
+
+                            {/* Quantity */}
+                            {sel.selected && (
+                              <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newQ = Math.max(1, sel.quantity - 1);
+                                    setRefundItemsSelection(prev => ({ ...prev, [idx]: { ...sel, quantity: newQ } }));
+                                  }}
+                                  className="w-6 h-6 rounded bg-slate-200 hover:bg-slate-300 text-xs font-bold flex items-center justify-center cursor-pointer"
+                                >
+                                  -
+                                </button>
+                                <span className="text-xs font-black font-mono w-4 text-center">{toBengaliDigits(sel.quantity)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const maxQ = item.quantity || 99;
+                                    const newQ = Math.min(maxQ, sel.quantity + 1);
+                                    setRefundItemsSelection(prev => ({ ...prev, [idx]: { ...sel, quantity: newQ } }));
+                                  }}
+                                  className="w-6 h-6 rounded bg-slate-200 hover:bg-slate-300 text-xs font-bold flex items-center justify-center cursor-pointer"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Reason */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    রিফান্ডের সুনির্দিষ্ট কারণ <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-amber-500"
+                    required
+                  >
+                    <option value="ক্ষতিগ্রস্ত বা ভাঙা পণ্য">ক্ষতিগ্রস্ত বা ভাঙা পণ্য (Damaged Product)</option>
+                    <option value="ভুল পণ্য সরবরাহ করা হয়েছে">ভুল পণ্য সরবরাহ করা হয়েছে (Wrong Item)</option>
+                    <option value="মেয়াদোত্তীর্ণ বা নষ্ট পণ্য">মেয়াদোত্তীর্ণ বা নষ্ট পণ্য (Expired or Spoiled)</option>
+                    <option value="ছবির সাথে বাস্তব পণ্যের অমিল">ছবির সাথে বাস্তব পণ্যের অমিল (Not as Described)</option>
+                    <option value="পছন্দ হয়নি / রিটার্ন করতে চাই">পছন্দ হয়নি / রিটার্ন করতে চাই (Change of Mind)</option>
+                    <option value="অন্যান্য">অন্যান্য (Other)</option>
+                  </select>
+                </div>
+
+                {/* 4. Detailed Description */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    বিস্তারিত বিবরণ (ঐচ্ছিক)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="পণ্যটির সমস্যা সম্পর্কে বিস্তারিত লিখুন..."
+                    value={refundDetailedReason}
+                    onChange={(e) => setRefundDetailedReason(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* 5. Photo Evidence Upload */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    প্রমাণস্বরূপ ছবি যুক্ত করুন (ঐচ্ছিক কিন্তু সুপারিশকৃত)
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {refundEvidenceImages.map((imgUrl, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 group">
+                        <img src={imgUrl} alt="Evidence" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setRefundEvidenceImages(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 text-white rounded-md transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 hover:border-amber-500 flex flex-col items-center justify-center text-slate-400 hover:text-amber-600 transition-colors cursor-pointer bg-slate-50">
+                      {refundUploadingImage ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <UploadCloud className="w-5 h-5" />
+                          <span className="text-[9px] font-bold mt-1">ফটো</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadEvidencePhoto}
+                        disabled={refundUploadingImage}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* 6. Payout Method & Account */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    টাকা ফেরত পাওয়ার মাধ্যম <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-4 gap-2 mb-2.5">
+                    {[
+                      { id: 'bkash', label: 'বিকাশ' },
+                      { id: 'nagad', label: 'নগদ' },
+                      { id: 'rocket', label: 'রকেট' },
+                      { id: 'bank', label: 'ব্যাংক' }
+                    ].map(method => (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setRefundMethod(method.id)}
+                        className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          refundMethod === method.id
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {method.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {refundMethod !== 'bank' ? (
+                    <input
+                      type="text"
+                      placeholder="বিকাশ / নগদ / রকেট ব্যক্তিগত মোবাইল নম্বর"
+                      value={refundAccount}
+                      onChange={(e) => setRefundAccount(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-amber-500"
+                      required
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="ব্যাংকের নাম (উদা: ডাচ-বাংলা ব্যাংক)"
+                        value={refundBankDetails.bank_name}
+                        onChange={(e) => setRefundBankDetails({ ...refundBankDetails, bank_name: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="একাউন্ট নম্বর"
+                        value={refundBankDetails.account_number}
+                        onChange={(e) => setRefundBankDetails({ ...refundBankDetails, account_number: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit & Cancel Buttons */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setRefundModalOpen(false)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingRefund}
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl text-xs font-black shadow-md shadow-amber-600/20 flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {submittingRefund ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    <span>{submittingRefund ? 'জমা হচ্ছে...' : 'আবেদন জমা দিন'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* 🌸 QARD REPAYMENT MODAL */}
+      {repayModalOpen && (
+        <div 
+          className="fixed inset-0 z-[9995] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs font-sans animate-in fade-in"
+          onClick={() => setRepayModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 text-slate-800 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                  <CreditCard className="w-5 h-5 text-emerald-700" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">করযে হাসানা ঋণ পরিশোধ</h3>
+                  <p className="text-[11px] text-slate-500">বিকাশ, নগদ বা রকেটের মাধ্যমে ঋণ পরিশোধ</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setRepayModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {repaySuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center">
+                  <Check className="w-6 h-6" />
+                </div>
+                <h4 className="font-black text-emerald-800 text-sm">ঋণ পরিশোধ সফল হয়েছে!</h4>
+                <p className="text-xs text-slate-600">আপনার বকেয়া ঋণ সফলভাবে সমন্বয় করা হয়েছে। আলহামদুলিল্লাহ!</p>
+              </div>
+            ) : (
+              <form onSubmit={handleConfirmRepay} className="space-y-3.5">
+                {/* Summary Info */}
+                <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[10px] font-bold">বর্তমান মোট বকেয়া</span>
+                    <span className="text-base font-black text-rose-600 font-mono">৳{toBengaliDigits(unpaidQard.toLocaleString())}</span>
+                  </div>
+                  {qardDaysRemaining !== null && (
+                    <div className="text-right">
+                      <span className="text-slate-500 block text-[10px] font-bold">পরিশোধের শেষ সময়</span>
+                      <span className={`text-xs font-bold font-mono ${isQardOverdue ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        {isQardOverdue ? 'মেয়াদ উত্তীর্ণ' : `আর ${toBengaliDigits(qardDaysRemaining)} দিন বাকি`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amount Input */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    পরিশোধের পরিমাণ (টাকা) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={unpaidQard || 50000}
+                    value={repayAmount}
+                    onChange={(e) => setRepayAmount(e.target.value)}
+                    placeholder="যেমন: ৫০০"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-bold font-mono text-sm focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">আপনি চাইলে সম্পূর্ণ বকেয়া অথবা যেকোনো আংশিক কিস্তি পরিশোধ করতে পারেন।</p>
+                </div>
+
+                {/* Payment Method Pills */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                    পেমেন্ট মেথড নির্বাচন করুন <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'bKash', label: 'বিকাশ', number: siteSettings?.payment_methods?.bkash_number || '01712-345678' },
+                      { id: 'Nagad', label: 'নগদ', number: siteSettings?.payment_methods?.nagad_number || '01812-345678' },
+                      { id: 'Rocket', label: 'রকেট', number: siteSettings?.payment_methods?.rocket_number || '01912-345678' }
+                    ].map(pm => (
+                      <button
+                        key={pm.id}
+                        type="button"
+                        onClick={() => setRepayMethod(pm.id)}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                          repayMethod === pm.id
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {pm.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Send Money Number Display with Copy */}
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      {repayMethod} সেন্ড মানি নম্বর (Send Money):
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const num = (repayMethod === 'Nagad' ? siteSettings?.payment_methods?.nagad_number : repayMethod === 'Rocket' ? siteSettings?.payment_methods?.rocket_number : siteSettings?.payment_methods?.bkash_number) || '01712-345678';
+                        navigator.clipboard?.writeText(num);
+                        setCopiedNumber(true);
+                        setTimeout(() => setCopiedNumber(false), 2000);
+                      }}
+                      className="text-[10px] font-bold text-amber-600 hover:underline cursor-pointer flex items-center space-x-1"
+                    >
+                      {copiedNumber ? <Check className="w-3 h-3 text-emerald-600" /> : null}
+                      <span>{copiedNumber ? 'কপি হয়েছে' : 'নম্বর কপি করুন'}</span>
+                    </button>
+                  </div>
+                  <p className="font-mono font-black text-slate-900 text-sm">
+                    {(repayMethod === 'Nagad' ? siteSettings?.payment_methods?.nagad_number : repayMethod === 'Rocket' ? siteSettings?.payment_methods?.rocket_number : siteSettings?.payment_methods?.bkash_number) || '01712-345678'}
+                  </p>
+                  <p className="text-[10px] text-slate-500">উক্ত নম্বরে Send Money সম্পন্ন করে নিচে প্রেরক নম্বর ও TrxID লিখুন।</p>
+                </div>
+
+                {/* Sender Mobile & TrxID */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      প্রেরক মোবাইল নম্বর <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={repaySenderNumber}
+                      onChange={(e) => setRepaySenderNumber(e.target.value)}
+                      placeholder="017XXXXXXXX"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-amber-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      ট্রানজেকশন আইডি (TrxID) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={repayTrxId}
+                      onChange={(e) => setRepayTrxId(e.target.value)}
+                      placeholder="TrxID (যেমন: 9J2K...)"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-900 font-mono text-xs uppercase focus:outline-none focus:border-amber-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Notes */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-0.5">মন্তব্য / নোট (ঐচ্ছিক)</label>
+                  <input
+                    type="text"
+                    value={repayNotes}
+                    onChange={(e) => setRepayNotes(e.target.value)}
+                    placeholder="যেমন: কিস্তি পরিশোধ"
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {repayError && (
+                  <div className="p-2.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-700 text-xs font-medium">
+                    ⚠️ {repayError}
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setRepayModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingRepay}
+                    className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
+                  >
+                    {submittingRepay ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    <span>{submittingRepay ? 'যাচাই হচ্ছে...' : '✓ পরিশোধ নিশ্চিত করুন'}</span>
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         </div>

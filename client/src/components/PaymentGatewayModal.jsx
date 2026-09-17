@@ -11,7 +11,8 @@ import {
   Truck, 
   QrCode, 
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
 
@@ -25,7 +26,8 @@ export default function PaymentGatewayModal({
   onConfirmPayment,
   title,
   subtitle,
-  hideCod = false
+  hideCod = false,
+  initialMethod = null
 }) {
   useScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('mfs'); // 'mfs', 'bank', 'cod'
@@ -34,6 +36,7 @@ export default function PaymentGatewayModal({
   const isFreeDelivery = Number(deliveryFee) === 0;
   const advanceFee = isFreeDelivery ? 0 : (Number(deliveryFee) || 60);
   const remainingCodAmount = Math.max(0, safeTotal - advanceFee);
+  const [codMfsProvider, setCodMfsProvider] = useState('bkash_personal');
   const [senderNumber, setSenderNumber] = useState(user?.phone || '');
   const [senderBankName, setSenderBankName] = useState('');
   const [senderAccountName, setSenderAccountName] = useState(user?.name || '');
@@ -41,6 +44,7 @@ export default function PaymentGatewayModal({
   const [copiedField, setCopiedField] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes countdown
   const [validationError, setValidationError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [invoiceId] = useState(() => 'INV-' + Math.random().toString(36).substr(2, 7).toUpperCase());
 
   // Reset and countdown timer
@@ -51,11 +55,18 @@ export default function PaymentGatewayModal({
       return;
     }
     setTimeLeft(300);
+    if (initialMethod === 'cod') {
+      setActiveTab('cod');
+      setSelectedMethod(paymentProviders.cod);
+    } else if (initialMethod && paymentProviders[initialMethod]) {
+      setActiveTab('mfs');
+      setSelectedMethod(paymentProviders[initialMethod]);
+    }
     const interval = setInterval(() => {
       setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, initialMethod]);
 
   if (!isOpen) return null;
 
@@ -211,7 +222,7 @@ export default function PaymentGatewayModal({
       key: 'cod',
       name: 'ক্যাশ অন ডেলিভারি (Cash on Delivery)',
       shortName: 'COD',
-      methodType: 'Pay Upon Delivery',
+      methodType: 'Pay Upon Delivery (ডেলিভারি ফি অগ্রিম প্রদেয়)',
       number: 'N/A',
       bgColor: 'bg-[#059669]',
       themeHex: '#059669',
@@ -219,8 +230,9 @@ export default function PaymentGatewayModal({
       accentBorder: 'border-[#059669]',
       helpline: siteSettings?.store_phone || '01700-000000',
       instructions: [
-        'পণ্য আপনার ঠিকানায় পৌঁছানোর পর দেখে-শুনে ডেলিভারিম্যানের কাছে সম্পূর্ণ টাকা পরিশোধ করবেন।',
-        'কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই। নিচে ‘অর্ডার নিশ্চিত করুন (Next)’ বাটনে ক্লিক করে এগিয়ে যান।'
+        'অর্ডার চূড়ান্ত করতে কুরিয়ার / ডেলিভারি ফি নির্ধারিত নম্বরে বিকাশ বা নগদ থেকে সেন্ড মানি করুন।',
+        'বাকি পণ্যমূল্য পণ্য হাতে পেয়ে ডেলিভারিম্যানকে দেখে-শুনে নগদ পরিশোধ করবেন।',
+        'টাকা পাঠানোর পর নিচে প্রেরক নম্বর ও TrxID প্রদান করে অর্ডার নিশ্চিত করুন।'
       ]
     }
   };
@@ -230,47 +242,48 @@ export default function PaymentGatewayModal({
     setValidationError('');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setValidationError('');
     if (!selectedMethod) {
       setValidationError('অনুগ্রহ করে একটি পেমেন্ট পদ্ধতি সিলেক্ট করুন।');
       return;
     }
 
+    let payload = null;
+
     if (selectedMethod.key === 'cod') {
-      if (advanceFee === 0) {
-        onConfirmPayment({
+      if (advanceFee > 0) {
+        if (!senderNumber.trim()) {
+          setValidationError('যে নম্বর থেকে ডেলিভারি ফি পাঠিয়েছেন তা উল্লেখ করুন।');
+          return;
+        }
+        if (!transactionId.trim()) {
+          setValidationError('ডেলিভারি ফি পরিশোধের Transaction ID (TrxID) প্রদান করুন।');
+          return;
+        }
+        payload = {
+          payment_method: 'cod',
+          advance_delivery_fee_paid: true,
+          delivery_fee_amount: advanceFee,
+          delivery_fee_method: codMfsProvider,
+          remaining_cod_amount: remainingCodAmount,
+          sender_number: senderNumber.trim(),
+          transaction_id: transactionId.trim().toUpperCase(),
+          payment_amount: advanceFee
+        };
+      } else {
+        payload = {
           payment_method: 'cod',
           advance_delivery_fee_paid: false,
           delivery_fee_amount: 0,
-          delivery_fee_method: 'cod_free',
-          sender_number: senderNumber.trim() || user?.phone || 'N/A',
+          delivery_fee_method: 'free_delivery',
+          remaining_cod_amount: safeTotal,
+          sender_number: senderNumber.trim() || user?.phone || 'COD',
           transaction_id: 'FREE-DELIVERY-COD',
           payment_amount: 0
-        });
-        return;
+        };
       }
-      if (!senderNumber.trim()) {
-        setValidationError('যে নম্বর থেকে ডেলিভারি ফি পাঠিয়েছেন তা উল্লেখ করুন।');
-        return;
-      }
-      if (!transactionId.trim()) {
-        setValidationError('ডেলিভারি ফি লেনদেনের Transaction ID (TrxID) প্রদান করুন।');
-        return;
-      }
-      onConfirmPayment({
-        payment_method: 'cod',
-        advance_delivery_fee_paid: true,
-        delivery_fee_amount: advanceFee,
-        delivery_fee_method: codMfsProvider,
-        sender_number: senderNumber.trim(),
-        transaction_id: transactionId.trim().toUpperCase(),
-        payment_amount: advanceFee
-      });
-      return;
-    }
-
-    if (selectedMethod.key === 'bank') {
+    } else if (selectedMethod.key === 'bank') {
       if (!senderBankName.trim()) {
         setValidationError('যে ব্যাংক থেকে টাকা পাঠিয়েছেন তার নাম উল্লেখ করুন (যেমন: ডাচ-বাংলা, ব্র্যাক, ইত্যাদি)।');
         return;
@@ -284,35 +297,48 @@ export default function PaymentGatewayModal({
         return;
       }
 
-      onConfirmPayment({
+      payload = {
         payment_method: 'bank',
         sender_bank_name: senderBankName.trim(),
         sender_number: `${senderBankName.trim()} (${senderAccountName ? senderAccountName.trim() + ' - ' : ''}${senderNumber.trim()})`,
         transaction_id: transactionId.trim().toUpperCase(),
         payment_amount: totalAmount,
         delivery_fee_amount: advanceFee
-      });
-      return;
+      };
+    } else {
+      // Digital mobile banking methods require sender number & TrxID
+      if (!senderNumber.trim()) {
+        setValidationError('যে নম্বর থেকে টাকা পাঠিয়েছেন তা উল্লেখ করুন।');
+        return;
+      }
+
+      if (!transactionId.trim()) {
+        setValidationError('পেমেন্ট নিশ্চিত করতে Transaction ID (TrxID) প্রদান করুন।');
+        return;
+      }
+
+      payload = {
+        payment_method: selectedMethod.key,
+        sender_number: senderNumber.trim(),
+        transaction_id: transactionId.trim().toUpperCase(),
+        payment_amount: totalAmount,
+        delivery_fee_amount: advanceFee
+      };
     }
 
-    // Digital mobile banking methods require sender number & TrxID
-    if (!senderNumber.trim()) {
-      setValidationError('যে নম্বর থেকে টাকা পাঠিয়েছেন তা উল্লেখ করুন।');
-      return;
+    if (payload && onConfirmPayment) {
+      try {
+        setIsProcessing(true);
+        const res = await onConfirmPayment(payload);
+        if (res && res.success === false) {
+          setValidationError(res.message || 'অর্ডার সম্পন্ন করা সম্ভব হয়নি। পুনরায় চেষ্টা করুন।');
+        }
+      } catch (err) {
+        setValidationError(err?.message || 'অর্ডার প্রক্রিয়াকরণে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+      } finally {
+        setIsProcessing(false);
+      }
     }
-
-    if (!transactionId.trim()) {
-      setValidationError('পেমেন্ট নিশ্চিত করতে Transaction ID (TrxID) প্রদান করুন।');
-      return;
-    }
-
-    onConfirmPayment({
-      payment_method: selectedMethod.key,
-      sender_number: senderNumber.trim(),
-      transaction_id: transactionId.trim().toUpperCase(),
-      payment_amount: totalAmount,
-      delivery_fee_amount: advanceFee
-    });
   };
 
   // Provider SVG Logos
@@ -602,13 +628,15 @@ export default function PaymentGatewayModal({
                 
                 <div className="text-center space-y-1">
                   <h3 className="text-sm sm:text-base font-black tracking-wide">
-                    {selectedMethod.key === 'cod' && advanceFee === 0
-                      ? 'ক্যাশ অন ডেলিভারি (সম্পূর্ণ ফ্রি ডেলিভারি)'
+                    {selectedMethod.key === 'cod'
+                      ? 'ক্যাশ অন ডেলিভারি (Cash on Delivery)'
                       : `Complete payment from your ${selectedMethod.shortName} app`}
                   </h3>
                   <p className="text-[11px] opacity-90">
-                    {selectedMethod.key === 'cod' && advanceFee === 0
-                      ? 'কোনো অগ্রিম পেমেন্টের ঝামেলা নেই। নিচে সরাসরি অর্ডার নিশ্চিত করুন।'
+                    {selectedMethod.key === 'cod'
+                      ? (advanceFee > 0 
+                          ? 'কুরিয়ার ফি অগ্রিম সেন্ড মানি করে TrxID দিয়ে ক্যাশ অন ডেলিভারি নিশ্চিত করুন' 
+                          : 'কোনো প্রকার অগ্রিম ফি নেই। পণ্য হাতে পেয়ে সম্পূর্ণ টাকা ডেলিভারিম্যানকে পরিশোধ করবেন।')
                       : 'নিচের নম্বরে নির্ধারিত টাকা সেন্ড করে TrxID দিয়ে নিশ্চিত করুন'}
                   </p>
                 </div>
@@ -623,7 +651,7 @@ export default function PaymentGatewayModal({
                             অগ্রিম প্রদেয় ফি
                           </span>
                           <span className="text-base sm:text-lg font-black text-emerald-700 font-mono">
-                            ৳০ (ফ্রি ডেলিভারি)
+                            ৳০ (কোনো অগ্রিম নেই)
                           </span>
                         </div>
                         <div>
@@ -638,8 +666,8 @@ export default function PaymentGatewayModal({
                       <div className="flex items-start space-x-2.5 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
                         <Truck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                         <div className="text-xs text-emerald-950 leading-relaxed">
-                          <strong className="block font-black text-emerald-900 mb-0.5">🎉 ১০০% ফ্রি হোম ডেলিভারি অফার!</strong>
-                          আপনার পণ্যে ফ্রি ডেলিভারি থাকায় কোনো প্রকার অগ্রিম ক্যাশআউট ফি দিতে হবে না। ডেলিভারিম্যান থেকে পণ্য বুঝে নিয়ে সম্পূর্ণ ক্যাশ পরিশোধ করবেন।
+                          <strong className="block font-black text-emerald-900 mb-0.5">📦 ক্যাশ অন ডেলিভারি সুবিধা সক্রিয়</strong>
+                          পণ্য আপনার ঠিকানায় পৌঁছানোর পর দেখে-শুনে ডেলিভারিম্যানের কাছে সম্পূর্ণ <strong>৳{toBengaliDigits(safeTotal.toLocaleString())}</strong> টাকা নগদ পরিশোধ করবেন।
                         </div>
                       </div>
                     </div>
@@ -762,12 +790,12 @@ export default function PaymentGatewayModal({
                   )}
                 </div>
 
-                {/* Copy Amount & Copy Number Action Buttons (Photo 1) - Only when not free COD */}
-                {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+                {/* Copy Amount & Copy Number Action Buttons - Only for Digital Payment */}
+                {selectedMethod.key !== 'cod' && (
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
-                      onClick={() => handleCopy((selectedMethod.key === 'cod' ? advanceFee : totalAmount).toString(), 'amount')}
+                      onClick={() => handleCopy(totalAmount.toString(), 'amount')}
                       className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                     >
                       {copiedField === 'amount' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -776,16 +804,7 @@ export default function PaymentGatewayModal({
 
                     <button
                       type="button"
-                      onClick={() => handleCopy(
-                        selectedMethod.key === 'cod'
-                          ? (codMfsProvider.includes('nagad') 
-                              ? (siteSettings?.nagad_number || '01811223344') 
-                              : codMfsProvider.includes('rocket')
-                              ? (siteSettings?.rocket_number || '01911223344')
-                              : (siteSettings?.bkash_number || '01715712941'))
-                          : selectedMethod.number, 
-                        'number_quick'
-                      )}
+                      onClick={() => handleCopy(selectedMethod.number, 'number_quick')}
                       className="py-2 px-3 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold text-white border border-white/30 backdrop-blur-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                     >
                       {copiedField === 'number_quick' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -794,8 +813,8 @@ export default function PaymentGatewayModal({
                   </div>
                 )}
 
-                {/* Countdown Timer Box (Photo 2 Right) - Only when not free COD */}
-                {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+                {/* Countdown Timer Box - Only for Digital Payment */}
+                {selectedMethod.key !== 'cod' && (
                   <div className="bg-black/20 backdrop-blur-xs py-2 px-3 rounded-xl flex items-center justify-between text-xs">
                     <span className="text-[11px] opacity-90">পেমেন্ট সম্পন্ন করার জন্য সময় বাকি:</span>
                     <div className="flex items-center space-x-1 font-mono font-black text-amber-300">
@@ -807,8 +826,8 @@ export default function PaymentGatewayModal({
 
               </div>
 
-              {/* Quick Step Instructions */}
-              {!(selectedMethod.key === 'cod' && advanceFee === 0) && (
+              {/* Quick Step Instructions - Only for Digital Payment */}
+              {selectedMethod.key !== 'cod' && (
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
                   <span className="font-bold text-slate-800 block text-[11px]">সহজ নির্দেশনা:</span>
                   {selectedMethod.instructions.map((step, idx) => (
@@ -819,19 +838,6 @@ export default function PaymentGatewayModal({
                       <span>{step}</span>
                     </div>
                   ))}
-                </div>
-              )}
-
-              {/* Cash On Delivery Guidance Box (When advance fee > 0) */}
-              {selectedMethod.key === 'cod' && advanceFee > 0 && (
-                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-300 text-emerald-950 space-y-1.5 shadow-2xs">
-                  <div className="flex items-center space-x-2">
-                    <Truck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-                    <h4 className="text-xs font-black">ক্যাশ অন ডেলিভারি নির্দেশিকা</h4>
-                  </div>
-                  <p className="text-[11.5px] text-emerald-900 leading-relaxed">
-                    অর্ডার কনফার্মেশনের জন্য উপরের নম্বরে শুধুমাত্র ডেলিভারি ফি <strong>৳{toBengaliDigits(advanceFee.toLocaleString())}</strong> অগ্রিম পরিশোধ করুন। বাকি পণ্যমূল্য <strong>৳{toBengaliDigits(remainingCodAmount.toLocaleString())}</strong> ডেলিভারির সময় পণ্য হাতে পেয়ে ডেলিভারিম্যানকে পরিশোধ করবেন।
-                  </p>
                 </div>
               )}
 
@@ -888,22 +894,22 @@ export default function PaymentGatewayModal({
                 </div>
               )}
 
-              {/* Free Delivery COD Banner (No inputs needed) */}
+              {/* Cash On Delivery Direct Confirmation Banner (Only when advance fee is 0) */}
               {selectedMethod.key === 'cod' && advanceFee === 0 ? (
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-300 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
-                  <h4 className="text-xs font-black text-emerald-900">ডেলিভারি ঠিকানায় সরাসরি পণ্য পাঠানো হবে</h4>
-                  <p className="text-[11px] text-emerald-800">
-                    কোনো প্রকার অগ্রিম ফি নেই। নিচের <strong>"অর্ডার নিশ্চিত করুন"</strong> বাটনে ক্লিক করলেই সরাসরি অর্ডার চূড়ান্ত হবে।
+                  <h4 className="text-xs sm:text-sm font-black text-emerald-900">ফ্রি ডেলিভারি অফারে ক্যাশ অন ডেলিভারি</h4>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    কোনো প্রকার অগ্রিম ফি নেই। পণ্য হাতে পেয়ে সম্পূর্ণ মূল্য (৳{toBengaliDigits(safeTotal.toLocaleString())}) ডেলিভারিম্যানকে নগদ পরিশোধ করবেন। নিচের <strong>"অর্ডার নিশ্চিত করুন"</strong> বাটনে ক্লিক করলেই সরাসরি অর্ডার চূড়ান্ত হবে।
                   </p>
                 </div>
               ) : selectedMethod.key !== 'bank' && (
                 <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-amber-950 uppercase tracking-wider">
-                      {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি ভেরিফিকেশন তথ্য' : 'পেমেন্ট ভেরিফিকেশন তথ্য'}
+                      {selectedMethod.key === 'cod' ? 'কুরিয়ার / ডেলিভারি ফি পেমেন্ট তথ্য' : 'পেমেন্ট ভেরিফিকেশন তথ্য'}
                     </span>
                     <span className="text-[10px] text-amber-700 font-semibold">* বাধ্যতামূলক</span>
                   </div>
@@ -911,7 +917,7 @@ export default function PaymentGatewayModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        {selectedMethod.key === 'cod' ? 'যে নম্বর থেকে ডেলিভারি ফি দিয়েছেন:' : 'প্রেরক মোবাইল নম্বর (Sender Number):'}
+                        {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি পাঠানোর মোবাইল নম্বর:' : 'প্রেরক মোবাইল নম্বর (Sender Number):'}
                       </label>
                       <input
                         type="text"
@@ -924,11 +930,11 @@ export default function PaymentGatewayModal({
 
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি পাঠানোর TrxID:' : 'Transaction ID (TrxID):'}
+                        {selectedMethod.key === 'cod' ? 'ডেলিভারি ফি পেমেন্ট TrxID:' : 'Transaction ID (TrxID):'}
                       </label>
                       <input
                         type="text"
-                        placeholder="যেমন: BL7A90KQ1"
+                        placeholder={selectedMethod.key === 'cod' ? 'ডেলিভারি ফি TrxID দিন' : 'যেমন: BL7A90KQ1'}
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
                         className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-900 font-mono uppercase focus:outline-none focus:border-amber-500"
@@ -958,19 +964,31 @@ export default function PaymentGatewayModal({
 
                 <button
                   type="button"
+                  disabled={isProcessing}
                   onClick={handleConfirm}
                   className={`py-3 px-4 rounded-2xl text-xs font-black transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer ${
+                    isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                  } ${
                     selectedMethod.key === 'cod'
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                       : `${selectedMethod.bgColor} hover:opacity-95 ${selectedMethod.textColor}`
                   }`}
                 >
-                  <Check className="w-4 h-4" />
-                  <span>
-                    {selectedMethod.key === 'cod'
-                      ? 'অর্ডার নিশ্চিত করুন (Next) →'
-                      : "I'VE PAID - CONFIRM / নিশ্চিত করুন"}
-                  </span>
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>অর্ডার প্রসেস হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>
+                        {selectedMethod.key === 'cod'
+                          ? `ক্যাশ অন ডেলিভারিতে অর্ডার নিশ্চিত করুন (৳${toBengaliDigits(safeTotal.toLocaleString())}) ✓`
+                          : "I'VE PAID - CONFIRM / নিশ্চিত করুন"}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
 

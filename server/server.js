@@ -54,6 +54,7 @@ const adminRoutes = require('./routes/admin');
 const chatRoutes = require('./routes/chat');
 const uploadRoutes = require('./routes/upload');
 const reviewRoutes = require('./routes/reviews');
+const refundRoutes = require('./routes/refunds');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -65,6 +66,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/refunds', refundRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

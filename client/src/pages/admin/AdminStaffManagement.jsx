@@ -28,7 +28,8 @@ import {
   EyeOff,
   UserX,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  RotateCcw
 } from 'lucide-react';
 
 const PERMISSION_GROUPS = [
@@ -86,6 +87,14 @@ const PERMISSION_GROUPS = [
     permissions: [
       { key: 'chat.manage', label: 'লাইভ চ্যাট সাপোর্ট ডেস্ক', desc: 'কাস্টমারদের সাথে সরাসরি লাইভ চ্যাটে কথা বলা' },
       { key: 'settings.manage', label: 'সাইট সেটিংস ও ব্যানার', desc: 'ব্যানার, বিকাশ/নগদ নম্বর ও গ্লোবাল কনফিগ পরিবর্তন' }
+    ]
+  },
+  {
+    category: 'রিফান্ড ও রিটার্ন ডেস্ক (Refunds & Returns)',
+    icon: RotateCcw,
+    permissions: [
+      { key: 'refunds.manage', label: 'রিফান্ড আবেদন ও প্রসেসিং', desc: 'সকল কাস্টমার রিফান্ড আবেদন পর্যালোচনা, অনুমোদন ও প্রসেসিং করা' },
+      { key: 'refunds.policy', label: 'রিফান্ড শর্তাবলী ও পলিসি', desc: 'রিফান্ড নীতিমালা, সময়সীমা ও প্রক্রিয়া এডিট ও সেভ করা' }
     ]
   }
 ];

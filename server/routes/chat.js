@@ -171,4 +171,118 @@ router.post('/admin/:convId/reply', requirePermission('chat.manage'), (req, res)
   }
 });
 
+// ==========================================
+// ADMIN GROUP LIVE CHAT (TEAM DISCUSSION)
+// ==========================================
+
+// GET ALL ADMIN GROUP MESSAGES
+router.get('/admin-group/messages', requireAdmin, (req, res) => {
+  try {
+    const messages = db.getAdminGroupMessages();
+    return res.json({ success: true, messages });
+  } catch (err) {
+    console.error('Error fetching admin group messages:', err);
+    return res.status(500).json({ success: false, message: 'Server error fetching group chat.' });
+  }
+});
+
+// GET ALL ADMIN TEAM MEMBERS DIRECTORY
+router.get('/admin-group/members', requireAdmin, (req, res) => {
+  try {
+    const members = db.getAdminTeamMembers();
+    return res.json({ success: true, members });
+  } catch (err) {
+    console.error('Error fetching admin team members:', err);
+    return res.status(500).json({ success: false, message: 'Server error fetching team members.' });
+  }
+});
+
+// SEND MESSAGE TO ADMIN GROUP
+router.post('/admin-group/messages', requireAdmin, (req, res) => {
+  try {
+    const { text, attachment } = req.body;
+    if ((!text || !text.trim()) && !attachment) {
+      return res.status(400).json({ success: false, message: 'Message content is required.' });
+    }
+
+    const senderRole = req.user.custom_role || (req.user.role === 'admin' && !req.user.is_staff ? 'Super Admin' : 'Staff Admin');
+
+    const newMsg = db.addAdminGroupMessage({
+      sender_id: req.user.id,
+      sender_name: req.user.name,
+      sender_role: senderRole,
+      text: (text || '').trim(),
+      attachment: attachment || null
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_group_message', newMsg);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: newMsg
+    });
+  } catch (err) {
+    console.error('Error sending admin group message:', err);
+    return res.status(500).json({ success: false, message: 'Server error sending team message.' });
+  }
+});
+
+// DELETE MESSAGE IN ADMIN GROUP
+router.delete('/admin-group/messages/:id', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const messages = db.getAdminGroupMessages();
+    const targetMsg = messages.find(m => m.id === id);
+
+    if (!targetMsg) {
+      return res.status(404).json({ success: false, message: 'Message not found.' });
+    }
+
+    const isOwner = targetMsg.sender_id === req.user.id;
+    const isSuper = req.user.role === 'admin' && !req.user.is_staff;
+
+    if (!isOwner && !isSuper) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own messages.' });
+    }
+
+    const deleted = db.deleteAdminGroupMessage(id);
+    if (deleted) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to('admin_channel').emit('admin_group_message_deleted', { id });
+      }
+      return res.json({ success: true, message: 'Message deleted.' });
+    }
+
+    return res.status(500).json({ success: false, message: 'Could not delete message.' });
+  } catch (err) {
+    console.error('Error deleting admin group message:', err);
+    return res.status(500).json({ success: false, message: 'Server error deleting message.' });
+  }
+});
+
+// TOGGLE PIN ANNOUNCEMENT IN ADMIN GROUP
+router.post('/admin-group/messages/:id/pin', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = db.togglePinAdminGroupMessage(id);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Message not found.' });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_group_message_pinned', { id, is_pinned: updated.is_pinned });
+    }
+
+    return res.json({ success: true, message: updated });
+  } catch (err) {
+    console.error('Error toggling pin:', err);
+    return res.status(500).json({ success: false, message: 'Server error pinning message.' });
+  }
+});
+
 module.exports = router;

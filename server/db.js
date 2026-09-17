@@ -22,6 +22,17 @@ function getInitialData() {
         postal_code: '1230',
         role: 'admin',
         is_blocked: false,
+        loyalty_card_approved: true,
+        loyalty_card_status: 'Approved',
+        loyalty_card_number: 'ANSAR-VIP-0001-2026',
+        loyalty_points: 500,
+        loyalty_tier: 'Royal Gold VIP',
+        qard_credit_limit: 10000,
+        qard_limit: 10000,
+        is_qard_eligible: true,
+        qard_status: 'Approved',
+        has_unpaid_qard: false,
+        qard_unpaid_amount: 0,
         created_at: new Date().toISOString()
       },
       {
@@ -609,12 +620,14 @@ function getInitialData() {
     chat_conversations: [],
     qard_applications: [],
     account_appeals: [],
+    admin_notifications: [],
     site_settings: {
       store_name: 'AL ANSAR SUPER SHOP',
       store_name_bn: 'আল আনসার সুপার শপ',
       store_tagline: 'ঘরের বাজার, প্রিমিয়াম বেকারি, খাঁটি আতর, পারফিউম ও রাজকীয় উপহার সামগ্রী বাংলাদেশ',
       store_phone: '+880 1711-223344',
       store_email: 'info@alansarbd.com',
+      admin_notification_email: 'alansar.bd@hotmail.com',
       store_address: 'আল আনসার প্লাজা, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
       showroom_address: 'আল আনসার ফ্ল্যাগশিপ শোরুম, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
       whatsapp_number: '+880 1711-223344',
@@ -653,7 +666,14 @@ function getInitialData() {
       // Qard-e-Hasana Full CMS
       qard_hasana_enabled: true,
       qard_hasana_percentage: 10,
-      qard_application_fee: 50,
+      qard_application_fee: 300,
+      qard_max_percentage: 10,
+      qard_default_duration_months: 6,
+      qard_repay_percentage: 2,
+      reward_points_spend_amount: 1000,
+      reward_points_earned: 100,
+      reward_point_value_bdt: 1,
+      loyalty_card_fee: 500,
       qard_hero_badge: 'আল আনসার করযে হাসানা স্কিম',
       qard_hero_title: 'সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা',
       qard_hero_subtitle: 'ইসলামী শরীয়াহ অনুযায়ী পারস্পরিক সহযোগিতার উদ্দেশ্যে ‘আল আনসার’ নিয়ে এসেছে ১০০% সুদমুক্ত করযে হাসানা সুবিধা। আপনি কোনো প্রকার অতিরিক্ত ফি, প্রসেসিং চার্জ বা সুদ ছাড়াই পণ্য ক্রয় করে পরবর্তীতে সুবিধা অনুযায়ী মূল্য পরিশোধ করতে পারবেন।',
@@ -782,7 +802,16 @@ function getInitialData() {
       // Footer CMS
       footer_about: 'বাংলাদেশে খাঁটি ঘরের বাজার, প্রিমিয়াম বেকারি সামগ্রী, অ্যালকোহলমুক্ত আতর এবং রাজকীয় উপহার সামগ্রীর বিশ্বস্ত প্রতিষ্ঠান।',
       footer_copyright: '© ২০২৬ AL ANSAR SUPER SHOP (আল আনসার সুপার শপ) বাংলাদেশ। সর্বস্বত্ব সংরক্ষিত।',
-      footer_tagline: 'বিশুদ্ধ খাদ্য • আভিজাত্য সুবাস • সুদমুক্ত সেবা'
+      footer_tagline: 'বিশুদ্ধ খাদ্য • আভিজাত্য সুবাস • সুদমুক্ত সেবা',
+
+      // Refund & Return Policy CMS
+      refund_policy_title: 'রিফান্ড ও রিটার্ন নীতিমালা ও নির্দেশিকা',
+      refund_policy_badge: 'সহজ ও ১০০% নিরাপদ রিটার্ন সেবা',
+      refund_policy_terms: '১. ডেলিভারি গ্রহণের সর্বোচ্চ ৭ দিনের মধ্যে রিফান্ড বা রিটার্নের আবেদন সম্পন্ন করতে হবে।\n২. পণ্যটি অব্যবহৃত, আসল প্যাকেজিং ও অরিজিনাল সিলসহ সম্পূর্ণ অক্ষত থাকতে হবে।\n৩. ভুল পণ্য, ভাঙা বা মেয়াদোত্তীর্ণ পণ্য পাওয়া গেলে প্যাকেটের ছবি বা ভিডিও প্রমাণস্বরূপ যুক্ত করতে হবে।\n৪. রিটার্ন অনুমোদনের পর পণ্য আমাদের ওয়্যারহাউজে পৌঁছালে ৩-৫ কার্যদিবসের মধ্যে টাকা রিফান্ড করা হবে।',
+      refund_process_steps: '১. আপনার ড্যাশবোর্ডের "অর্ডারসমূহ" বা "রিফান্ড ও রিটার্ন" ট্যাব থেকে সংশ্লিষ্ট অর্ডার ও পণ্য নির্বাচন করুন।\n২. রিফান্ডের সুনির্দিষ্ট কারণ, প্রয়োজনীয় ছবি ও পছন্দের পেমেন্ট মেথড (বিকাশ/নগদ/রকেট/ব্যাংক) প্রদান করুন।\n৩. আমাদের সাপোর্ট টিম ২৪ ঘণ্টার মধ্যে আপনার আবেদনটি যাচাই ও অনুমোদন করবে।\n৪. কুরিয়ারের মাধ্যমে পণ্য ফেরত সংগ্রহের পর সরাসরি আপনার প্রদত্ত নম্বরে টাকা পাঠিয়ে দেওয়া হবে।',
+      refund_window_days: 7,
+      refund_support_phone: '01711000000',
+      refund_support_email: 'support@alansarbd.com'
     }
   };
 }
@@ -800,11 +829,37 @@ class Database {
         this.data = JSON.parse(raw);
         const initial = getInitialData();
         this.data.site_settings = { ...initial.site_settings, ...this.data.site_settings };
+        if (!this.data.site_settings.qard_application_fee || this.data.site_settings.qard_application_fee === 50) {
+          this.data.site_settings.qard_application_fee = 300;
+        }
+        if (!this.data.site_settings.loyalty_card_fee) {
+          this.data.site_settings.loyalty_card_fee = 500;
+        }
+        if (!this.data.site_settings.reward_points_spend_amount) {
+          this.data.site_settings.reward_points_spend_amount = 1000;
+        }
+        if (!this.data.site_settings.reward_points_earned) {
+          this.data.site_settings.reward_points_earned = 100;
+        }
+        if (!this.data.site_settings.reward_point_value_bdt) {
+          this.data.site_settings.reward_point_value_bdt = 1;
+        }
+        if (!this.data.site_settings.qard_max_percentage) {
+          this.data.site_settings.qard_max_percentage = 10;
+        }
+        if (!this.data.site_settings.qard_default_duration_months) {
+          this.data.site_settings.qard_default_duration_months = 6;
+        }
         if (!this.data.vouchers) this.data.vouchers = initial.vouchers;
         if (!this.data.reviews) this.data.reviews = initial.reviews;
         if (!this.data.categories || this.data.categories.length === 0) this.data.categories = initial.categories;
         if (!this.data.products || this.data.products.length === 0) this.data.products = initial.products;
         if (!this.data.users || this.data.users.length === 0) this.data.users = initial.users;
+        if (!this.data.refund_requests) this.data.refund_requests = [];
+        if (!this.data.admin_notifications) this.data.admin_notifications = [];
+        if (!this.data.site_settings.admin_notification_email) {
+          this.data.site_settings.admin_notification_email = 'alansar.bd@hotmail.com';
+        }
         
         // Ensure VIP account exists
         if (!this.data.users.find(u => u.phone === '01700112233' || u.id === 'usr_vip_member')) {
@@ -1087,19 +1142,62 @@ class Database {
       });
     }
 
+    // Deduct redeemed loyalty points if applied
+    if (orderData.user_id && Number(orderData.points_used) > 0) {
+      const user = this.getUserById(orderData.user_id);
+      if (user) {
+        user.loyalty_points = Math.max(0, (Number(user.loyalty_points) || 0) - Number(orderData.points_used));
+      }
+    }
+
+    // Handle Qard-e-Hasana deferred debt
+    if (orderData.user_id && Number(orderData.qard_amount) > 0) {
+      const user = this.getUserById(orderData.user_id);
+      if (user) {
+        user.has_unpaid_qard = true;
+        user.qard_unpaid_amount = (Number(user.qard_unpaid_amount) || 0) + Number(orderData.qard_amount);
+        if (!user.qard_due_date) {
+          const d = new Date();
+          const months = Number(this.data.site_settings?.qard_default_duration_months) || 6;
+          d.setMonth(d.getMonth() + months);
+          user.qard_due_date = d.toISOString();
+        }
+        user.qard_last_order_id = newOrder.id;
+        user.qard_last_order_code = newOrder.order_code;
+      }
+    }
+
+    // Handle optional Qard debt repayment on this order
+    if (orderData.user_id && Number(orderData.qard_repayment_amount) > 0) {
+      const user = this.getUserById(orderData.user_id);
+      if (user) {
+        user.qard_unpaid_amount = Math.max(0, (Number(user.qard_unpaid_amount) || 0) - Number(orderData.qard_repayment_amount));
+        if (user.qard_unpaid_amount === 0) {
+          user.has_unpaid_qard = false;
+          user.qard_due_date = null;
+        }
+      }
+    }
+
     // Award loyalty points ONLY if user exists AND has an approved loyalty card
     let pointsEarned = 0;
     if (orderData.user_id) {
       const user = this.getUserById(orderData.user_id);
       const hasLoyaltyCard = user && (user.loyalty_card_status === 'Approved' || user.loyalty_card_approved === true);
       if (hasLoyaltyCard) {
-        const spendStep = Math.max(1, Number(this.data.site_settings?.reward_points_spend_amount) || 100);
-        const pointStep = Math.max(0, Number(this.data.site_settings?.reward_points_earned) || 1);
+        const spendStep = Math.max(1, Number(this.data.site_settings?.reward_points_spend_amount) || 1000);
+        const pointStep = Math.max(0, Number(this.data.site_settings?.reward_points_earned) || 100);
         pointsEarned = Math.floor((Number(orderData.total_amount) || 0) / spendStep) * pointStep;
         user.loyalty_points = (Number(user.loyalty_points) || 0) + pointsEarned;
       }
     }
     newOrder.points_earned = pointsEarned;
+    newOrder.points_used = Number(orderData.points_used) || 0;
+    newOrder.points_discount = Number(orderData.points_discount) || 0;
+    newOrder.qard_amount = Number(orderData.qard_amount) || 0;
+    newOrder.qard_percentage = Number(orderData.qard_percentage) || 0;
+    newOrder.qard_due_date = orderData.qard_due_date || (orderData.user_id ? this.getUserById(orderData.user_id)?.qard_due_date : null);
+    newOrder.payable_now = Number(orderData.payable_now) !== undefined ? Number(orderData.payable_now) : Math.max(0, (Number(orderData.total_amount) || 0) - (newOrder.qard_amount || 0));
 
     this.save();
     return newOrder;
@@ -1216,7 +1314,7 @@ class Database {
     };
     this.data.qard_applications.unshift(newApp);
 
-    // Sync status with user account if user exists
+    // Sync status and document photos with user account if user exists
     let user = appData.user_id ? this.getUserById(appData.user_id) : null;
     if (!user && appData.email) user = this.getUserByEmail(appData.email.toLowerCase());
     if (!user && appData.phone) {
@@ -1226,6 +1324,15 @@ class Database {
     if (user) {
       user.qard_status = 'Pending';
       user.qard_decline_reason = null;
+      if (appData.nid_number) user.nid_number = appData.nid_number;
+      if (appData.nid_front_photo) user.nid_front_photo = appData.nid_front_photo;
+      if (appData.nid_back_photo) user.nid_back_photo = appData.nid_back_photo;
+      if (appData.user_photo) user.user_photo = appData.user_photo;
+      if (appData.father_name) user.father_name = appData.father_name;
+      if (appData.mother_name) user.mother_name = appData.mother_name;
+      if (appData.emergency_phone) user.emergency_phone = appData.emergency_phone;
+      if (appData.occupation) user.occupation = appData.occupation;
+      if (appData.address && !user.address) user.address = appData.address;
     }
 
     this.save();
@@ -1267,6 +1374,64 @@ class Database {
     return { app, user };
   }
 
+  extendUserQardDueDate(userId, { due_date, additional_months = 1, notes = '' } = {}) {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    if (due_date) {
+      user.qard_due_date = new Date(due_date).toISOString();
+    } else {
+      const currentDue = user.qard_due_date ? new Date(user.qard_due_date) : new Date();
+      const monthsToAdd = Number(additional_months) || 1;
+      currentDue.setMonth(currentDue.getMonth() + monthsToAdd);
+      user.qard_due_date = currentDue.toISOString();
+    }
+    user.qard_extension_notes = notes || user.qard_extension_notes || '';
+    user.qard_extended_at = new Date().toISOString();
+    this.save();
+    return user;
+  }
+
+  repayUserQard(userId, amount, notes = '', paymentDetails = {}) {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    const numAmount = Number(amount) || 0;
+    user.qard_unpaid_amount = Math.max(0, (Number(user.qard_unpaid_amount) || 0) - numAmount);
+    user.qard_total_repaid = (Number(user.qard_total_repaid) || 0) + numAmount;
+    if (user.qard_unpaid_amount === 0) {
+      user.has_unpaid_qard = false;
+      user.qard_due_date = null;
+    }
+    user.qard_last_repayment_at = new Date().toISOString();
+    user.qard_last_repayment_amount = numAmount;
+    user.qard_repayment_notes = notes || paymentDetails.notes || '';
+
+    if (!Array.isArray(user.qard_history)) {
+      user.qard_history = [];
+    }
+    user.qard_history.unshift({
+      id: 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      type: 'repayment',
+      amount: numAmount,
+      payment_method: paymentDetails.payment_method || 'direct',
+      sender_number: paymentDetails.sender_number || '',
+      transaction_id: paymentDetails.transaction_id || '',
+      notes: notes || paymentDetails.notes || '',
+      balance_after: user.qard_unpaid_amount,
+      created_at: new Date().toISOString()
+    });
+
+    this.save();
+    return user;
+  }
+
+  updateUserQardLimit(userId, newLimit) {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    user.qard_credit_limit = Math.max(0, Number(newLimit) || 0);
+    this.save();
+    return user;
+  }
+
   // Loyalty Card Applications
   getLoyaltyApplications() {
     return (this.data.loyalty_applications || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -1282,7 +1447,7 @@ class Database {
     };
     this.data.loyalty_applications.unshift(newApp);
 
-    // If user exists, also update user's status to Pending
+    // If user exists, also update user's status and document photos
     let user = appData.user_id ? this.getUserById(appData.user_id) : null;
     if (!user && appData.email) user = this.getUserByEmail(appData.email.toLowerCase());
     if (!user && appData.phone) {
@@ -1292,6 +1457,15 @@ class Database {
     if (user) {
       user.loyalty_card_status = 'Pending';
       user.loyalty_decline_reason = null;
+      if (appData.nid_number) user.nid_number = appData.nid_number;
+      if (appData.nid_front_photo) user.nid_front_photo = appData.nid_front_photo;
+      if (appData.nid_back_photo) user.nid_back_photo = appData.nid_back_photo;
+      if (appData.user_photo) user.user_photo = appData.user_photo;
+      if (appData.father_name) user.father_name = appData.father_name;
+      if (appData.mother_name) user.mother_name = appData.mother_name;
+      if (appData.emergency_phone) user.emergency_phone = appData.emergency_phone;
+      if (appData.occupation) user.occupation = appData.occupation;
+      if (appData.address && !user.address) user.address = appData.address;
     }
     this.save();
     return newApp;
@@ -1447,6 +1621,170 @@ class Database {
     const index = (this.data.users || []).findIndex(u => u.id === id && u.is_staff === true);
     if (index === -1) return false;
     this.data.users.splice(index, 1);
+    this.save();
+    return true;
+  }
+
+  // Refund Requests
+  getRefundRequests() {
+    if (!this.data.refund_requests) this.data.refund_requests = [];
+    return this.data.refund_requests.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  getRefundRequestById(id) {
+    if (!this.data.refund_requests) this.data.refund_requests = [];
+    return this.data.refund_requests.find(r => r.id === id);
+  }
+
+  getRefundRequestsByUserId(userId) {
+    if (!this.data.refund_requests) this.data.refund_requests = [];
+    return this.data.refund_requests
+      .filter(r => r.user_id === userId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  createRefundRequest(refundData) {
+    if (!this.data.refund_requests) this.data.refund_requests = [];
+    const newRequest = {
+      id: 'ref_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      status: 'Pending', // Pending | Approved | Processing | Completed | Rejected
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ...refundData
+    };
+    this.data.refund_requests.push(newRequest);
+    this.save();
+    return newRequest;
+  }
+
+  updateRefundRequestStatus(id, status, updates = {}) {
+    if (!this.data.refund_requests) this.data.refund_requests = [];
+    const idx = this.data.refund_requests.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    this.data.refund_requests[idx] = {
+      ...this.data.refund_requests[idx],
+      status,
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    this.save();
+    return this.data.refund_requests[idx];
+  }
+
+  // ADMIN GROUP LIVE CHAT
+  getAdminGroupMessages() {
+    if (!this.data.admin_group_messages) {
+      this.data.admin_group_messages = [];
+    }
+    return this.data.admin_group_messages.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  }
+
+  addAdminGroupMessage({ sender_id, sender_name, sender_role, text, attachment = null, is_pinned = false }) {
+    if (!this.data.admin_group_messages) {
+      this.data.admin_group_messages = [];
+    }
+    const newMsg = {
+      id: 'adm_msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      sender_id: sender_id || null,
+      sender_name: sender_name || 'Admin',
+      sender_role: sender_role || 'Staff',
+      text: text.trim(),
+      attachment: attachment || null,
+      is_pinned: Boolean(is_pinned),
+      timestamp: new Date().toISOString()
+    };
+    this.data.admin_group_messages.push(newMsg);
+    this.save();
+    return newMsg;
+  }
+
+  deleteAdminGroupMessage(id) {
+    if (!this.data.admin_group_messages) return false;
+    const idx = this.data.admin_group_messages.findIndex(m => m.id === id);
+    if (idx === -1) return false;
+    this.data.admin_group_messages.splice(idx, 1);
+    this.save();
+    return true;
+  }
+
+  togglePinAdminGroupMessage(id) {
+    if (!this.data.admin_group_messages) return null;
+    const msg = this.data.admin_group_messages.find(m => m.id === id);
+    if (!msg) return null;
+    msg.is_pinned = !msg.is_pinned;
+    this.save();
+    return msg;
+  }
+
+  getAdminTeamMembers() {
+    return (this.data.users || [])
+      .filter(u => u.role === 'admin' || u.is_staff === true)
+      .map(u => {
+        const safe = { ...u };
+        delete safe.password_hash;
+        return {
+          id: safe.id,
+          name: safe.name,
+          email: safe.email,
+          phone: safe.phone,
+          role: safe.role,
+          is_staff: safe.is_staff || false,
+          custom_role: safe.custom_role || (safe.role === 'admin' && !safe.is_staff ? 'Super Admin' : 'Staff Admin'),
+          permissions: safe.permissions || [],
+          is_blocked: safe.is_blocked || false,
+          created_at: safe.created_at
+        };
+      });
+  }
+
+  // Admin Notification Feed (PC + Mobile)
+  getAdminNotifications(limit = 50) {
+    if (!this.data.admin_notifications) this.data.admin_notifications = [];
+    return this.data.admin_notifications
+      .slice(0, limit)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  createAdminNotification({ type, title, message, link_tab = 'dashboard', data = {} }) {
+    if (!this.data.admin_notifications) this.data.admin_notifications = [];
+    const newNotif = {
+      id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      type, // 'order', 'qard', 'loyalty', 'refund', 'user_delete', 'appeal'
+      title,
+      message,
+      link_tab,
+      data,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+    this.data.admin_notifications.unshift(newNotif);
+    if (this.data.admin_notifications.length > 200) {
+      this.data.admin_notifications = this.data.admin_notifications.slice(0, 200);
+    }
+    this.save();
+    return newNotif;
+  }
+
+  markAdminNotificationAsRead(id) {
+    if (!this.data.admin_notifications) return false;
+    const notif = this.data.admin_notifications.find(n => n.id === id);
+    if (notif) {
+      notif.is_read = true;
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  markAllAdminNotificationsAsRead() {
+    if (!this.data.admin_notifications) return 0;
+    this.data.admin_notifications.forEach(n => { n.is_read = true; });
+    this.save();
+    return this.data.admin_notifications.length;
+  }
+
+  clearAdminNotifications() {
+    this.data.admin_notifications = [];
     this.save();
     return true;
   }

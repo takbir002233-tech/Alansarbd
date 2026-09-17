@@ -8,16 +8,24 @@ import {
   ShieldCheck, 
   ArrowLeft, 
   FileText,
-  Check 
+  Check,
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  User as UserIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import useScrollLock from '../hooks/useScrollLock';
+import PaymentGatewayModal from './PaymentGatewayModal';
 
 export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
   const { user, updateProfile, refreshUser } = useAuth();
   const { siteSettings } = useCart();
   useScrollLock(isOpen);
+
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -25,7 +33,10 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
     email: user?.email || '',
     address: user?.address || '',
     city: user?.city || 'ঢাকা',
-    nid_number: ''
+    nid_number: user?.nid_number || '',
+    nid_front_photo: user?.nid_front_photo || '',
+    nid_back_photo: user?.nid_back_photo || '',
+    user_photo: user?.user_photo || ''
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -35,8 +46,9 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [reapplyMode, setReapplyMode] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Sync user details to form
+  // Sync user details and inherited NID photos to form
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -45,7 +57,11 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
         phone: prev.phone || user.phone || '',
         email: prev.email || user.email || '',
         address: prev.address || user.address || '',
-        city: prev.city || user.city || 'ঢাকা'
+        city: prev.city || user.city || 'ঢাকা',
+        nid_number: prev.nid_number || user.nid_number || '',
+        nid_front_photo: prev.nid_front_photo || user.nid_front_photo || '',
+        nid_back_photo: prev.nid_back_photo || user.nid_back_photo || '',
+        user_photo: prev.user_photo || user.user_photo || ''
       }));
     }
     try {
@@ -85,7 +101,27 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handlePhotoUpload = (field, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      setErrorMsg('ছবির সাইজ সর্বোচ্চ ৬ মেগাবাইট হতে পারবে।');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFormData(prev => ({ ...prev, [field]: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const hasInheritedPhotos = Boolean(
+    (formData.nid_front_photo || user?.nid_front_photo) &&
+    (formData.nid_back_photo || user?.nid_back_photo) &&
+    (formData.user_photo || user?.user_photo)
+  );
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -106,13 +142,35 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
       setErrorMsg('আপনার সম্পূর্ণ ঠিকানা লিখুন।');
       return;
     }
+    if (!formData.nid_front_photo || !formData.nid_back_photo || !formData.user_photo) {
+      setErrorMsg('এনআইডি কার্ডের সামনের ও পেছনের ছবি এবং আপনার নিজের ছবি যুক্ত করা আবশ্যক।');
+      return;
+    }
 
+    const applicationFee = (siteSettings?.loyalty_card_fee !== undefined && siteSettings?.loyalty_card_fee !== null && siteSettings?.loyalty_card_fee !== '')
+      ? Number(siteSettings.loyalty_card_fee)
+      : 500;
+
+    if (applicationFee > 0) {
+      setShowPaymentModal(true);
+    } else {
+      executeApplicationSubmit();
+    }
+  };
+
+  const executeApplicationSubmit = async (paymentData = {}) => {
     setSubmitting(true);
+    setErrorMsg(null);
 
     try {
       const payload = {
         ...formData,
-        user_id: user?.id || null
+        user_id: user?.id || null,
+        payment_method: paymentData.payment_method || 'mfs',
+        payment_amount: Number(paymentData.payment_amount) || Number(siteSettings?.loyalty_card_fee || 500),
+        transaction_id: paymentData.transaction_id || '',
+        sender_number: paymentData.sender_number || '',
+        sender_bank_name: paymentData.sender_bank_name || ''
       };
 
       const res = await fetch('/api/admin/loyalty-applications', {
@@ -134,6 +192,7 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
         localStorage.removeItem('alansar_vip_applied_global');
       } catch (e) {}
 
+      setShowPaymentModal(false);
       setIsSubmitted(true);
       setReapplyMode(false);
       setSuccessMsg('আপনার লয়ালটি মেম্বারশিপ আবেদন সফলভাবে জমা হয়েছে!');
@@ -387,7 +446,7 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
                       ডেলিভারি ও যোগাযোগের ঠিকানা <span className="text-rose-500">*</span>
                     </label>
                     <textarea
-                      rows={2}
+                      rows={1.5}
                       required
                       placeholder="বাসা নম্বর, রোড নম্বর, এলাকা, থানা..."
                       value={formData.address}
@@ -399,10 +458,11 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
                   {/* NID */}
                   <div className="sm:col-span-2">
                     <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
-                      জাতীয় পরিচয়পত্র (NID) নম্বর (ঐচ্ছিক)
+                      জাতীয় পরিচয়পত্র (NID) নম্বর <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
+                      required
                       placeholder="১০ বা ১৭ ডিজিটের এনআইডি"
                       value={formData.nid_number}
                       onChange={(e) => setFormData({ ...formData, nid_number: e.target.value })}
@@ -410,10 +470,107 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
                     />
                   </div>
 
+                  {/* Photo Uploads: NID Front, NID Back, Selfie */}
+                  <div className="sm:col-span-2 space-y-1.5 pt-1 border-t border-amber-100">
+                    <div className="flex items-center justify-between">
+                      <label className="font-black text-slate-800 text-[11px] flex items-center space-x-1">
+                        <Camera className="w-3.5 h-3.5 text-amber-600" />
+                        <span>প্রয়োজনীয় ৩টি ছবি (এনআইডি উভয় পিঠ ও নিজের ছবি)</span>
+                        <span className="text-rose-500">*</span>
+                      </label>
+                      {hasInheritedPhotos && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full flex items-center space-x-1 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>পূর্বের তথ্য সংরক্ষিত</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* NID Front Slot */}
+                      <div className="relative border border-dashed border-amber-300 bg-amber-50/40 hover:bg-amber-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.nid_front_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.nid_front_photo} 
+                              alt="NID Front" 
+                              className="w-full h-11 object-cover rounded-lg border border-amber-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-amber-950 mt-1 truncate max-w-full">
+                              ✓ এনআইডি (সামনে)
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('nid_front_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <CreditCard className="w-5 h-5 text-amber-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">এনআইডি (সামনে)</span>
+                            <span className="text-[9px] text-amber-700 font-semibold">+ ছবি দিন</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('nid_front_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* NID Back Slot */}
+                      <div className="relative border border-dashed border-amber-300 bg-amber-50/40 hover:bg-amber-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.nid_back_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.nid_back_photo} 
+                              alt="NID Back" 
+                              className="w-full h-11 object-cover rounded-lg border border-amber-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-amber-950 mt-1 truncate max-w-full">
+                              ✓ এনআইডি (পেছনে)
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('nid_back_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <CreditCard className="w-5 h-5 text-amber-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">এনআইডি (পেছনে)</span>
+                            <span className="text-[9px] text-amber-700 font-semibold">+ ছবি দিন</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('nid_back_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* User Photo Slot */}
+                      <div className="relative border border-dashed border-amber-300 bg-amber-50/40 hover:bg-amber-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.user_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.user_photo} 
+                              alt="Applicant Selfie" 
+                              className="w-full h-11 object-cover rounded-lg border border-amber-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-amber-950 mt-1 truncate max-w-full">
+                              ✓ নিজের ছবি
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('user_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <UserIcon className="w-5 h-5 text-amber-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">নিজের ছবি</span>
+                            <span className="text-[9px] text-amber-700 font-semibold">+ সেলফি/ছবি</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('user_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
                 {/* Privilege Note */}
-                <div className="p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-950 leading-relaxed flex items-center space-x-2">
+                <div className="p-2 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-950 leading-relaxed flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
                   <span>
                     অনুমোদিত হলে স্বয়ংক্রিয়ভাবে ইউনিক বারকোডসহ আপনার ডিজিটাল ভিআইপি কার্ডটি প্রোফাইলে যুক্ত হবে।
@@ -421,8 +578,8 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
                 </div>
 
                 {/* Terms Agreement Checkbox (Right Above Submit Button) */}
-                <div className="pt-1">
-                  <div className="flex items-start space-x-2 p-2.5 bg-amber-50/70 border border-amber-300/90 rounded-xl hover:bg-amber-100/60 transition-colors">
+                <div className="pt-0.5">
+                  <div className="flex items-start space-x-2 p-2 bg-amber-50/70 border border-amber-300/90 rounded-xl hover:bg-amber-100/60 transition-colors">
                     <input
                       id="loyalty_terms_chk"
                       type="checkbox"
@@ -464,7 +621,13 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
                     }`}
                   >
                     <CreditCard className="w-4 h-4 text-slate-950" />
-                    <span>{submitting ? 'আবেদন জমা হচ্ছে...' : 'লয়ালটি কার্ড আবেদন সাবমিট করুন'}</span>
+                    <span>
+                      {submitting
+                        ? 'আবেদন প্রসেস হচ্ছে...'
+                        : (Number(siteSettings?.loyalty_card_fee ?? 500) > 0
+                          ? `পরবর্তী ধাপ: মেম্বারশিপ ফি পরিশোধ (৳${toBn(siteSettings?.loyalty_card_fee ?? 500)}) →`
+                          : 'লয়ালটি কার্ড আবেদন সাবমিট করুন')}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -574,6 +737,21 @@ export default function LoyaltyApplicationModal({ isOpen, onClose, onSuccess, on
             </div>
           </div>
         </div>
+      )}
+      {/* Payment Gateway Modal for VIP Loyalty Card Application Fee */}
+      {showPaymentModal && (
+        <PaymentGatewayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          totalAmount={Number(siteSettings?.loyalty_card_fee ?? 500)}
+          deliveryFee={0}
+          siteSettings={siteSettings}
+          user={user}
+          hideCod={true}
+          title="ভিআইপি কার্ড মেম্বারশিপ ফি পরিশোধ"
+          subtitle="রয়্যাল গোল্ড ভিআইপি ক্লাবের প্রিমিয়াম মেম্বারশিপ ও কার্ড অ্যাক্টিভেশন চার্জ"
+          onConfirmPayment={executeApplicationSubmit}
+        />
       )}
     </>
   );

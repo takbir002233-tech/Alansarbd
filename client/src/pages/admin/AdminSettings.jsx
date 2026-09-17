@@ -36,16 +36,28 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState('brand'); // brand, marquee, invoice, qard, terms, hero, deals, trust, guarantee, footer, payment
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState(null);
+  const [showSmtpAdvanced, setShowSmtpAdvanced] = useState(false);
 
   const [form, setForm] = useState({
     store_name: 'AL ANSAR',
     store_name_bn: 'আল আনসার',
     store_tagline: 'বিলাসবহুল পারফিউম, ১০০% খাঁটি আতর ও এক্সক্লুসিভ উপহার সামগ্রী বাংলাদেশ',
     store_phone: '+880 1711-223344',
+    hotline_number: '+880 1711-223344',
     store_email: 'info@alansarfragrance.com',
+    admin_notification_email: 'alansar.bd@hotmail.com',
+    smtp_host: 'smtp-mail.outlook.com',
+    smtp_port: 587,
+    smtp_user: 'alansar.bd@hotmail.com',
+    smtp_pass: '',
     store_address: 'আল আনসার প্লাজা, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
     showroom_address: 'আল আনসার ফ্ল্যাগশিপ শোরুম, লেভেল ৪, সেক্টর ৩, উত্তরা, ঢাকা-১২৩০',
     whatsapp_number: '+880 1711-223344',
+    contact_office_hours: 'সকাল ৯:০০টা – রাত ১১:০০টা (সপ্তাহের ৭ দিন খোলা)',
+    contact_subtitle: 'ঘরের বাজার, বেকারি আইটেম, করযে হাসানা সুবিধা, আতর ও কাস্টম গিফট প্যাকেজ সংক্রান্ত যেকোনো জিজ্ঞাসায় আমাদের সাথে সরাসরি যোগাযোগ করুন।',
+    contact_extra_note: 'আমাদের সম্মানিত গ্রাহকদের সুবিধার্থে অনলাইন কাস্টমার কেয়ার ও হেল্পডেস্ক সার্বক্ষণিক সক্রিয় থাকে। যেকোনো জরুরি তথ্যের জন্য সরাসরি কল অথবা হোয়াটসঅ্যাপ করুন।',
     logo_url: '/logo.jpg',
     bkash_number: '01711-223344 (ব্যক্তিগত / Send Money)',
     nagad_number: '01811-223344 (ব্যক্তিগত / Send Money)',
@@ -53,9 +65,10 @@ export default function AdminSettings() {
     dhaka_delivery_fee: 60,
     outside_dhaka_delivery_fee: 120,
     free_delivery_threshold: 2000,
+    loyalty_card_fee: 500,
     loyalty_card_initial_points: 100,
-    reward_points_spend_amount: 100,
-    reward_points_earned: 1,
+    reward_points_spend_amount: 1000,
+    reward_points_earned: 100,
     reward_point_value_bdt: 1,
     
     // Top Dynamic Marquee Ticker
@@ -79,7 +92,10 @@ export default function AdminSettings() {
     // Qard-e-Hasana Full CMS
     qard_hasana_enabled: true,
     qard_hasana_percentage: 10,
-    qard_application_fee: 50,
+    qard_max_percentage: 10,
+    qard_default_duration_months: 6,
+    qard_application_fee: 300,
+    qard_repay_percentage: 2,
     qard_hero_badge: 'আল আনসার করযে হাসানা স্কিম',
     qard_hero_title: 'সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা',
     qard_hero_subtitle: 'ইসলামী শরীয়াহ অনুযায়ী পারস্পরিক সহযোগিতার উদ্দেশ্যে ‘আল আনসার’ নিয়ে এসেছে ১০০% সুদমুক্ত করযে হাসানা সুবিধা। আপনি কোনো প্রকার অতিরিক্ত ফি, প্রসেসিং চার্জ বা সুদ ছাড়াই পণ্য ক্রয় করে পরবর্তীতে সুবিধা অনুযায়ী মূল্য পরিশোধ করতে পারবেন।',
@@ -260,7 +276,7 @@ export default function AdminSettings() {
       ...prev,
       [name]: type === 'checkbox'
         ? checked
-        : ['dhaka_delivery_fee', 'outside_dhaka_delivery_fee', 'free_delivery_threshold', 'qard_hasana_percentage', 'qard_application_fee', 'loyalty_card_initial_points', 'reward_points_new_user', 'reward_points_spend_amount', 'reward_points_earned', 'reward_point_value_bdt'].includes(name)
+        : ['dhaka_delivery_fee', 'outside_dhaka_delivery_fee', 'free_delivery_threshold', 'qard_hasana_percentage', 'qard_application_fee', 'qard_max_percentage', 'qard_default_duration_months', 'loyalty_card_fee', 'loyalty_card_initial_points', 'reward_points_new_user', 'reward_points_spend_amount', 'reward_points_earned', 'reward_point_value_bdt', 'qard_repay_percentage'].includes(name)
         ? Number(value)
         : value
     }));
@@ -326,6 +342,28 @@ export default function AdminSettings() {
     });
   };
 
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    setTestEmailResult(null);
+    try {
+      const res = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ target_email: form.admin_notification_email })
+      });
+      const data = await res.json();
+      setTestEmailResult(data);
+      setTimeout(() => setTestEmailResult(null), 8000);
+    } catch (err) {
+      setTestEmailResult({ success: false, message: 'সার্ভার সংযোগে ত্রুটি হয়েছে।' });
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -371,6 +409,7 @@ export default function AdminSettings() {
     { id: 'guarantee', label: '১০. আল আনসার গ্যারান্টি', icon: ShieldCheck },
     { id: 'footer', label: '১১. ফুটার ও কপিরাইট', icon: Layers },
     { id: 'payment', label: '১২. পেমেন্ট ও ডেলিভারি ফি', icon: CreditCard },
+    { id: 'contact', label: '১৩. যোগাযোগ পেজ CMS', icon: Phone },
   ];
 
   return (
@@ -512,6 +551,123 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-emerald-500"
                     />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-amber-400 block mb-1">অফিসিয়াল স্টোর ইমেইল *</label>
+                    <input
+                      type="email"
+                      name="store_email"
+                      required
+                      value={form.store_email || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  {/* ADMIN NOTIFICATION EMAIL & ALERTS */}
+                  <div className="sm:col-span-2 p-5 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl space-y-3.5 shadow-inner">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-xs font-black text-amber-300 flex items-center">
+                          <Bell className="w-4 h-4 mr-1.5 text-amber-400" />
+                          অ্যাডমিন নোটিফিকেশন ইমেইল (নতুন অর্ডার, করযে হাসানা, ভিআইপি, রিফান্ড ও আপিল অ্যালার্ট) *
+                        </label>
+                        <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                          যেকোনো নতুন অর্ডার, করযে হাসানা আবেদন, ভিআইপি কার্ড আবেদন, রিফান্ড ও রিপোর্ট/আপিল আসার সাথে সাথে এই ইমেইলে স্বয়ংক্রিয় নোটিফিকেশন যাবে।
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2.5">
+                      <input
+                        type="email"
+                        name="admin_notification_email"
+                        required
+                        value={form.admin_notification_email || 'alansar.bd@hotmail.com'}
+                        onChange={handleChange}
+                        placeholder="alansar.bd@hotmail.com"
+                        className="flex-1 px-3.5 py-2.5 bg-slate-900 text-xs rounded-xl border border-amber-500/50 text-amber-200 font-mono font-bold focus:outline-none focus:border-amber-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestEmail}
+                        disabled={testingEmail}
+                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-md disabled:opacity-50"
+                      >
+                        {testingEmail ? 'পাঠানো হচ্ছে...' : '🧪 টেস্ট ইমেইল পাঠান'}
+                      </button>
+                    </div>
+
+                    {testEmailResult && (
+                      <div className={`p-3 rounded-xl border text-xs font-bold ${
+                        testEmailResult.success 
+                          ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' 
+                          : 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+                      }`}>
+                        {testEmailResult.message}
+                      </div>
+                    )}
+
+                    {/* Collapsible SMTP Server Configuration */}
+                    <div className="pt-2 border-t border-amber-500/20">
+                      <button
+                        type="button"
+                        onClick={() => setShowSmtpAdvanced(!showSmtpAdvanced)}
+                        className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer"
+                      >
+                        <span>{showSmtpAdvanced ? '▼ কাস্টম SMTP সার্ভার সেটিংস লুকান' : '▶ কাস্টম SMTP সার্ভার কনফিগারেশন (ঐচ্ছিক)'}</span>
+                      </button>
+
+                      {showSmtpAdvanced && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-800">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 block mb-1">SMTP Host</label>
+                            <input
+                              type="text"
+                              name="smtp_host"
+                              placeholder="smtp-mail.outlook.com"
+                              value={form.smtp_host || ''}
+                              onChange={handleChange}
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 block mb-1">SMTP Port</label>
+                            <input
+                              type="number"
+                              name="smtp_port"
+                              placeholder="587"
+                              value={form.smtp_port || 587}
+                              onChange={handleChange}
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 block mb-1">SMTP Username / Email</label>
+                            <input
+                              type="text"
+                              name="smtp_user"
+                              placeholder="alansar.bd@hotmail.com"
+                              value={form.smtp_user || ''}
+                              onChange={handleChange}
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-300 block mb-1">SMTP Password / App Password</label>
+                            <input
+                              type="password"
+                              name="smtp_pass"
+                              placeholder="••••••••••••"
+                              value={form.smtp_pass || ''}
+                              onChange={handleChange}
+                              className="w-full px-3 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2">
@@ -749,6 +905,18 @@ export default function AdminSettings() {
                   </div>
 
                   <div>
+                    <label className="text-xs font-bold text-teal-400 block mb-1">বকেয়া ঋণ পরিশোধ কিস্তি হার (%) *</label>
+                    <input
+                      type="number"
+                      name="qard_repay_percentage"
+                      value={form.qard_repay_percentage !== undefined ? form.qard_repay_percentage : 2}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-teal-300 font-mono font-bold focus:outline-none focus:border-teal-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">বকেয়া থাকলে পরবর্তী অর্ডারে যোগ হবে (ডিফল্ট: ২%)</p>
+                  </div>
+
+                  <div>
                     <label className="text-xs font-bold text-slate-300 block mb-1">করযে হাসানা পেজ ব্যাজ টেক্সট</label>
                     <input
                       type="text"
@@ -948,6 +1116,30 @@ export default function AdminSettings() {
                     <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-2.5 py-1 rounded-full border border-amber-500/30 self-start sm:self-auto">
                       ডিজিটাল লয়ালটি কার্ড ও অর্ডারে সক্রিয়
                     </span>
+                  </div>
+
+                  {/* VIP Loyalty Card Fee Input Block */}
+                  <div className="p-4 bg-slate-900/90 rounded-xl border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <label className="text-xs font-black text-amber-300 flex items-center">
+                        <CreditCard className="w-4 h-4 mr-1.5 text-amber-400" />
+                        ভিআইপি লয়ালটি কার্ড আবেদন ফি (Membership Fee Amount) *
+                      </label>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        গ্রাহক যখন VIP কার্ডের জন্য আবেদন করবেন, তখন এই ফি পেমেন্ট গেটওয়ের মাধ্যমে পরিশোধ করতে হবে (যেমন ৳৫০০ বা আপনার ইচ্ছামতো যেকোনো অংক)। ০ দিলে ফ্রিতে আবেদন হবে।
+                      </p>
+                    </div>
+                    <div className="relative w-full sm:w-48 shrink-0">
+                      <input
+                        type="number"
+                        min="0"
+                        name="loyalty_card_fee"
+                        value={form.loyalty_card_fee !== undefined ? form.loyalty_card_fee : 500}
+                        onChange={handleChange}
+                        className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-amber-500/60 text-amber-300 font-mono font-black text-base focus:outline-none focus:border-amber-400 pr-12"
+                      />
+                      <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">টাকা (৳)</span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -1958,6 +2150,131 @@ export default function AdminSettings() {
                       value={form.free_delivery_threshold}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono font-bold text-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-amber-400 block mb-1">ভিআইপি লয়ালটি কার্ড আবেদন ফি (টাকা) *</label>
+                    <input
+                      type="number"
+                      name="loyalty_card_fee"
+                      value={form.loyalty_card_fee !== undefined ? form.loyalty_card_fee : 500}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-amber-500/50 text-amber-300 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-emerald-400 block mb-1">করযে হাসানা আবেদন ফি (টাকা) *</label>
+                    <input
+                      type="number"
+                      name="qard_application_fee"
+                      value={form.qard_application_fee !== undefined ? form.qard_application_fee : 300}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-emerald-500/50 text-emerald-300 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-teal-400 block mb-1">বকেয়া ঋণ পরিশোধ কিস্তি (%) *</label>
+                    <input
+                      type="number"
+                      name="qard_repay_percentage"
+                      value={form.qard_repay_percentage !== undefined ? form.qard_repay_percentage : 2}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-teal-500/50 text-teal-300 font-mono font-bold"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">বকেয়া থাকলে পরবর্তী অর্ডারে যোগ হওয়ার শতকরা হার</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 13: CONTACT US CMS */}
+            {activeSection === 'contact' && (
+              <div className="p-6 sm:p-8 bg-slate-900 rounded-3xl border border-amber-500/30 space-y-5 shadow-xl animate-in fade-in">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <h3 className="text-sm font-bold text-white flex items-center">
+                    <Phone className="w-4 h-4 mr-2 text-amber-400" /> ১৩. যোগাযোগ পেজ কনটেন্ট CMS
+                  </h3>
+                  <span className="text-[11px] font-bold text-slate-400">কাস্টমার কেয়ার ও হেল্পডেস্ক তথ্য</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">হটলাইন নম্বর (Call Support)</label>
+                    <input
+                      type="text"
+                      name="hotline_number"
+                      value={form.hotline_number || form.store_phone || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono font-bold focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-emerald-400 block mb-1">অফিসিয়াল হোয়াটসঅ্যাপ নম্বর</label>
+                    <input
+                      type="text"
+                      name="whatsapp_number"
+                      value={form.whatsapp_number || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-amber-400 block mb-1">অফিসিয়াল সাপোর্ট ইমেইল</label>
+                    <input
+                      type="email"
+                      name="store_email"
+                      value={form.store_email || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white font-mono focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">গ্রাহক সেবা সময়সূচী (Office Hours)</label>
+                    <input
+                      type="text"
+                      name="contact_office_hours"
+                      value={form.contact_office_hours || 'সকাল ৯:০০টা – রাত ১১:০০টা (সপ্তাহের ৭ দিন খোলা)'}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-slate-300 block mb-1">শোরুম ও প্রধান কার্যালয়ের ঠিকানা</label>
+                    <input
+                      type="text"
+                      name="showroom_address"
+                      value={form.showroom_address || ''}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-slate-300 block mb-1">যোগাযোগ পেজের সাবটাইটেল / বিবরণ</label>
+                    <textarea
+                      rows={2}
+                      name="contact_subtitle"
+                      value={form.contact_subtitle || 'ঘরের বাজার, বেকারি আইটেম, করযে হাসানা সুবিধা, আতর ও কাস্টম গিফট প্যাকেজ সংক্রান্ত যেকোনো জিজ্ঞাসায় আমাদের সাথে সরাসরি যোগাযোগ করুন।'}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-amber-400 block mb-1">গ্রাহক সন্তুষ্টি নিশ্চয়তা নোট (Customer Assurance)</label>
+                    <textarea
+                      rows={2}
+                      name="contact_extra_note"
+                      value={form.contact_extra_note || 'আমাদের সম্মানিত গ্রাহকদের সুবিধার্থে অনলাইন কাস্টমার কেয়ার ও হেল্পডেস্ক সার্বক্ষণিক সক্রিয় থাকে। যেকোনো জরুরি তথ্যের জন্য সরাসরি কল অথবা হোয়াটসঅ্যাপ করুন।'}
+                      onChange={handleChange}
+                      className="w-full px-3.5 py-2.5 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>

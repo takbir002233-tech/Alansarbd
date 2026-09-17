@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const mailService = require('../services/mailService');
 const { authenticateToken, requireAdmin, requirePermission } = require('../middleware/auth');
 
 // CREATE ORDER
@@ -87,12 +88,6 @@ router.post('/', (req, res) => {
         thumbnail: prd ? prd.thumbnail : (item.thumbnail || '')
       };
     });
-
-    const discount = Number(discount_amount) || 0;
-    const isThresholdFree = subtotal >= (siteSettings.free_delivery_threshold || 2000);
-    const finalDeliveryFee = (hasFreeDeliveryProduct || isThresholdFree) ? 0 : standardDeliveryFee;
-    const total_amount = Math.max(0, subtotal - discount) + finalDeliveryFee;
-
     let finalUserId = user_id || null;
     if (!finalUserId && req.headers.authorization) {
       try {
@@ -106,6 +101,31 @@ router.post('/', (req, res) => {
       const cleanP = customer_phone.trim().replace(/^(\+88|88)/, '');
       const u = db.getUserByPhone(cleanP);
       if (u) finalUserId = u.id;
+    }
+
+    // Check unpaid Qard debt status & auto repayment calculation
+    const existingUser = finalUserId ? db.getUserById(finalUserId) : null;
+    const hasUnpaidQard = Boolean(existingUser && existingUser.has_unpaid_qard && Number(existingUser.qard_unpaid_amount) > 0);
+
+    const discount = Number(discount_amount) || 0;
+    let qardRepayAmount = Number(req.body.qard_repayment_amount) || 0;
+    if (hasUnpaidQard) {
+      const repayPct = Number(siteSettings.qard_repay_percentage) > 0 ? Number(siteSettings.qard_repay_percentage) : 2;
+      const netProductPrice = Math.max(0, subtotal - discount);
+      const autoCalculatedRepay = Math.min(Number(existingUser.qard_unpaid_amount), Math.max(1, Math.round(netProductPrice * (repayPct / 100))));
+      qardRepayAmount = Math.max(qardRepayAmount, autoCalculatedRepay);
+    }
+
+    const isThresholdFree = subtotal >= (siteSettings.free_delivery_threshold || 2000);
+    const finalDeliveryFee = (hasFreeDeliveryProduct || isThresholdFree) ? 0 : standardDeliveryFee;
+    const total_amount = Math.max(0, subtotal - discount) + finalDeliveryFee + qardRepayAmount;
+
+    const qardAmount = Number(req.body.qard_amount || req.body.qard_deferred_amount || 0);
+    if ((pMethod === 'qard' || qardAmount > 0) && hasUnpaidQard) {
+      return res.status(400).json({
+        success: false,
+        message: `আপনার পূর্বের করযে হাসানা ঋণ বকেয়া রয়েছে (৳${existingUser.qard_unpaid_amount})। পূর্বের ঋণ সম্পূর্ণ পরিশোধ না করা পর্যন্ত নতুন করযে হাসানা নির্বাচন করা যাবে না। অনুগ্রহ করে সাধারণ পেমেন্টে অর্ডার সম্পন্ন করুন।`
+      });
     }
 
     const orderCode = 'ANSAR-' + Math.floor(100000 + Math.random() * 900000);
@@ -127,17 +147,60 @@ router.post('/', (req, res) => {
       applied_voucher_code: voucherCode,
       total_amount,
       payment_method: pMethod,
+      advance_delivery_fee_paid: Boolean(req.body.advance_delivery_fee_paid),
+      delivery_fee_method: req.body.delivery_fee_method || '',
+      remaining_cod_amount: Number(req.body.remaining_cod_amount) || Math.max(0, total_amount - finalDeliveryFee),
       sender_number: sender_number ? sender_number.trim() : '',
       transaction_id: transaction_id ? transaction_id.trim().toUpperCase() : '',
       qard_nid: (req.body.qard_nid || req.body.payment_details?.qard_nid || '').trim(),
-      qard_deferred_amount: Number(req.body.qard_deferred_amount || req.body.payment_details?.qard_discount_amount) || 0,
+      qard_amount: qardAmount,
+      qard_percentage: Number(req.body.qard_percentage) || 0,
+      qard_repayment_amount: qardRepayAmount,
+      points_used: Number(req.body.points_used) || 0,
+      points_discount: Number(req.body.points_discount) || 0,
+      payable_now: Number(req.body.payable_now) !== undefined ? Number(req.body.payable_now) : Math.max(0, total_amount - qardAmount),
       notes: (notes || '').trim()
     });
 
-    // Notify connected admins via socket
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'order',
+      title: '🛒 নতুন অর্ডার এসেছে',
+      message: `অর্ডার #${newOrder.order_code} - ${newOrder.customer_name} (৳${Number(newOrder.total_amount).toLocaleString()})`,
+      link_tab: 'orders',
+      data: { order_id: newOrder.id, order_code: newOrder.order_code, total_amount: newOrder.total_amount }
+    });
+
+    // Notify connected admins via admin_channel (User does NOT receive this)
     if (req.app.get('io')) {
-      req.app.get('io').emit('new_order', newOrder);
+      req.app.get('io').to('admin_channel').emit('new_order', newOrder);
+      req.app.get('io').to('admin_channel').emit('admin_notification', notif);
+      if (finalUserId) {
+        const freshUser = db.getUserById(finalUserId);
+        if (freshUser) {
+          req.app.get('io').emit('user_updated', { userId: finalUserId, user: freshUser });
+        }
+      }
     }
+
+    // Send email alert to admin notification address
+    const itemsSummary = verifiedItems.map(i => `${i.title} (${i.quantity}টি)`).join(', ');
+    mailService.sendAdminAlert({
+      type: 'order',
+      title: `নতুন অর্ডার #${newOrder.order_code} (৳${Number(newOrder.total_amount).toLocaleString()})`,
+      message: `${newOrder.customer_name} একটি নতুন অর্ডার সফলভাবে সম্পন্ন করেছেন।`,
+      details: {
+        'অর্ডার নম্বর': '#' + newOrder.order_code,
+        'গ্রাহকের নাম': newOrder.customer_name,
+        'মোবাইল নম্বর': newOrder.customer_phone,
+        'ইমেইল': newOrder.customer_email || 'দেওয়া হয়নি',
+        'ডেলিভারি ঠিকানা': `${newOrder.shipping_address}, ${newOrder.shipping_city}`,
+        'পেমেন্ট মেথড': newOrder.payment_method?.toUpperCase(),
+        'মোট প্রদেয়': `৳${Number(newOrder.total_amount).toLocaleString()}`,
+        'পণ্য তালিকা': itemsSummary
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('Order admin email error:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -158,6 +221,161 @@ router.get('/my-orders', authenticateToken, (req, res) => {
   } catch (err) {
     console.error('Error getting user orders:', err);
     return res.status(500).json({ success: false, message: 'Server error fetching orders.' });
+  }
+});
+
+// GET AUTHENTICATED USER QARD-E-HASANA LEDGER & STATEMENT
+router.get('/my-qard-ledger', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = db.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'ব্যবহারকারী পাওয়া যায়নি।' });
+    }
+
+    const userOrders = db.getOrdersByUserId(userId) || [];
+    const qardTransactions = [];
+
+    // 1. Borrowed & order-based installments
+    userOrders.forEach(ord => {
+      if (Number(ord.qard_amount) > 0) {
+        qardTransactions.push({
+          id: 'qard_borrow_' + ord.id,
+          type: 'borrowed',
+          amount: Number(ord.qard_amount),
+          title: `অর্ডার #${ord.order_code || ord.order_number} এ করযে হাসানা (১০% ধার)`,
+          method: 'করযে হাসানা',
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+      if (Number(ord.qard_repayment_amount) > 0) {
+        qardTransactions.push({
+          id: 'qard_repay_ord_' + ord.id,
+          type: 'repayment',
+          amount: Number(ord.qard_repayment_amount),
+          title: `অর্ডার #${ord.order_code || ord.order_number} এ কিস্তি পরিশোধ`,
+          method: 'অর্ডার কিস্তি',
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+    });
+
+    // 2. Direct repayments from user.qard_history
+    if (Array.isArray(user.qard_history)) {
+      user.qard_history.forEach(qh => {
+        if (!qardTransactions.some(existing => existing.id === qh.id)) {
+          qardTransactions.push({
+            id: qh.id,
+            type: 'repayment',
+            amount: Number(qh.amount || 0),
+            title: `সরাসরি ঋণ পরিশোধ (${qh.payment_method || 'MFS'})`,
+            method: qh.payment_method || 'direct',
+            sender_number: qh.sender_number || '',
+            transaction_id: qh.transaction_id || '',
+            notes: qh.notes || '',
+            date: qh.created_at || user.qard_last_repayment_at
+          });
+        }
+      });
+    }
+
+    qardTransactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    const totalQardBorrowed = qardTransactions
+      .filter(t => t.type === 'borrowed')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    const directRepaidSum = qardTransactions
+      .filter(t => t.type === 'repayment')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalQardRepaid = Math.max(directRepaidSum, Number(user.qard_total_repaid) || 0);
+
+    let daysRemaining = null;
+    let isOverdue = false;
+    if (user.qard_due_date) {
+      const due = new Date(user.qard_due_date);
+      const now = new Date();
+      daysRemaining = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      isOverdue = daysRemaining < 0;
+    }
+
+    const creditLimit = Number(user.qard_credit_limit || user.qard_limit || 5000);
+    const unpaidDebt = Number(user.qard_unpaid_amount || 0);
+    const availableCredit = Math.max(0, creditLimit - unpaidDebt);
+
+    const qardLedger = {
+      status: user.qard_status || (user.is_qard_eligible ? 'Approved' : 'None'),
+      credit_limit: creditLimit,
+      available_credit: availableCredit,
+      total_borrowed: totalQardBorrowed || unpaidDebt,
+      total_repaid: totalQardRepaid,
+      unpaid_debt: unpaidDebt,
+      has_unpaid_qard: Boolean(user.has_unpaid_qard && unpaidDebt > 0),
+      due_date: user.qard_due_date,
+      days_remaining: daysRemaining,
+      is_overdue: isOverdue,
+      transactions: qardTransactions
+    };
+
+    return res.json({ success: true, ledger: qardLedger });
+  } catch (err) {
+    console.error('Error fetching user qard ledger:', err);
+    return res.status(500).json({ success: false, message: 'Server error fetching qard ledger.' });
+  }
+});
+
+// USER REPAY QARD DEBT DIRECTLY FROM DASHBOARD
+router.post('/repay-qard', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { amount, payment_method, sender_number, transaction_id, notes } = req.body;
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'সঠিক পরিশোধের পরিমাণ প্রদান করুন।' });
+    }
+    if (!sender_number || !sender_number.trim()) {
+      return res.status(400).json({ success: false, message: 'প্রেরক মোবাইল নম্বর আবশ্যক।' });
+    }
+    if (!transaction_id || !transaction_id.trim()) {
+      return res.status(400).json({ success: false, message: 'ট্রানজেকশন আইডি (TrxID) আবশ্যক।' });
+    }
+
+    const user = db.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'ব্যবহারকারী পাওয়া যায়নি।' });
+    }
+
+    const updatedUser = db.repayUserQard(userId, numAmount, notes || 'গ্রাহক ড্যাশবোর্ড থেকে ঋণ পরিশোধ', {
+      payment_method: payment_method || 'bKash',
+      sender_number: sender_number.trim(),
+      transaction_id: transaction_id.trim(),
+      notes: notes || ''
+    });
+
+    const safeUser = { ...updatedUser };
+    delete safeUser.password_hash;
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
+      io.to('admin_channel').emit('admin_notification', {
+        id: 'notif_qard_repay_' + Date.now(),
+        type: 'qard_repayment',
+        title: '🌸 করযে হাসানা ঋণ পরিশোধ',
+        message: `${user.name} ৳${numAmount.toLocaleString()} ঋণ পরিশোধ করেছেন (${payment_method || 'MFS'}, TrxID: ${transaction_id.trim()})`,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'করযে হাসানা ঋণ সফলভাবে পরিশোধ করা হয়েছে!',
+      user: safeUser
+    });
+  } catch (err) {
+    console.error('Error in customer repay-qard:', err);
+    return res.status(500).json({ success: false, message: 'ঋণ পরিশোধ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।' });
   }
 });
 

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db');
+const mailService = require('../services/mailService');
 const { requireAdmin, requireSuperAdmin, requirePermission } = require('../middleware/auth');
 
 // DASHBOARD ANALYTICS & STATS
@@ -87,6 +88,9 @@ router.get('/stats', requireAdmin, (req, res) => {
         total_users: users.length,
         blocked_users_count: users.filter(u => u.is_blocked).length,
         qard_applications_count: (db.getQardApplications() || []).length,
+        pending_qard_count: (db.getQardApplications() || []).filter(a => a.status === 'Pending').length,
+        pending_loyalty_count: (db.getLoyaltyApplications() || []).filter(a => a.status === 'Pending').length,
+        pending_refunds_count: (db.getRefundRequests ? db.getRefundRequests() : []).filter(r => r.status === 'Pending').length,
         account_appeals_count: (db.getAccountAppeals() || []).length
       },
       low_stock_products: lowStockProducts,
@@ -166,10 +170,18 @@ router.put('/users/:id/toggle-block', requirePermission('customers.block'), (req
 router.put('/users/:id', requirePermission('customers.edit_limit'), (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, address, city, role, loyalty_points, qard_credit_limit, qard_status } = req.body;
+    const { name, phone, email, address, city, role, loyalty_points, qard_credit_limit, qard_status } = req.body;
     const updates = {};
 
     if (name) updates.name = name.trim();
+    if (email && email.trim()) {
+      const cleanEmail = email.trim().toLowerCase();
+      const existing = db.getUserByEmail(cleanEmail);
+      if (existing && existing.id !== id) {
+        return res.status(400).json({ success: false, message: 'এই ইমেইলটি ইতিমধ্যে অন্য একজন ব্যবহারকারী ব্যবহার করছেন।' });
+      }
+      updates.email = cleanEmail;
+    }
     if (phone) updates.phone = phone.trim();
     if (address) updates.address = address.trim();
     if (city) updates.city = city.trim();
@@ -183,6 +195,8 @@ router.put('/users/:id', requirePermission('customers.edit_limit'), (req, res) =
       updates.qard_available_credit = Number(qard_credit_limit);
     }
     if (qard_status) updates.qard_status = qard_status;
+    if (req.body.has_unpaid_qard !== undefined) updates.has_unpaid_qard = Boolean(req.body.has_unpaid_qard);
+    if (req.body.qard_unpaid_amount !== undefined) updates.qard_unpaid_amount = Number(req.body.qard_unpaid_amount);
 
     const updated = db.updateUser(id, updates);
     if (!updated) {
@@ -203,7 +217,7 @@ router.put('/users/:id', requirePermission('customers.edit_limit'), (req, res) =
   }
 });
 
-// GET SINGLE USER PROFILE DETAILS & ORDERS
+// GET SINGLE USER PROFILE DETAILS & ORDERS WITH FULL VIP & QARD LEDGERS
 router.get('/users/:id/details', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
@@ -225,6 +239,148 @@ router.get('/users/:id/details', requireAdmin, (req, res) => {
       .filter(o => o.status !== 'Cancelled')
       .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
+    // 1. VIP Loyalty Points History compilation
+    const pointsHistory = [];
+    const isVip = user.loyalty_card_approved || user.loyalty_card_status === 'Approved';
+    const initialBonus = Number(user.loyalty_bonus_points || 250);
+
+    if (isVip) {
+      pointsHistory.push({
+        id: 'pts_welcome_' + user.id,
+        type: 'earned',
+        points: initialBonus,
+        title: 'ভিআইপি মেম্বারশিপ কার্ড অনুমোদন ওয়েলকাম বোনাস',
+        source: 'VIP Card Bonus',
+        date: user.loyalty_approved_at || user.created_at,
+        order_code: null
+      });
+    }
+
+    userOrders.forEach(ord => {
+      if (ord.points_used && Number(ord.points_used) > 0) {
+        pointsHistory.push({
+          id: 'pts_used_' + ord.id,
+          type: 'used',
+          points: -Math.abs(Number(ord.points_used)),
+          title: `অর্ডার #${ord.order_code || ord.order_number} এ রিডিম / ছাড়`,
+          source: 'Order Redemption',
+          discount_amount: ord.points_discount || ord.points_used,
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+      if (ord.points_earned && Number(ord.points_earned) > 0) {
+        pointsHistory.push({
+          id: 'pts_earned_' + ord.id,
+          type: 'earned',
+          points: Math.abs(Number(ord.points_earned)),
+          title: `অর্ডার #${ord.order_code || ord.order_number} কেনাকাটায় অর্জিত পয়েন্ট`,
+          source: 'Order Reward',
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+    });
+
+    if (Array.isArray(user.points_history)) {
+      user.points_history.forEach(p => {
+        if (!pointsHistory.some(existing => existing.id === p.id)) {
+          pointsHistory.push(p);
+        }
+      });
+    }
+
+    pointsHistory.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    const totalPointsEarned = pointsHistory.filter(p => p.type === 'earned').reduce((sum, p) => sum + Math.abs(p.points || 0), 0);
+    const totalPointsUsed = pointsHistory.filter(p => p.type === 'used').reduce((sum, p) => sum + Math.abs(p.points || 0), 0);
+
+    // 2. Qard-e-Hasana Ledger compilation
+    const qardTransactions = [];
+
+    // Orders where Qard debt was borrowed
+    userOrders.forEach(ord => {
+      if (ord.qard_amount && Number(ord.qard_amount) > 0) {
+        qardTransactions.push({
+          id: 'qard_borrow_' + ord.id,
+          type: 'borrowed',
+          amount: Number(ord.qard_amount),
+          title: `অর্ডার #${ord.order_code || ord.order_number} এ ঋণ গ্রহণ`,
+          source: 'Order Qard Loan',
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+
+      // Orders where 2% auto installment was deducted
+      if (ord.qard_repayment_amount && Number(ord.qard_repayment_amount) > 0) {
+        qardTransactions.push({
+          id: 'qard_repay_ord_' + ord.id,
+          type: 'repayment',
+          amount: Number(ord.qard_repayment_amount),
+          title: `অর্ডার #${ord.order_code || ord.order_number} এ স্বয়ংক্রিয় কিস্তি পরিশোধ`,
+          method: 'অর্ডার কিস্তি',
+          source: 'Order Surcharge Installment',
+          date: ord.created_at,
+          order_code: ord.order_code || ord.order_number
+        });
+      }
+    });
+
+    // Direct repayments from user.qard_history
+    if (Array.isArray(user.qard_history)) {
+      user.qard_history.forEach(qh => {
+        if (!qardTransactions.some(existing => existing.id === qh.id)) {
+          qardTransactions.push({
+            id: qh.id,
+            type: 'repayment',
+            amount: Number(qh.amount || 0),
+            title: `সরাসরি ঋণ পরিশোধ (${qh.payment_method || 'MFS'})`,
+            method: qh.payment_method || 'direct',
+            sender_number: qh.sender_number || '',
+            transaction_id: qh.transaction_id || '',
+            notes: qh.notes || '',
+            date: qh.created_at || user.qard_last_repayment_at
+          });
+        }
+      });
+    }
+
+    qardTransactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    const totalQardBorrowed = qardTransactions.filter(t => t.type === 'borrowed').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const directRepaidSum = qardTransactions.filter(t => t.type === 'repayment').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalQardRepaid = Math.max(directRepaidSum, Number(user.qard_total_repaid) || 0);
+
+    let daysRemaining = null;
+    let isOverdue = false;
+    if (user.qard_due_date) {
+      const due = new Date(user.qard_due_date);
+      const now = new Date();
+      daysRemaining = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      isOverdue = daysRemaining < 0;
+    }
+
+    const qardLedger = {
+      credit_limit: user.qard_credit_limit || 5000,
+      total_borrowed: totalQardBorrowed || Number(user.qard_unpaid_amount || 0),
+      total_repaid: totalQardRepaid,
+      unpaid_debt: Number(user.qard_unpaid_amount || 0),
+      has_unpaid_qard: Boolean(user.has_unpaid_qard && user.qard_unpaid_amount > 0),
+      due_date: user.qard_due_date,
+      days_remaining: daysRemaining,
+      is_overdue: isOverdue,
+      transactions: qardTransactions
+    };
+
+    const pointsLedger = {
+      current_points: Number(user.loyalty_points || 0),
+      total_earned: totalPointsEarned,
+      total_used: totalPointsUsed,
+      points_cash_value: Number(user.loyalty_points || 0),
+      history: pointsHistory
+    };
+
     const safeUser = { ...user };
     delete safeUser.password_hash;
 
@@ -238,11 +394,38 @@ router.get('/users/:id/details', requireAdmin, (req, res) => {
         active_orders: activeOrders.length,
         total_spent: totalSpent
       },
-      orders: userOrders
+      orders: userOrders,
+      points_history: pointsLedger,
+      qard_ledger: qardLedger
     });
   } catch (err) {
     console.error('Error fetching user details:', err);
     return res.status(500).json({ success: false, message: 'Server error fetching user details.' });
+  }
+});
+
+// ADMIN: UPDATE CUSTOMER QARD CREDIT LIMIT DIRECTLY
+router.put('/users/:id/qard-limit', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { credit_limit } = req.body;
+    const numLimit = Math.max(0, Number(credit_limit) || 0);
+    const updatedUser = db.updateUserQardLimit(id, numLimit);
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'গ্রাহক পাওয়া যায়নি।' });
+    }
+    const safeUser = { ...updatedUser };
+    delete safeUser.password_hash;
+    const io = req.app.get('io');
+    if (io) io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
+    return res.json({
+      success: true,
+      message: 'করযে হাসানা ক্রেডিট লিমিট সফলভাবে আপডেট করা হয়েছে!',
+      user: safeUser
+    });
+  } catch (err) {
+    console.error('Error updating qard limit:', err);
+    return res.status(500).json({ success: false, message: 'ক্রেডিট লিমিট আপডেট করতে সমস্যা হয়েছে।' });
   }
 });
 
@@ -302,16 +485,25 @@ router.post('/qard-applications', (req, res) => {
       payment_amount,
       transaction_id,
       sender_number,
-      sender_bank_name
+      sender_bank_name,
+      nid_front_photo,
+      nid_back_photo,
+      user_photo,
+      father_name,
+      mother_name,
+      emergency_phone,
+      occupation
     } = req.body;
-    if (!name || !phone || !nid_number) {
+    const finalName = (name || req.body.full_name || '').trim();
+    const finalPhone = (phone || req.body.customer_phone || '').trim();
+    if (!finalName || !finalPhone || !nid_number) {
       return res.status(400).json({ success: false, message: 'নাম, মোবাইল নম্বর ও জাতীয় পরিচয়পত্র (NID) নম্বর আবশ্যক।' });
     }
 
     const newApp = db.createQardApplication({
       user_id: user_id || null,
-      name: name.trim(),
-      phone: phone.trim(),
+      name: finalName,
+      phone: finalPhone,
       email: (email || '').trim(),
       nid_number: nid_number.trim(),
       address: (address || '').trim(),
@@ -322,8 +514,47 @@ router.post('/qard-applications', (req, res) => {
       payment_amount: Number(payment_amount) || 0,
       transaction_id: (transaction_id || '').trim().toUpperCase(),
       sender_number: (sender_number || '').trim(),
-      sender_bank_name: (sender_bank_name || '').trim()
+      sender_bank_name: (sender_bank_name || '').trim(),
+      nid_front_photo: nid_front_photo || null,
+      nid_back_photo: nid_back_photo || null,
+      user_photo: user_photo || null,
+      father_name: (father_name || '').trim(),
+      mother_name: (mother_name || '').trim(),
+      emergency_phone: (emergency_phone || '').trim(),
+      occupation: (occupation || '').trim()
     });
+
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'qard',
+      title: '🌸 নতুন করযে হাসানা আবেদন',
+      message: `${newApp.name} (${newApp.phone}) ৳${Number(newApp.requested_limit).toLocaleString()} লিমিটের আবেদন করেছেন।`,
+      link_tab: 'qard',
+      data: { app_id: newApp.id, name: newApp.name, phone: newApp.phone, requested_limit: newApp.requested_limit }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_notification', notif);
+      io.to('admin_channel').emit('new_qard_application', newApp);
+    }
+
+    // Send admin email alert
+    mailService.sendAdminAlert({
+      type: 'qard',
+      title: `নতুন করযে হাসানা আবেদন: ${newApp.name}`,
+      message: `${newApp.name} (${newApp.phone}) করযে হাসানা সুদমুক্ত ঋণ সুবিধার জন্য আবেদন করেছেন।`,
+      details: {
+        'আবেদনকারীর নাম': newApp.name,
+        'মোবাইল নম্বর': newApp.phone,
+        'ইমেইল': newApp.email || 'দেওয়া হয়নি',
+        'জাতীয় পরিচয়পত্র (NID)': newApp.nid_number,
+        'প্রার্থিত লিমিট': `৳${Number(newApp.requested_limit).toLocaleString()}`,
+        'পেশা': newApp.occupation || 'N/A',
+        'ঠিকানা': newApp.address || 'N/A'
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('Qard admin alert email error:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -338,7 +569,11 @@ router.post('/qard-applications', (req, res) => {
 router.put('/qard-applications/:id', requirePermission('customers.qard_applications'), (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, requested_limit } = req.body;
+    if (requested_limit) {
+      const app = (db.data.qard_applications || []).find(a => a.id === id);
+      if (app) app.requested_limit = Number(requested_limit);
+    }
     const result = db.updateQardApplicationStatus(id, status, notes);
     if (!result || !result.app) {
       return res.status(404).json({ success: false, message: 'Application not found.' });
@@ -361,9 +596,65 @@ router.put('/qard-applications/:id', requirePermission('customers.qard_applicati
       }
     }
 
+    // Customer email upon approval
+    if (status === 'Approved') {
+      mailService.sendQardApprovedEmail(user, updated)
+        .catch(err => console.error('Qard approval email error:', err.message));
+    }
+
     return res.json({ success: true, message: `Application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update application.' });
+  }
+});
+
+// EXTEND QARD REPAYMENT DUE DATE
+router.put('/users/:id/extend-qard-due', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { due_date, additional_months, notes } = req.body;
+    const updatedUser = db.extendUserQardDueDate(id, { due_date, additional_months, notes });
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'গ্রাহক অ্যাকাউন্ট পাওয়া যায়নি।' });
+    }
+    const safeUser = { ...updatedUser };
+    delete safeUser.password_hash;
+    const io = req.app.get('io');
+    if (io) io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
+
+    return res.json({
+      success: true,
+      message: 'করযে হাসানা পরিশোধের মেয়াদ সফলভাবে বাড়ানো হয়েছে!',
+      user: safeUser
+    });
+  } catch (err) {
+    console.error('Error extending qard due date:', err);
+    return res.status(500).json({ success: false, message: 'মেয়াদ বৃদ্ধি করতে সমস্যা হয়েছে।' });
+  }
+});
+
+// REPAY QARD DEBT (Manual or installment adjustment)
+router.put('/users/:id/repay-qard', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, notes } = req.body;
+    const updatedUser = db.repayUserQard(id, amount, notes);
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'গ্রাহক অ্যাকাউন্ট পাওয়া যায়নি।' });
+    }
+    const safeUser = { ...updatedUser };
+    delete safeUser.password_hash;
+    const io = req.app.get('io');
+    if (io) io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
+
+    return res.json({
+      success: true,
+      message: 'করযে হাসানা বকেয়া সফলভাবে সমন্বয় বা পরিশোধ করা হয়েছে!',
+      user: safeUser
+    });
+  } catch (err) {
+    console.error('Error repaying qard:', err);
+    return res.status(500).json({ success: false, message: 'ঋণ সমন্বয় করতে সমস্যা হয়েছে।' });
   }
 });
 
@@ -379,20 +670,86 @@ router.get('/loyalty-applications', requirePermission('customers.loyalty_applica
 
 router.post('/loyalty-applications', (req, res) => {
   try {
-    const { name, phone, email, address, city, nid_number, user_id } = req.body;
-    if (!name || !phone) {
+    const { 
+      name, 
+      phone, 
+      email, 
+      address, 
+      city, 
+      nid_number, 
+      user_id,
+      payment_method,
+      payment_amount,
+      transaction_id,
+      sender_number,
+      sender_bank_name,
+      nid_front_photo,
+      nid_back_photo,
+      user_photo,
+      father_name,
+      mother_name,
+      emergency_phone,
+      occupation
+    } = req.body;
+
+    const finalName = (name || req.body.full_name || '').trim();
+    const finalPhone = (phone || req.body.customer_phone || '').trim();
+    if (!finalName || !finalPhone) {
       return res.status(400).json({ success: false, message: 'নাম ও মোবাইল নম্বর আবশ্যক।' });
     }
 
     const newApp = db.createLoyaltyApplication({
       user_id: user_id || null,
-      name: name.trim(),
-      phone: phone.trim(),
+      name: finalName,
+      phone: finalPhone,
       email: (email || '').trim(),
       address: (address || '').trim(),
       city: (city || 'Dhaka').trim(),
-      nid_number: (nid_number || '').trim()
+      nid_number: (nid_number || '').trim(),
+      payment_method: (payment_method || 'mfs').trim(),
+      payment_amount: Number(payment_amount || req.body.fee_amount) || 0,
+      transaction_id: (transaction_id || req.body.fee_transaction_id || '').trim().toUpperCase(),
+      sender_number: (sender_number || req.body.fee_sender_number || '').trim(),
+      sender_bank_name: (sender_bank_name || '').trim(),
+      nid_front_photo: nid_front_photo || null,
+      nid_back_photo: nid_back_photo || null,
+      user_photo: user_photo || null,
+      father_name: (father_name || '').trim(),
+      mother_name: (mother_name || '').trim(),
+      emergency_phone: (emergency_phone || '').trim(),
+      occupation: (occupation || '').trim()
     });
+
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'loyalty',
+      title: '💎 নতুন ভিআইপি কার্ড আবেদন',
+      message: `${newApp.name} (${newApp.phone}) ভিআইপি মেম্বারশিপের জন্য আবেদন করেছেন।`,
+      link_tab: 'loyalty',
+      data: { app_id: newApp.id, name: newApp.name, phone: newApp.phone }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_notification', notif);
+      io.to('admin_channel').emit('new_loyalty_application', newApp);
+    }
+
+    // Send admin email alert
+    mailService.sendAdminAlert({
+      type: 'loyalty',
+      title: `নতুন ভিআইপি কার্ড আবেদন: ${newApp.name}`,
+      message: `${newApp.name} (${newApp.phone}) আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ কার্ডের জন্য আবেদন করেছেন।`,
+      details: {
+        'আবেদনকারীর নাম': newApp.name,
+        'মোবাইল নম্বর': newApp.phone,
+        'ইমেইল': newApp.email || 'দেওয়া হয়নি',
+        'জাতীয় পরিচয়পত্র': newApp.nid_number || 'N/A',
+        'জেলা/শহর': newApp.city || 'ঢাকা',
+        'ফি পরিশোধ ট্রানজেকশন': newApp.transaction_id || 'N/A'
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('VIP admin alert email error:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -430,6 +787,12 @@ router.put('/loyalty-applications/:id', requirePermission('customers.loyalty_app
       }
     }
 
+    // Customer email upon approval
+    if (status === 'Approved') {
+      mailService.sendVipApprovedEmail(user, updated)
+        .catch(err => console.error('VIP approval email error:', err.message));
+    }
+
     return res.json({ success: true, message: `Loyalty application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update loyalty application.' });
@@ -463,6 +826,35 @@ router.post('/account-appeals', (req, res) => {
       reason: reason.trim()
     });
 
+    // In-app admin notification for Main Admin & Sub-admins (PC + Mobile)
+    const notif = db.createAdminNotification({
+      type: 'appeal',
+      title: '🛡️ নতুন অ্যাকাউন্ট আপিল আবেদন',
+      message: `${appeal.user_name || appeal.user_phone || appeal.user_email} একটি রিভিউ আপিল আবেদন জমা দিয়েছেন।`,
+      link_tab: 'users',
+      data: { appeal_id: appeal.id, name: appeal.user_name, phone: appeal.user_phone }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_channel').emit('admin_notification', notif);
+      io.to('admin_channel').emit('new_account_appeal', appeal);
+    }
+
+    // Send admin email alert
+    mailService.sendAdminAlert({
+      type: 'appeal',
+      title: `নতুন অ্যাকাউন্ট আপিল: ${appeal.user_name || appeal.user_phone || appeal.user_email}`,
+      message: `একজন ব্যবহারকারী অ্যাকাউন্ট রিভিউ / সাসপেনশন সমাধানের জন্য আপিল আবেদন করেছেন।`,
+      details: {
+        'ব্যবহারকারী': appeal.user_name || 'N/A',
+        'মোবাইল নম্বর': appeal.user_phone || 'N/A',
+        'ইমেইল': appeal.user_email || 'N/A',
+        'আপিলের কারণ': appeal.reason
+      },
+      link: 'https://alansarbd.com/admin'
+    }).catch(err => console.error('Appeal admin alert email error:', err.message));
+
     return res.status(201).json({
       success: true,
       message: 'আপনার অ্যাকাউন্ট রিভিউ আবেদনটি গ্রহণ করা হয়েছে। অ্যাডমিন পর্যালোচনা করে দ্রুত ব্যবস্থা গ্রহণ করবে।',
@@ -481,6 +873,12 @@ router.put('/account-appeals/:id', requirePermission('customers.appeals'), (req,
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Appeal not found.' });
     }
+
+    if (status === 'Resolved' || status === 'Approved') {
+      mailService.sendAppealApprovedEmail(updated)
+        .catch(err => console.error('Appeal approval email error:', err.message));
+    }
+
     return res.json({ success: true, message: `Appeal marked as ${status}! User unblocked if resolved.`, appeal: updated });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update appeal.' });
@@ -661,6 +1059,85 @@ router.delete('/staff/:id', requireSuperAdmin, (req, res) => {
   } catch (err) {
     console.error('Error deleting staff user:', err);
     return res.status(500).json({ success: false, message: 'স্টাফ অ্যাকাউন্ট মুছে ফেলতে ব্যর্থ হয়েছে।' });
+  }
+});
+
+// ==========================================
+// ADMIN NOTIFICATION FEED & EMAIL TEST
+// (Accessible by Main Admin and Staff Admins)
+// ==========================================
+
+// GET all admin notifications
+router.get('/notifications', requireAdmin, (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 60;
+    const notifications = db.getAdminNotifications(limit);
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    return res.json({ success: true, notifications, unread_count: unreadCount });
+  } catch (err) {
+    console.error('Error fetching admin notifications:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch notifications.' });
+  }
+});
+
+// MARK single notification as read
+router.put('/notifications/:id/read', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = db.markAdminNotificationAsRead(id);
+    return res.json({ success });
+  } catch (err) {
+    return res.status(500).json({ success: false });
+  }
+});
+
+// MARK ALL notifications as read
+router.put('/notifications/mark-all-read', requireAdmin, (req, res) => {
+  try {
+    const count = db.markAllAdminNotificationsAsRead();
+    return res.json({ success: true, marked: count });
+  } catch (err) {
+    return res.status(500).json({ success: false });
+  }
+});
+
+// CLEAR ALL notifications
+router.delete('/notifications', requireAdmin, (req, res) => {
+  try {
+    db.clearAdminNotifications();
+    return res.json({ success: true, message: 'All notifications cleared.' });
+  } catch (err) {
+    return res.status(500).json({ success: false });
+  }
+});
+
+// TEST EMAIL DISPATCH (from Admin Settings)
+router.post('/test-email', requireAdmin, async (req, res) => {
+  try {
+    const { target_email } = req.body;
+    const siteSettings = db.getSiteSettings() || {};
+    const recipient = target_email || siteSettings.admin_notification_email || 'alansar.bd@hotmail.com';
+    
+    const result = await mailService.sendAdminAlert({
+      type: 'order',
+      title: '🧪 টেস্ট ইমেইল নোটিফিকেশন (Test Alert)',
+      message: 'আল আনসার অ্যাডমিন প্যানেল থেকে টেস্ট নোটিফিকেশন সফলভাবে পাঠানো হয়েছে। আপনার ইমেইল কনফিগারেশন সক্রিয় রয়েছে।',
+      details: {
+        'পরীক্ষামূলক তারিখ': new Date().toLocaleString('bn-BD'),
+        'প্রেরক স্টোর': siteSettings.store_name || 'AL ANSAR SUPER SHOP',
+        'স্ট্যাটাস': 'সক্রিয় ও কার্যকর'
+      },
+      link: 'https://alansarbd.com/admin'
+    });
+
+    return res.json({
+      success: true,
+      message: `টেস্ট ইমেইল সফলভাবে পাঠানো হয়েছে (${recipient})!`,
+      details: result
+    });
+  } catch (err) {
+    console.error('Error sending test email:', err);
+    return res.status(500).json({ success: false, message: 'টেস্ট ইমেইল পাঠাতে সমস্যা হয়েছে।' });
   }
 });
 

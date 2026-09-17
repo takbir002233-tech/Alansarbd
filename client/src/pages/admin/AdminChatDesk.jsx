@@ -11,12 +11,15 @@ import {
   Clock, 
   Phone, 
   Mail,
-  Headphones
+  Headphones,
+  Users
 } from 'lucide-react';
+import AdminTeamChat from './AdminTeamChat';
 
 export default function AdminChatDesk() {
   const { token, user } = useAuth();
   const { socket } = useSocket();
+  const [chatViewMode, setChatViewMode] = useState('customer'); // 'customer' | 'team'
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -128,7 +131,7 @@ export default function AdminChatDesk() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800 flex-shrink-0">
         <div>
-          <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Customer Support</span>
+          <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Customer Support & Team Desk</span>
           <h1 className="text-2xl font-black text-white mt-1">Live Chat Support Desk</h1>
           <p className="text-xs text-slate-400">Respond directly to online shoppers and review AI automated replies in real-time</p>
         </div>
@@ -139,8 +142,42 @@ export default function AdminChatDesk() {
         </div>
       </div>
 
-      {/* Main Split Chat Workspace */}
-      <div className="flex-1 min-h-0 bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl grid grid-cols-1 md:grid-cols-12">
+      {/* Mode Switcher Tabs */}
+      <div className="flex items-center space-x-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 w-fit flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setChatViewMode('customer')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${
+            chatViewMode === 'customer'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Headphones className="w-3.5 h-3.5" />
+          <span>গ্রাহক লাইভ সাপোর্ট ({conversations.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setChatViewMode('team')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer ${
+            chatViewMode === 'team'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md font-black'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5 text-amber-400" />
+          <span>👥 অ্যাডমিন টিম গ্রুপ চ্যাট</span>
+        </button>
+      </div>
+
+      {chatViewMode === 'team' ? (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <AdminTeamChat />
+        </div>
+      ) : (
+        /* Main Split Chat Workspace */
+        <div className="flex-1 min-h-0 bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl grid grid-cols-1 md:grid-cols-12">
         
         {/* Left Conversation List (4 cols) */}
         <div className="md:col-span-4 border-r border-slate-800 flex flex-col min-h-0 bg-slate-900/60">
@@ -305,6 +342,7 @@ export default function AdminChatDesk() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

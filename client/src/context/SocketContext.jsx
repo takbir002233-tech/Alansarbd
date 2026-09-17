@@ -30,19 +30,10 @@ export function SocketProvider({ children }) {
       setIsConnected(false);
     });
 
-    // Real-time new order notification for admins
+    // Real-time new order notification handler (Frontend floating toast disabled per user request)
     newSocket.on('new_order', (order) => {
-      console.log('🔔 New order received:', order);
-      setLiveNotifications(prev => [
-        {
-          id: Date.now(),
-          type: 'order',
-          title: `New Order Placed! (#${order.order_code})`,
-          message: `${order.customer_name} placed an order of ৳${order.total_amount.toLocaleString()} via ${order.payment_method.toUpperCase()}`,
-          time: new Date().toLocaleTimeString()
-        },
-        ...prev
-      ]);
+      console.log('🔔 New order received via socket:', order?.order_code);
+      // Floating notification toast turned off so user does not see popup on screen
     });
 
     // Real-time status update for customer

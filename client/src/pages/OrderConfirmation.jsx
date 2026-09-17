@@ -122,7 +122,7 @@ export default function OrderConfirmation({ order, onNavigate, onOpenInvoice }) 
           </button>
 
           <button
-            onClick={() => onNavigate('track-order', { code: order.order_code })}
+            onClick={() => onNavigate('track-order', { code: order.order_code, order })}
             className="py-3.5 px-5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-black rounded-2xl flex items-center justify-center space-x-2 shadow-lg shadow-amber-600/20 transition-all cursor-pointer"
           >
             <Clock className="w-4 h-4" />

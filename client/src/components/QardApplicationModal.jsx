@@ -8,7 +8,12 @@ import {
   ShieldCheck, 
   ArrowLeft, 
   FileText,
-  Check 
+  Check,
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  CreditCard,
+  User as UserIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -27,10 +32,13 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    nid_number: '',
+    nid_number: user?.nid_number || '',
     address: user?.address || '',
     requested_limit: '5000',
-    notes: ''
+    notes: '',
+    nid_front_photo: user?.nid_front_photo || '',
+    nid_back_photo: user?.nid_back_photo || '',
+    user_photo: user?.user_photo || ''
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +50,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
   const [reapplyMode, setReapplyMode] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Sync user details to form
+  // Sync user details and inherited NID photos to form
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -50,7 +58,11 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
         name: prev.name || user.name || '',
         phone: prev.phone || user.phone || '',
         email: prev.email || user.email || '',
-        address: prev.address || user.address || ''
+        nid_number: prev.nid_number || user.nid_number || '',
+        address: prev.address || user.address || '',
+        nid_front_photo: prev.nid_front_photo || user.nid_front_photo || '',
+        nid_back_photo: prev.nid_back_photo || user.nid_back_photo || '',
+        user_photo: prev.user_photo || user.user_photo || ''
       }));
     }
     // Cleanup any lingering global flag
@@ -91,6 +103,26 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
     }
   };
 
+  const handlePhotoUpload = (field, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      setErrorMsg('ছবির সাইজ সর্বোচ্চ ৬ মেগাবাইট হতে পারবে।');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFormData(prev => ({ ...prev, [field]: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const hasInheritedPhotos = Boolean(
+    (formData.nid_front_photo || user?.nid_front_photo) &&
+    (formData.nid_back_photo || user?.nid_back_photo) &&
+    (formData.user_photo || user?.user_photo)
+  );
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -116,10 +148,10 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
       setErrorMsg('আপনার বর্তমান ও স্থায়ী ঠিকানা প্রদান করুন।');
       return;
     }
-
-    const applicationFee = (siteSettings?.qard_application_fee !== undefined && siteSettings?.qard_application_fee !== null && siteSettings?.qard_application_fee !== '')
-      ? Number(siteSettings.qard_application_fee)
-      : 50;
+    if (!formData.nid_front_photo || !formData.nid_back_photo || !formData.user_photo) {
+      setErrorMsg('এনআইডি কার্ডের সামনের ও পেছনের ছবি এবং আপনার নিজের ছবি যুক্ত করা আবশ্যক।');
+      return;
+    }
 
     setShowPaymentModal(true);
   };
@@ -425,7 +457,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
                       বর্তমান বাসস্থান ও স্থায়ী ঠিকানা <span className="text-rose-500">*</span>
                     </label>
                     <textarea
-                      rows={2}
+                      rows={1.5}
                       required
                       placeholder="বাসা নম্বর, রোড নম্বর, এলাকা, থানা, জেলা..."
                       value={formData.address}
@@ -434,18 +466,101 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
                     />
                   </div>
 
-                  {/* Commitment Notes */}
-                  <div className="sm:col-span-2">
-                    <label className="font-bold text-slate-700 block mb-0.5 text-[11px]">
-                      পরিশোধের অঙ্গীকার বার্তা (ঐচ্ছিক)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="যেমন: পরবর্তী মাসের ১০ তারিখের মধ্যে পরিশোধ করব।"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-medium text-xs text-slate-900"
-                    />
+                  {/* Photo Uploads: NID Front, NID Back, Selfie */}
+                  <div className="sm:col-span-2 space-y-1.5 pt-1 border-t border-emerald-100">
+                    <div className="flex items-center justify-between">
+                      <label className="font-black text-slate-800 text-[11px] flex items-center space-x-1">
+                        <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>প্রয়োজনীয় ৩টি ছবি (এনআইডি উভয় পিঠ ও নিজের ছবি)</span>
+                        <span className="text-rose-500">*</span>
+                      </label>
+                      {hasInheritedPhotos && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full flex items-center space-x-1 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>পূর্বের তথ্য সংরক্ষিত</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* NID Front Slot */}
+                      <div className="relative border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.nid_front_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.nid_front_photo} 
+                              alt="NID Front" 
+                              className="w-full h-11 object-cover rounded-lg border border-emerald-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-emerald-900 mt-1 truncate max-w-full">
+                              ✓ এনআইডি (সামনে)
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('nid_front_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <CreditCard className="w-5 h-5 text-emerald-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">এনআইডি (সামনে)</span>
+                            <span className="text-[9px] text-emerald-600 font-semibold">+ ছবি দিন</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('nid_front_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* NID Back Slot */}
+                      <div className="relative border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.nid_back_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.nid_back_photo} 
+                              alt="NID Back" 
+                              className="w-full h-11 object-cover rounded-lg border border-emerald-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-emerald-900 mt-1 truncate max-w-full">
+                              ✓ এনআইডি (পেছনে)
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('nid_back_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <CreditCard className="w-5 h-5 text-emerald-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">এনআইডি (পেছনে)</span>
+                            <span className="text-[9px] text-emerald-600 font-semibold">+ ছবি দিন</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('nid_back_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* User Photo Slot */}
+                      <div className="relative border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/80 rounded-xl p-1.5 text-center flex flex-col items-center justify-center min-h-[78px] transition-colors">
+                        {formData.user_photo ? (
+                          <div className="relative w-full h-full flex flex-col items-center">
+                            <img 
+                              src={formData.user_photo} 
+                              alt="Applicant Selfie" 
+                              className="w-full h-11 object-cover rounded-lg border border-emerald-300 shadow-2xs" 
+                            />
+                            <span className="text-[10px] font-bold text-emerald-900 mt-1 truncate max-w-full">
+                              ✓ নিজের ছবি
+                            </span>
+                            <label className="absolute inset-0 opacity-0 cursor-pointer">
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload('user_photo', e)} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full py-1">
+                            <UserIcon className="w-5 h-5 text-emerald-600 mb-0.5" />
+                            <span className="text-[10px] font-black text-slate-700">নিজের ছবি</span>
+                            <span className="text-[9px] text-emerald-600 font-semibold">+ সেলফি/ছবি</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload('user_photo', e)} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                 </div>
@@ -505,7 +620,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
                     <span>
                       {submitting 
                         ? 'আবেদন প্রসেস হচ্ছে...' 
-                        : `পরবর্তী ধাপ: আবেদন ফি পরিশোধ (৳${toBn(siteSettings?.qard_application_fee ?? 50)}) →`}
+                        : `পরবর্তী ধাপ: আবেদন ফি পরিশোধ (৳${toBn(siteSettings?.qard_application_fee ?? 300)}) →`}
                     </span>
                   </button>
                 </div>
@@ -624,7 +739,7 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
         <PaymentGatewayModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-          totalAmount={Number(siteSettings?.qard_application_fee ?? 50)}
+          totalAmount={Number(siteSettings?.qard_application_fee ?? 300)}
           deliveryFee={0}
           siteSettings={siteSettings}
           user={user}
