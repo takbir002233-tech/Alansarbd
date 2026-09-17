@@ -13,8 +13,14 @@ function enrichProduct(p) {
   const stockNum = Number(p.stock) !== undefined ? Number(p.stock) : 0;
   const isOutOfStock = stockNum <= 0;
 
+  // Ensure clean, deduplicated images array starting with thumbnail
+  const rawImages = Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []);
+  const combinedImages = [p.thumbnail, ...rawImages].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+
   return {
     ...p,
+    thumbnail: p.thumbnail || combinedImages[0] || '',
+    images: combinedImages.length ? combinedImages : (p.thumbnail ? [p.thumbnail] : []),
     delivery_time: p.delivery_time || '১-২ ঘণ্টা',
     stock: stockNum,
     is_out_of_stock: isOutOfStock,
@@ -231,6 +237,9 @@ router.put('/:id', requirePermission('products.edit'), (req, res) => {
     if (updates.is_free_delivery !== undefined) updates.is_free_delivery = !!updates.is_free_delivery;
     if (updates.delivery_time !== undefined) {
       updates.delivery_time = updates.delivery_time.trim() || '১-২ ঘণ্টা';
+    }
+    if (updates.images !== undefined && Array.isArray(updates.images)) {
+      updates.images = updates.images.filter(Boolean);
     }
 
     const updated = db.updateProduct(id, updates);

@@ -599,8 +599,8 @@ export default function AdminDashboard({ onNavigateTab, onOpenInvoice }) {
         </div>
       </div>
 
-      {/* INTERACTIVE FULFILLMENT STATUS BREAKDOWN CARDS (LIVE BUTTONS) */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+      {/* INTERACTIVE FULFILLMENT STATUS BREAKDOWN CARDS (LIVE BUTTONS - STICKY) */}
+      <div className="sticky top-[88px] md:top-[68px] z-20 bg-slate-900/95 backdrop-blur-md border border-slate-800 p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-2xl space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center">
@@ -624,7 +624,7 @@ export default function AdminDashboard({ onNavigateTab, onOpenInvoice }) {
         </div>
 
         {/* 5 Interactive Status Cards (Starting strictly from Confirmed) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
           {statusCardConfig.map((item) => {
             const isSelected = expandedStatus?.toLowerCase() === item.id.toLowerCase();
             return (
@@ -632,7 +632,7 @@ export default function AdminDashboard({ onNavigateTab, onOpenInvoice }) {
                 key={item.id}
                 type="button"
                 onClick={() => handleToggleStatus(item.id)}
-                className={`p-3.5 rounded-2xl border text-center transition-all duration-200 cursor-pointer transform hover:-translate-y-0.5 relative group ${
+                className={`p-3 rounded-xl sm:rounded-2xl border text-center transition-all duration-200 cursor-pointer transform hover:-translate-y-0.5 relative group ${
                   isSelected ? item.bgActive : item.bgNormal
                 }`}
               >
@@ -647,21 +647,22 @@ export default function AdminDashboard({ onNavigateTab, onOpenInvoice }) {
                 <span className="text-xs text-slate-400 font-medium block text-[10px]">
                   {item.labelEn}
                 </span>
-                <span className="text-2xl font-black text-white mt-1 block font-mono">
+                <span className="text-xl sm:text-2xl font-black text-white mt-1 block font-mono">
                   {item.count}
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] text-slate-400 block mt-0.5 sm:mt-1 opacity-70 group-hover:opacity-100 transition-opacity">
                   {isSelected ? 'তালিকা দেখাচ্ছে ▼' : 'ক্লিক করে দেখুন ➔'}
                 </span>
               </button>
             );
           })}
         </div>
+      </div>
 
-        {/* DEDICATED FULFILLMENT STATUS ORDERS LIST (OPENS WHEN STATUS BUTTON IS CLICKED) */}
-        {expandedStatus && (
-          <div className="mt-5 pt-5 border-t border-slate-800 animate-in fade-in space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* DEDICATED FULFILLMENT STATUS ORDERS LIST (OPENS WHEN STATUS BUTTON IS CLICKED) */}
+      {expandedStatus && (
+        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl animate-in fade-in space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                 <h4 className="text-sm font-black text-white uppercase tracking-wider">
@@ -914,7 +915,6 @@ export default function AdminDashboard({ onNavigateTab, onOpenInvoice }) {
             )}
           </div>
         )}
-      </div>
 
       {/* RECENT ORDERS QUEUE (SEPARATE & PERMANENT) + LOW STOCK WARNINGS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

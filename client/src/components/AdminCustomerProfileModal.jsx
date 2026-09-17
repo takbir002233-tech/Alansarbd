@@ -19,12 +19,13 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Edit2,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import useScrollLock from '../hooks/useScrollLock';
 
-export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpenInvoice }) {
+export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpenInvoice, onDeleteUser }) {
   const { token } = useAuth();
   useScrollLock(isOpen);
 
@@ -33,11 +34,18 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
   const [loading, setLoading] = useState(false);
   const [zoomPhoto, setZoomPhoto] = useState(null);
 
-  // Inline Qard Limit Adjustment State
+  // Inline Qard Limit & % Adjustment State
   const [isEditingLimit, setIsEditingLimit] = useState(false);
   const [editLimitVal, setEditLimitVal] = useState('');
+  const [editMaxPctVal, setEditMaxPctVal] = useState(10);
   const [savingLimit, setSavingLimit] = useState(false);
   const [limitSuccess, setLimitSuccess] = useState(false);
+
+  // Inline VIP Points Limit Adjustment State
+  const [isEditingPointsLimit, setIsEditingPointsLimit] = useState(false);
+  const [editPointsLimitVal, setEditPointsLimitVal] = useState('');
+  const [savingPointsLimit, setSavingPointsLimit] = useState(false);
+  const [pointsLimitSuccess, setPointsLimitSuccess] = useState(false);
 
   const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   const toBn = (n) => String(n ?? '').replace(/[0-9]/g, d => bengaliDigits[+d]);
@@ -46,6 +54,7 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
     if (!isOpen || !user?.id) {
       setDetails(null);
       setIsEditingLimit(false);
+      setIsEditingPointsLimit(false);
       setActiveSubTab('overview');
       return;
     }
@@ -59,6 +68,8 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
         if (data.success) {
           setDetails(data);
           setEditLimitVal(data.qard_ledger?.credit_limit || data.user?.qard_credit_limit || 5000);
+          setEditMaxPctVal(data.user?.qard_max_percentage || 10);
+          setEditPointsLimitVal(data.user?.loyalty_points_limit ?? '');
         }
       } catch (err) {
         console.error('Error fetching user details:', err);
@@ -108,7 +119,10 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
         },
-        body: JSON.stringify({ credit_limit: Number(editLimitVal) })
+        body: JSON.stringify({ 
+          credit_limit: Number(editLimitVal),
+          max_percentage: Number(editMaxPctVal)
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -116,7 +130,11 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
         setIsEditingLimit(false);
         setDetails(prev => ({
           ...prev,
-          user: { ...prev?.user, qard_credit_limit: Number(editLimitVal) },
+          user: { 
+            ...prev?.user, 
+            qard_credit_limit: Number(editLimitVal),
+            qard_max_percentage: Number(editMaxPctVal)
+          },
           qard_ledger: { ...prev?.qard_ledger, credit_limit: Number(editLimitVal) }
         }));
         setTimeout(() => setLimitSuccess(false), 2500);
@@ -125,6 +143,40 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
       console.error('Error saving qard limit:', err);
     } finally {
       setSavingLimit(false);
+    }
+  };
+
+  const handleSavePointsLimit = async (e) => {
+    e?.preventDefault();
+    setSavingPointsLimit(true);
+    try {
+      const res = await fetch(`/api/admin/users/${currentUser.id}/loyalty-limit`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
+        },
+        body: JSON.stringify({ 
+          points_limit: editPointsLimitVal === '' ? null : Number(editPointsLimitVal) 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPointsLimitSuccess(true);
+        setIsEditingPointsLimit(false);
+        setDetails(prev => ({
+          ...prev,
+          user: { 
+            ...prev?.user, 
+            loyalty_points_limit: editPointsLimitVal === '' ? null : Number(editPointsLimitVal) 
+          }
+        }));
+        setTimeout(() => setPointsLimitSuccess(false), 2500);
+      }
+    } catch (err) {
+      console.error('Error saving loyalty points limit:', err);
+    } finally {
+      setSavingPointsLimit(false);
     }
   };
 
@@ -508,6 +560,63 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
                 </div>
               </div>
 
+              {/* VIP Points Redeem Limit Control Card */}
+              <div className="p-3 bg-slate-950 rounded-2xl border border-amber-500/30 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">অর্ডার প্রতি সর্বোচ্চ পয়েন্ট ব্যবহার (Redeem Limit)</span>
+                  <p className="text-sm font-black text-amber-300 font-mono mt-0.5">
+                    {currentUser.loyalty_points_limit ? `${toBn(currentUser.loyalty_points_limit)} পয়েন্ট` : 'আনলিমিটেড (কোনো সীমা নেই)'}
+                  </p>
+                  <p className="text-[10px] text-slate-500">গ্রাহক প্রতি অর্ডারে এই পয়েন্টের বেশি ছাড় ব্যবহার করতে পারবেন না।</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingPointsLimit(!isEditingPointsLimit)}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold rounded-xl border border-slate-700 flex items-center space-x-1 cursor-pointer"
+                >
+                  <Edit2 className="w-3 h-3" />
+                  <span>লিমিট পরিবর্তন</span>
+                </button>
+              </div>
+
+              {/* Inline Points Limit Edit Form */}
+              {isEditingPointsLimit && (
+                <form onSubmit={handleSavePointsLimit} className="p-3 bg-slate-950 rounded-2xl border border-amber-500/50 space-y-2 animate-in zoom-in-95">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1">
+                      <label className="text-[10px] font-bold text-amber-400 block mb-0.5">প্রতি অর্ডারে সর্বোচ্চ পয়েন্ট লিমিট (খালি রাখলে আনলিমিটেড)</label>
+                      <input
+                        type="number"
+                        value={editPointsLimitVal}
+                        onChange={(e) => setEditPointsLimitVal(e.target.value)}
+                        placeholder="যেমন: ৫০০ (বা খালি রাখুন)"
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-1.5 pt-4">
+                      <button
+                        type="submit"
+                        disabled={savingPointsLimit}
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition-colors cursor-pointer flex items-center space-x-1"
+                      >
+                        {savingPointsLimit ? <span className="animate-spin">⏳</span> : <Check className="w-3.5 h-3.5" />}
+                        <span>সংরক্ষণ</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPointsLimit(false)}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                    </div>
+                  </div>
+                  {pointsLimitSuccess && (
+                    <p className="text-[11px] text-emerald-400 font-bold">✓ পয়েন্ট লিমিট সফলভাবে সংরক্ষিত হয়েছে!</p>
+                  )}
+                </form>
+              )}
+
               {/* Itemized Points Timeline */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -589,7 +698,9 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
                   <span className="text-xl font-black text-emerald-400 font-mono block">
                     ৳{toBn(Number(qardLedger.credit_limit || 5000).toLocaleString())}
                   </span>
-                  <span className="text-[10px] text-slate-500 block">০% সুদমুক্ত ধার</span>
+                  <span className="text-[10px] text-emerald-400 font-bold block">
+                    সর্বোচ্চ {toBn(currentUser.qard_max_percentage || 10)}% ধার (০% সুদ)
+                  </span>
                 </div>
 
                 {/* 2. Total Borrowed */}
@@ -626,33 +737,50 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
 
               {/* Admin Inline Limit Editor Form */}
               {isEditingLimit && (
-                <form onSubmit={handleSaveQardLimit} className="p-3 bg-slate-950 rounded-2xl border border-amber-500/40 flex items-center space-x-2 animate-in zoom-in-95">
-                  <div className="flex-1">
-                    <label className="text-[10px] font-bold text-amber-400 block mb-0.5">নতুন করযে হাসানা ক্রেডিট লিমিট (টাকা)</label>
-                    <input
-                      type="number"
-                      value={editLimitVal}
-                      onChange={(e) => setEditLimitVal(e.target.value)}
-                      placeholder="টাকার লিমিট লিখুন (যেমন: ১০০০০)"
-                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-amber-500"
-                    />
+                <form onSubmit={handleSaveQardLimit} className="p-3 bg-slate-950 rounded-2xl border border-amber-500/40 space-y-2 animate-in zoom-in-95">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-amber-400 block mb-0.5">নতুন করযে হাসানা ক্রেডিট লিমিট (টাকা)</label>
+                      <input
+                        type="number"
+                        value={editLimitVal}
+                        onChange={(e) => setEditLimitVal(e.target.value)}
+                        placeholder="টাকার লিমিট লিখুন (যেমন: ১০০০০)"
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-amber-400 block mb-0.5">সর্বোচ্চ ধারের হার (%)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={editMaxPctVal}
+                        onChange={(e) => setEditMaxPctVal(e.target.value)}
+                        placeholder="যেমন: ১০ বা ১৫ বা ২০"
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1.5 pt-4">
-                    <button
-                      type="submit"
-                      disabled={savingLimit}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center space-x-1"
-                    >
-                      {savingLimit ? <span className="animate-spin">⏳</span> : <Check className="w-3.5 h-3.5" />}
-                      <span>সংরক্ষণ</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingLimit(false)}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      বাতিল
-                    </button>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-slate-400">এই ইউজার চেকআউটে এই সর্বোচ্চ % পর্যন্ত করযে হাসানা ধার নিতে পারবেন।</span>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="submit"
+                        disabled={savingLimit}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center space-x-1"
+                      >
+                        {savingLimit ? <span className="animate-spin">⏳</span> : <Check className="w-3.5 h-3.5" />}
+                        <span>সংরক্ষণ</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingLimit(false)}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
@@ -771,7 +899,20 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
         </div>
 
         {/* Footer */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 flex justify-end">
+        <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+          <div>
+            {onDeleteUser && (
+              <button 
+                type="button"
+                onClick={() => onDeleteUser(currentUser)}
+                className="px-3.5 py-2 bg-rose-950/50 hover:bg-rose-900/80 text-rose-300 font-bold text-xs rounded-xl border border-rose-800/50 cursor-pointer transition-colors flex items-center space-x-1.5"
+                title="এই গ্রাহকের অ্যাকাউন্ট ও কাস্টমার আইডি স্থায়ীভাবে ডিলিট করুন"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>গ্রাহক আইডি ডিলিট</span>
+              </button>
+            )}
+          </div>
           <button 
             type="button"
             onClick={onClose}

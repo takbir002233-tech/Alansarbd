@@ -9,7 +9,9 @@ import {
   ArrowLeft, 
   Check, 
   CreditCard,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import LuxuryLoyaltyCard from '../components/LuxuryLoyaltyCard';
 import LoyaltyApplicationModal from '../components/LoyaltyApplicationModal';
@@ -22,14 +24,30 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [appliedStatus, setAppliedStatus] = useState(null);
+  const [reapplyMode, setReapplyMode] = useState(false);
 
   const hasApprovedCard = user?.loyalty_card_status === 'Approved' || 
                          user?.loyalty_card_status === 'approved' || 
                          user?.loyalty_card_approved === true;
 
-  const isPendingCard = user?.loyalty_card_status === 'Pending' || 
-                        user?.loyalty_card_status === 'pending' ||
-                        appliedStatus === 'Pending';
+  const isNeedsCorrection = Boolean(
+    user?.loyalty_card_status && user.loyalty_card_status.toLowerCase() === 'needs correction'
+  );
+
+  const isDeclinedCard = Boolean(
+    user?.loyalty_card_status && (user.loyalty_card_status.toLowerCase() === 'declined' || user.loyalty_card_status.toLowerCase() === 'rejected')
+  );
+
+  const isPendingCard = Boolean(
+    !isNeedsCorrection && !isDeclinedCard && (
+      user?.loyalty_card_status === 'Pending' || 
+      user?.loyalty_card_status === 'pending' ||
+      appliedStatus === 'Pending'
+    )
+  );
+
+  const adminNotice = user?.loyalty_admin_message || user?.loyalty_decline_reason;
+  const showNoticeBanner = Boolean(!hasApprovedCard && (isNeedsCorrection || isDeclinedCard || adminNotice));
 
   const handleApplyClick = () => {
     setModalOpen(true);
@@ -68,6 +86,75 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
           <span>আল আনসার প্রিভিলেজ ক্লাব মেম্বারশিপ</span>
         </span>
       </div>
+
+      {/* High-visibility Admin Notice Banner (If declined or needs correction or admin note sent) */}
+      {showNoticeBanner && (
+        <div className={`p-4 sm:p-5 rounded-3xl border-2 shadow-xl animate-in slide-in-from-top-3 duration-300 relative overflow-hidden ${
+          isDeclinedCard 
+            ? 'bg-gradient-to-r from-rose-950/90 via-slate-950 to-rose-950/80 border-rose-500/60 text-white'
+            : 'bg-gradient-to-r from-amber-950/90 via-slate-950 to-amber-950/80 border-amber-500/60 text-white'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start space-x-3.5">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-md ${
+                isDeclinedCard 
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' 
+                  : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+              }`}>
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    isDeclinedCard 
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  }`}>
+                    {isDeclinedCard ? 'আবেদন বাতিল / প্রত্যাখ্যাত' : 'সংশোধন প্রয়োজন (Action Required)'}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    AL ANSAR VIP DESK
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-black text-white">
+                  {isDeclinedCard ? 'ভিআইপি মেম্বারশিপ আবেদন অনুমোদিত হয়নি' : 'ভিআইপি মেম্বারশিপ আবেদনে তথ্য সংশোধনের নির্দেশনা'}
+                </h2>
+                
+                {/* Admin Note Box */}
+                <div className="mt-2 p-3 bg-slate-950/90 rounded-2xl border border-slate-800 text-xs sm:text-sm font-medium text-slate-200">
+                  <span className="text-[10px] font-black text-amber-400 block uppercase tracking-wider mb-0.5">
+                    📢 অ্যাডমিনের বার্তা (Admin Note):
+                  </span>
+                  <p className="leading-relaxed text-amber-100 font-semibold">
+                    “{adminNotice || (isDeclinedCard ? 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আবেদনটি অনুমোদন করা সম্ভব হয়নি।' : 'প্রদত্ত তথ্য যাচাই করে সংশোধন সম্পন্ন করুন।')}”
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-400 pt-1">
+                  * সঠিক TrxID বা প্রয়োজনীয় তথ্য দিয়ে এখনই পুনরায় আবেদন সম্পন্ন করুন।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex sm:flex-col items-center sm:items-end justify-end flex-shrink-0 pt-2 sm:pt-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setReapplyMode(true);
+                  setModalOpen(true);
+                }}
+                className={`w-full sm:w-auto px-5 py-3 rounded-2xl font-black text-xs shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center justify-center space-x-2 ${
+                  isDeclinedCard
+                    ? 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white border border-rose-400/50 shadow-rose-950/40'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border border-amber-300 shadow-amber-950/40'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>তথ্য সংশোধন / পুনরায় আবেদন করুন</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top Banner: Ultra-compact when card is approved, full wireframe before receiving card */}
       {hasApprovedCard ? (
@@ -271,10 +358,20 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-          {isPendingCard ? (
+          {isNeedsCorrection ? (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center space-x-2 text-xs text-amber-950 font-bold">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>আবেদনে তথ্য সংশোধন প্রয়োজন: {adminNotice || 'সঠিক তথ্য দিয়ে পুনরায় জমা দিন'}</span>
+            </div>
+          ) : isPendingCard ? (
             <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center space-x-2 text-xs text-amber-950 font-bold">
               <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
               <span>আপনার লয়ালটি কার্ড আবেদনটি পর্যালোচনায় রয়েছে। দ্রুত অনুমোদন সম্পন্ন হবে।</span>
+            </div>
+          ) : isDeclinedCard ? (
+            <div className="p-3 bg-rose-50 border border-rose-300 rounded-2xl flex items-center space-x-2 text-xs text-rose-900 font-bold">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <span>পূর্ববর্তী আবেদনটি অনুমোদিত হয়নি: {adminNotice || 'সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন'}</span>
             </div>
           ) : (
             <div className="text-xs text-slate-500 font-medium hidden sm:block">
@@ -284,7 +381,10 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
 
           <div className="flex justify-end w-full sm:w-auto">
             <button
-              onClick={handleApplyClick}
+              onClick={() => {
+                if (isNeedsCorrection || isDeclinedCard) setReapplyMode(true);
+                handleApplyClick();
+              }}
               className="w-full sm:w-auto inline-flex items-center justify-end space-x-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-6 py-3 rounded-2xl border-2 border-amber-400 shadow-lg shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer group"
             >
               <div className="w-9 h-9 rounded-xl bg-slate-950/10 text-slate-950 flex items-center justify-center border border-slate-950/20 group-hover:scale-105 transition-transform flex-shrink-0">
@@ -294,10 +394,10 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
               {/* Dual Language Stacked Text */}
               <div className="text-right">
                 <span className="block text-xs sm:text-sm font-black text-slate-950 leading-tight">
-                  {siteSettings?.loyalty_button_bn || 'লয়ালটি কার্ডের জন্য আবেদন করুন'}
+                  {(isNeedsCorrection || isDeclinedCard) ? 'তথ্য সংশোধন / পুনরায় আবেদন করুন' : (siteSettings?.loyalty_button_bn || 'লয়ালটি কার্ডের জন্য আবেদন করুন')}
                 </span>
                 <span className="block text-[10px] sm:text-[11px] text-slate-900 font-mono font-bold tracking-wide">
-                  {siteSettings?.loyalty_button_en || 'Apply for Loyalty Card'}
+                  {(isNeedsCorrection || isDeclinedCard) ? 'Update & Re-apply' : (siteSettings?.loyalty_button_en || 'Apply for Loyalty Card')}
                 </span>
               </div>
             </button>
@@ -334,7 +434,11 @@ export default function LoyaltyCard({ onNavigate, onBack }) {
       <LoyaltyApplicationModal
         onNavigate={onNavigate}
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        initialReapply={reapplyMode}
+        onClose={() => {
+          setModalOpen(false);
+          setReapplyMode(false);
+        }}
         onSuccess={handleApplySuccess}
       />
 

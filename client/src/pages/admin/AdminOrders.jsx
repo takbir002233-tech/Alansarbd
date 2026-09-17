@@ -921,67 +921,70 @@ export default function AdminOrders({ initialStatus = 'all', onOpenInvoice }) {
         </div>
       </div>
 
-      {/* DEDICATED HIGH-VISIBILITY STATUS TABS */}
-      <div className="bg-slate-900 p-2 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-1.5">
-        {tabConfigs.map(tab => {
-          const isActive = statusFilter.toLowerCase() === tab.id.toLowerCase();
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-                isActive
-                  ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-600/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <span>{tab.labelBn}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
-                isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {tab.labelEn}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filters & Search Bar */}
-      <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="w-full md:w-96 relative">
-          <input
-            type="text"
-            placeholder="অর্ডার কোড, পণ্যের নাম, গ্রাহক, ফোন, জেলা বা TrxID লিখে খুঁজুন..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-800 text-xs rounded-xl border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+      {/* STICKY STATUS TABS & FILTERS BAR */}
+      <div className="sticky top-[88px] md:top-[68px] z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800 p-3 rounded-2xl shadow-2xl space-y-2.5 mb-6">
+        {/* DEDICATED HIGH-VISIBILITY STATUS TABS */}
+        <div className="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/80 flex items-center overflow-x-auto no-scrollbar gap-1.5">
+          {tabConfigs.map(tab => {
+            const isActive = statusFilter.toLowerCase() === tab.id.toLowerCase();
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 font-black shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <span>{tab.labelBn}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                  isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {tab.labelEn}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center space-x-3 w-full md:w-auto overflow-x-auto">
-          {/* Payment Method Selector */}
-          <div className="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-            <span className="text-slate-400">Payment:</span>
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs"
-            >
-              <option value="all" className="bg-slate-800 text-white">All Payments</option>
-              <option value="bkash" className="bg-slate-800 text-white">bKash</option>
-              <option value="nagad" className="bg-slate-800 text-white">Nagad</option>
-              <option value="rocket" className="bg-slate-800 text-white">Rocket</option>
-              <option value="upay" className="bg-slate-800 text-white">Upay</option>
-              <option value="cellfin" className="bg-slate-800 text-white">Cellfin</option>
-              <option value="bank" className="bg-slate-800 text-white">Bank Transfer</option>
-              <option value="cod" className="bg-slate-800 text-white">Cash on Delivery</option>
-            </select>
+        {/* Filters & Search Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2.5">
+          <div className="w-full md:w-96 relative">
+            <input
+              type="text"
+              placeholder="অর্ডার কোড, পণ্যের নাম, গ্রাহক, ফোন, জেলা বা TrxID লিখে খুঁজুন..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-900 text-xs rounded-xl border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 font-medium"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           </div>
 
-          <span className="text-xs font-bold text-slate-400">
-            মোট অর্ডার: <strong className="text-white">{orders.length}</strong>
-          </span>
+          <div className="flex items-center space-x-3 w-full md:w-auto overflow-x-auto no-scrollbar">
+            {/* Payment Method Selector */}
+            <div className="flex items-center space-x-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700 text-xs shrink-0">
+              <span className="text-slate-400">Payment:</span>
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs"
+              >
+                <option value="all" className="bg-slate-800 text-white">All Payments</option>
+                <option value="bkash" className="bg-slate-800 text-white">bKash</option>
+                <option value="nagad" className="bg-slate-800 text-white">Nagad</option>
+                <option value="rocket" className="bg-slate-800 text-white">Rocket</option>
+                <option value="upay" className="bg-slate-800 text-white">Upay</option>
+                <option value="cellfin" className="bg-slate-800 text-white">Cellfin</option>
+                <option value="bank" className="bg-slate-800 text-white">Bank Transfer</option>
+                <option value="cod" className="bg-slate-800 text-white">Cash on Delivery</option>
+              </select>
+            </div>
+
+            <span className="text-xs font-bold text-slate-400 shrink-0">
+              মোট অর্ডার: <strong className="text-white">{orders.length}</strong>
+            </span>
+          </div>
         </div>
       </div>
 

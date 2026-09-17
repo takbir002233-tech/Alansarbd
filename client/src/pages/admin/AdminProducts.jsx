@@ -47,6 +47,7 @@ export default function AdminProducts() {
     discount_price: '',
     stock: '15',
     thumbnail: '',
+    images: [],
     description: '',
     delivery_time: '১-২ ঘণ্টা',
     is_featured: false,
@@ -100,6 +101,7 @@ export default function AdminProducts() {
       discount_price: '',
       stock: '20',
       thumbnail: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
+      images: [],
       description: '',
       delivery_time: '১-২ ঘণ্টা',
       is_featured: false,
@@ -119,6 +121,9 @@ export default function AdminProducts() {
 
   const handleOpenEditModal = (prod) => {
     setEditingProduct(prod);
+    const rawImages = Array.isArray(prod.images) ? prod.images : [];
+    const extraImages = rawImages.filter(img => img && img !== prod.thumbnail);
+
     setFormData({
       title: prod.title || '',
       category_id: prod.category_id || 'cat_perfumes',
@@ -128,6 +133,7 @@ export default function AdminProducts() {
       stock: String(prod.stock !== undefined ? prod.stock : 15),
       delivery_time: prod.delivery_time || '১-২ ঘণ্টা',
       thumbnail: prod.thumbnail || '',
+      images: extraImages,
       description: prod.description || '',
       is_featured: !!prod.is_featured,
       is_free_delivery: !!prod.is_free_delivery,
@@ -273,6 +279,29 @@ export default function AdminProducts() {
     setSpecsList(prev => [...prev, { key: '', value: '' }]);
   };
 
+  // Slide Images Handlers
+  const handleAddSlideImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      images: [...(prev.images || []), '']
+    }));
+  };
+
+  const handleUpdateSlideImage = (index, url) => {
+    setFormData(prev => {
+      const updated = [...(prev.images || [])];
+      updated[index] = url;
+      return { ...prev, images: updated };
+    });
+  };
+
+  const handleRemoveSlideImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, idx) => idx !== index)
+    }));
+  };
+
   const handleSpecChange = (index, field, val) => {
     setSpecsList(prev => {
       const updated = [...prev];
@@ -347,11 +376,22 @@ export default function AdminProducts() {
       }
     });
 
+    // Clean and combine thumbnail + extra slide images
+    const cleanExtraImages = (formData.images || [])
+      .map(s => (s || '').trim())
+      .filter(Boolean);
+    const combinedImages = [
+      formData.thumbnail ? formData.thumbnail.trim() : '',
+      ...cleanExtraImages
+    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+
     setActionLoading(true);
 
     try {
       const payload = {
         ...formData,
+        thumbnail: formData.thumbnail ? formData.thumbnail.trim() : (combinedImages[0] || ''),
+        images: combinedImages,
         specs: finalSpecs
       };
 
@@ -531,11 +571,21 @@ export default function AdminProducts() {
                       {/* Product Info & Name */}
                       <td className="p-4 align-middle">
                         <div className="flex items-center space-x-3 max-w-sm">
-                          <img
-                            src={prod.thumbnail}
-                            alt={prod.title}
-                            className="w-12 h-12 rounded-2xl object-cover bg-slate-800 border border-slate-700 flex-shrink-0"
-                          />
+                          <div className="relative flex-shrink-0">
+                            <img
+                              src={prod.thumbnail}
+                              alt={prod.title}
+                              className="w-12 h-12 rounded-2xl object-cover bg-slate-800 border border-slate-700"
+                            />
+                            {prod.images && prod.images.length > 1 && (
+                              <span 
+                                title={`${prod.images.length}টি ছবি স্লাইডারে রয়েছে`}
+                                className="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1 py-0.5 rounded-full border border-slate-900 shadow-xs"
+                              >
+                                +{prod.images.length - 1}
+                              </span>
+                            )}
+                          </div>
                           <div className="min-w-0">
                             <h4 className="font-bold text-white text-xs truncate">{prod.title}</h4>
                             <div className="flex items-center space-x-2 mt-1">
@@ -971,11 +1021,82 @@ export default function AdminProducts() {
 
               {/* 🖼️ 5. DUAL PHOTO UPLOAD OR DIRECT LINK */}
               <ImageUploadField
-                label="Product Photo / Image (ছবি আপলোড বা লিংক) *"
+                label="Product Main Photo / Thumbnail (মূল কাভার ছবি) *"
                 value={formData.thumbnail}
                 onChange={(url) => setFormData({ ...formData, thumbnail: url })}
                 helper="Browse photo file from your device OR paste direct image link."
               />
+
+              {/* 🖼️ 5.1 ADDITIONAL SLIDE PHOTOS (অতিরিক্ত স্লাইড ছবি / গ্যালারি) */}
+              <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-700">
+                  <div>
+                    <label className="text-xs font-bold text-amber-400 flex items-center">
+                      <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
+                      অতিরিক্ত স্লাইড ছবি (Additional Slide Photos / Gallery)
+                    </label>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      প্রোডাক্ট পেইজে মূল ছবির পাশে স্লাইড আকারে এই ছবিগুলো দেখা যাবে
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddSlideImage}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl flex items-center space-x-1 transition-all shadow-sm cursor-pointer self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ স্লাইড ছবি যোগ করুন</span>
+                  </button>
+                </div>
+
+                {/* List of Additional Slide Photos */}
+                {formData.images && formData.images.length > 0 ? (
+                  <div className="space-y-3 pt-1">
+                    {formData.images.map((imgUrl, idx) => (
+                      <div 
+                        key={idx} 
+                        className="p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 space-y-2 relative"
+                      >
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                          <span className="text-[11px] font-bold text-amber-300 flex items-center space-x-1.5">
+                            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-[10px] font-mono">
+                              #{idx + 1}
+                            </span>
+                            <span>স্লাইড ছবি {idx + 1}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSlideImage(idx)}
+                            className="px-2 py-1 bg-rose-900/40 hover:bg-rose-800 text-rose-300 hover:text-white rounded-lg text-xs font-medium flex items-center space-x-1 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>মুছুন</span>
+                          </button>
+                        </div>
+
+                        <ImageUploadField
+                          label={`স্লাইড ছবি ${idx + 1} (ফাইল আপলোড বা লিংক)`}
+                          value={imgUrl}
+                          onChange={(url) => handleUpdateSlideImage(idx, url)}
+                          helper="কম্পিউটার/ফোন থেকে ছবি আপলোড করুন অথবা ডিরেক্ট ইমেজ লিংক পেস্ট করুন"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-4 text-center border border-dashed border-slate-700 rounded-xl bg-slate-900/40">
+                    <p className="text-xs text-slate-400">এখনও কোনো অতিরিক্ত স্লাইড ছবি যোগ করা হয়নি।</p>
+                    <button
+                      type="button"
+                      onClick={handleAddSlideImage}
+                      className="mt-1.5 inline-flex items-center space-x-1 text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>এখানে ক্লিক করে স্লাইড ছবি যোগ করুন</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* 📝 6. PRODUCT DESCRIPTION */}
               <div>

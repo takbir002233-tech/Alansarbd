@@ -134,6 +134,24 @@ router.post('/', (req, res) => {
           message: `আপনার পূর্বের করযে হাসানা ঋণ বকেয়া রয়েছে (৳${existingUser.qard_unpaid_amount})। পূর্বের ঋণ সম্পূর্ণ পরিশোধ না করা পর্যন্ত নতুন করযে হাসানা নির্বাচন করা যাবে না। অনুগ্রহ করে সাধারণ পেমেন্টে অর্ডার সম্পন্ন করুন।`
         });
       }
+      const userMaxPct = Number(existingUser.qard_max_percentage) > 0 ? Number(existingUser.qard_max_percentage) : (Number(siteSettings.qard_max_percentage) || 10);
+      const reqPct = Number(req.body.qard_percentage) || 0;
+      if (reqPct > userMaxPct) {
+        return res.status(400).json({
+          success: false,
+          message: `আপনার অ্যাকাউন্টের জন্য করযে হাসানা সর্বোচ্চ ${userMaxPct}% পর্যন্ত অনুমোদিত।`
+        });
+      }
+    }
+
+    const pointsUsed = Number(req.body.points_used) || 0;
+    if (pointsUsed > 0 && existingUser && Number(existingUser.loyalty_points_limit) > 0) {
+      if (pointsUsed > Number(existingUser.loyalty_points_limit)) {
+        return res.status(400).json({
+          success: false,
+          message: `আপনার অ্যাকাউন্টে প্রতি অর্ডারে সর্বোচ্চ ${existingUser.loyalty_points_limit} পয়েন্ট রিডিম করার সীমা নির্ধারিত রয়েছে।`
+        });
+      }
     }
 
     const orderCode = 'ANSAR-' + Math.floor(100000 + Math.random() * 900000);

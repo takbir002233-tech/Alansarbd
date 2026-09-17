@@ -171,8 +171,11 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
 
   // Loyalty Points Calculations
   const userPoints = Number(user?.loyalty_points) || 0;
+  const userPointsLimit = (user?.loyalty_points_limit !== undefined && user?.loyalty_points_limit !== null && user?.loyalty_points_limit !== '')
+    ? Number(user.loyalty_points_limit)
+    : Infinity;
   const pointValueBdt = Number(siteSettings?.reward_point_value_bdt) || 1;
-  const maxRedeemablePoints = Math.min(userPoints, Math.floor(orderTotalBeforePoints / pointValueBdt));
+  const maxRedeemablePoints = Math.min(userPoints, Math.floor(orderTotalBeforePoints / pointValueBdt), userPointsLimit);
 
   useEffect(() => {
     if (maxRedeemablePoints > 0 && pointsToRedeem === 0) {
@@ -194,8 +197,10 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
   );
   const qardEligible = isQardApproved && !hasUnpaidQard;
 
-  const maxQardPercent = Number(siteSettings?.qard_max_percentage) || 10;
-  const effectiveQardPercent = (useQard && qardEligible) ? Math.min(Math.max(Number(qardPercentage) || 10, 1), maxQardPercent) : 0;
+  const maxQardPercent = Number(user?.qard_max_percentage) > 0
+    ? Number(user.qard_max_percentage)
+    : (Number(siteSettings?.qard_max_percentage) || 10);
+  const effectiveQardPercent = (useQard && qardEligible) ? Math.min(Math.max(Number(qardPercentage) || Math.min(10, maxQardPercent), 1), maxQardPercent) : 0;
   
   const subtotalAfterVoucherAndPoints = Math.max(0, orderTotalBeforePoints - pointsDiscount);
   const qardDeferredAmount = effectiveQardPercent > 0 ? Math.round(subtotalAfterVoucherAndPoints * (effectiveQardPercent / 100)) : 0;
@@ -757,11 +762,16 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
                     <div className="flex items-center space-x-2">
                       <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
                       <div>
-                        <div className="flex items-center space-x-1.5">
+                        <div className="flex items-center space-x-1.5 flex-wrap">
                           <span className="font-bold text-slate-900 text-xs">ভিআইপি রিওয়ার্ড পয়েন্ট:</span>
                           <span className="font-mono font-black text-amber-900 bg-amber-200/70 px-1.5 py-0.5 rounded text-[11px]">
                             {toBengaliDigits(userPoints)} পয়েন্ট
                           </span>
+                          {userPointsLimit < Infinity && (
+                            <span className="text-[10px] text-amber-900 font-bold bg-amber-200/80 px-1.5 py-0.2 rounded border border-amber-300">
+                              সীমা: {toBengaliDigits(userPointsLimit)}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-slate-500">১ পয়েন্ট = ১ টাকা নগদ ছাড়</p>
                       </div>
@@ -858,7 +868,7 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
                       <HandHeart className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                       <div>
                         <span className="font-bold text-slate-900 text-xs">করযে হাসানা (সুদমুক্ত বাকিতে ক্রয়)</span>
-                        <p className="text-[10px] text-emerald-700">সর্বোচ্চ ১০% পর্যন্ত ধার • ৬ মাসের মধ্যে পরিশোধযোগ্য (০% সুদ)</p>
+                        <p className="text-[10px] text-emerald-700">সর্বোচ্চ {toBengaliDigits(maxQardPercent)}% পর্যন্ত ধার • ৬ মাসের মধ্যে পরিশোধযোগ্য (০% সুদ)</p>
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -876,8 +886,8 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
                     <div className="pt-2 border-t border-emerald-200/80 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-slate-700">ধারের হার নির্বাচন:</span>
-                        <div className="flex items-center space-x-1">
-                          {[2, 5, 8, 10].map(pct => (
+                        <div className="flex items-center space-x-1 flex-wrap gap-y-1">
+                          {[2, 5, 8, 10, 15, 20, 25, 30].filter(pct => pct <= maxQardPercent).map(pct => (
                             <button
                               key={pct}
                               type="button"

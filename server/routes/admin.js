@@ -195,6 +195,14 @@ router.put('/users/:id', requirePermission('customers.edit_limit'), (req, res) =
       updates.qard_available_credit = Number(qard_credit_limit);
     }
     if (qard_status) updates.qard_status = qard_status;
+    if (req.body.qard_max_percentage !== undefined && req.body.qard_max_percentage !== '') {
+      updates.qard_max_percentage = Math.max(1, Number(req.body.qard_max_percentage) || 10);
+    }
+    if (req.body.loyalty_points_limit !== undefined) {
+      updates.loyalty_points_limit = (req.body.loyalty_points_limit !== '' && req.body.loyalty_points_limit !== null)
+        ? Math.max(0, Number(req.body.loyalty_points_limit))
+        : null;
+    }
     if (req.body.has_unpaid_qard !== undefined) updates.has_unpaid_qard = Boolean(req.body.has_unpaid_qard);
     if (req.body.qard_unpaid_amount !== undefined) updates.qard_unpaid_amount = Number(req.body.qard_unpaid_amount);
 
@@ -404,13 +412,14 @@ router.get('/users/:id/details', requireAdmin, (req, res) => {
   }
 });
 
-// ADMIN: UPDATE CUSTOMER QARD CREDIT LIMIT DIRECTLY
+// ADMIN: UPDATE CUSTOMER QARD CREDIT LIMIT & MAX PERCENTAGE DIRECTLY
 router.put('/users/:id/qard-limit', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
-    const { credit_limit } = req.body;
-    const numLimit = Math.max(0, Number(credit_limit) || 0);
-    const updatedUser = db.updateUserQardLimit(id, numLimit);
+    const { credit_limit, max_percentage } = req.body;
+    const numLimit = credit_limit !== undefined ? Math.max(0, Number(credit_limit) || 0) : undefined;
+    const numPct = max_percentage !== undefined ? Math.max(1, Number(max_percentage) || 10) : undefined;
+    const updatedUser = db.updateUserQardLimit(id, numLimit, numPct);
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: 'গ্রাহক পাওয়া যায়নি।' });
     }
@@ -420,12 +429,43 @@ router.put('/users/:id/qard-limit', requireAdmin, (req, res) => {
     if (io) io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
     return res.json({
       success: true,
-      message: 'করযে হাসানা ক্রেডিট লিমিট সফলভাবে আপডেট করা হয়েছে!',
+      message: 'করযে হাসানা লিমিট ও সর্বোচ্চ হার (%) সফলভাবে আপডেট করা হয়েছে!',
       user: safeUser
     });
   } catch (err) {
     console.error('Error updating qard limit:', err);
     return res.status(500).json({ success: false, message: 'ক্রেডিট লিমিট আপডেট করতে সমস্যা হয়েছে।' });
+  }
+});
+
+// ADMIN: UPDATE CUSTOMER VIP LOYALTY POINTS REDEEM LIMIT DIRECTLY
+router.put('/users/:id/loyalty-limit', requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { points_limit, loyalty_points } = req.body;
+    let updatedUser = db.getUserById(id);
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'গ্রাহক পাওয়া যায়নি।' });
+    }
+    if (points_limit !== undefined) {
+      updatedUser = db.updateUserLoyaltyLimit(id, points_limit);
+    }
+    if (loyalty_points !== undefined) {
+      updatedUser.loyalty_points = Math.max(0, Number(loyalty_points) || 0);
+      db.save();
+    }
+    const safeUser = { ...updatedUser };
+    delete safeUser.password_hash;
+    const io = req.app.get('io');
+    if (io) io.emit('user_updated', { userId: updatedUser.id, user: safeUser });
+    return res.json({
+      success: true,
+      message: 'ভিআইপি লয়ালটি পয়েন্ট লিমিট সফলভাবে আপডেট করা হয়েছে!',
+      user: safeUser
+    });
+  } catch (err) {
+    console.error('Error updating loyalty limit:', err);
+    return res.status(500).json({ success: false, message: 'পয়েন্ট লিমিট আপডেট করতে সমস্যা হয়েছে।' });
   }
 });
 
@@ -441,6 +481,18 @@ router.delete('/users/:id', requirePermission('customers.delete'), (req, res) =>
 
     if (user.role === 'admin' && !user.is_staff) {
       return res.status(400).json({ success: false, message: 'Administrator accounts cannot be deleted.' });
+    }
+
+    const unpaidDebt = Number(user.qard_unpaid_amount || 0);
+    const force = req.body?.force === true || req.query?.force === 'true';
+
+    if (unpaidDebt > 0 && !force) {
+      return res.status(400).json({
+        success: false,
+        has_debt: true,
+        debt_amount: unpaidDebt,
+        message: `সতর্কতা: এই গ্রাহকের ৳${unpaidDebt.toLocaleString()} টাকা করযে হাসানা ঋণ বকেয়া রয়েছে! ঋণ থাকা অবস্থায় অ্যাকাউন্ট ডিলিট করতে সম্মতি (force) প্রয়োজন।`
+      });
     }
 
     const success = db.deleteUser(id);
@@ -569,10 +621,12 @@ router.post('/qard-applications', (req, res) => {
 router.put('/qard-applications/:id', requirePermission('customers.qard_applications'), (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, requested_limit } = req.body;
-    if (requested_limit) {
-      const app = (db.data.qard_applications || []).find(a => a.id === id);
-      if (app) app.requested_limit = Number(requested_limit);
+    const { status, notes, requested_limit, max_percentage, qard_max_percentage } = req.body;
+    const effMaxPct = max_percentage !== undefined ? max_percentage : qard_max_percentage;
+    const app = (db.data.qard_applications || []).find(a => a.id === id);
+    if (app) {
+      if (requested_limit) app.requested_limit = Number(requested_limit);
+      if (effMaxPct !== undefined && effMaxPct !== null) app.max_percentage = Math.max(1, Number(effMaxPct) || 10);
     }
     const result = db.updateQardApplicationStatus(id, status, notes);
     if (!result || !result.app) {
@@ -596,15 +650,63 @@ router.put('/qard-applications/:id', requirePermission('customers.qard_applicati
       }
     }
 
-    // Customer email upon approval
+    // Customer email upon approval or decline
     if (status === 'Approved') {
       mailService.sendQardApprovedEmail(user, updated)
         .catch(err => console.error('Qard approval email error:', err.message));
+    } else if (status === 'Declined' || status === 'Rejected') {
+      mailService.sendQardNoticeEmail(user, updated, notes, true)
+        .catch(err => console.error('Qard decline email error:', err.message));
     }
 
     return res.json({ success: true, message: `Application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update application.' });
+  }
+});
+
+// SEND NOTICE / CORRECTION INSTRUCTION TO QARD APPLICANT
+router.post('/qard-applications/:id/send-notice', requirePermission('customers.qard_applications'), (req, res) => {
+  try {
+    const { id } = req.params;
+    const { note, status = 'Needs Correction' } = req.body;
+    if (!note || !note.trim()) {
+      return res.status(400).json({ success: false, message: 'গ্রাহককে পাঠানোর জন্য নোটিশ বা কারণ লিখুন।' });
+    }
+    const result = db.sendQardNotice(id, note.trim(), status);
+    if (!result || !result.app) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+    const { app: updated, user } = result;
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('qard_status_updated', {
+        id: updated.id,
+        user_id: updated.user_id,
+        phone: updated.phone,
+        status: updated.status,
+        notes: updated.admin_notes
+      });
+      if (user) {
+        const safeUser = { ...user };
+        delete safeUser.password_hash;
+        io.emit('user_updated', { userId: user.id, user: safeUser });
+      }
+    }
+
+    // Send customer notice email with direct correction instructions
+    mailService.sendQardNoticeEmail(user, updated, note.trim(), false)
+      .catch(err => console.error('Qard notice email error:', err.message));
+
+    return res.json({ 
+      success: true, 
+      message: 'গ্রাহকের নিকট নোটিশ বার্তা সফলভাবে পাঠানো হয়েছে!', 
+      application: updated, 
+      user 
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to send notice.' });
   }
 });
 
@@ -764,7 +866,12 @@ router.post('/loyalty-applications', (req, res) => {
 router.put('/loyalty-applications/:id', requirePermission('customers.loyalty_applications'), (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, points_limit, loyalty_points_limit } = req.body;
+    const effLimit = points_limit !== undefined ? points_limit : loyalty_points_limit;
+    const app = (db.data.loyalty_applications || []).find(a => a.id === id);
+    if (app && effLimit !== undefined) {
+      app.points_limit = (effLimit !== null && effLimit !== '') ? Number(effLimit) : null;
+    }
     const result = db.updateLoyaltyApplicationStatus(id, status, notes);
     if (!result || !result.app) {
       return res.status(404).json({ success: false, message: 'Loyalty application not found.' });
@@ -787,15 +894,63 @@ router.put('/loyalty-applications/:id', requirePermission('customers.loyalty_app
       }
     }
 
-    // Customer email upon approval
+    // Customer email upon approval or decline
     if (status === 'Approved') {
       mailService.sendVipApprovedEmail(user, updated)
         .catch(err => console.error('VIP approval email error:', err.message));
+    } else if (status === 'Declined' || status === 'Rejected') {
+      mailService.sendVipNoticeEmail(user, updated, notes, true)
+        .catch(err => console.error('VIP decline email error:', err.message));
     }
 
     return res.json({ success: true, message: `Loyalty application status updated to ${status}!`, application: updated, user });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update loyalty application.' });
+  }
+});
+
+// SEND NOTICE / CORRECTION INSTRUCTION TO VIP LOYALTY APPLICANT
+router.post('/loyalty-applications/:id/send-notice', requirePermission('customers.loyalty_applications'), (req, res) => {
+  try {
+    const { id } = req.params;
+    const { note, status = 'Needs Correction' } = req.body;
+    if (!note || !note.trim()) {
+      return res.status(400).json({ success: false, message: 'গ্রাহককে পাঠানোর জন্য নোটিশ বা কারণ লিখুন।' });
+    }
+    const result = db.sendLoyaltyNotice(id, note.trim(), status);
+    if (!result || !result.app) {
+      return res.status(404).json({ success: false, message: 'Loyalty application not found.' });
+    }
+    const { app: updated, user } = result;
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('loyalty_status_updated', {
+        id: updated.id,
+        user_id: updated.user_id,
+        phone: updated.phone,
+        status: updated.status,
+        notes: updated.admin_notes
+      });
+      if (user) {
+        const safeUser = { ...user };
+        delete safeUser.password_hash;
+        io.emit('user_updated', { userId: user.id, user: safeUser });
+      }
+    }
+
+    // Send customer notice email with direct correction instructions
+    mailService.sendVipNoticeEmail(user, updated, note.trim(), false)
+      .catch(err => console.error('VIP notice email error:', err.message));
+
+    return res.json({ 
+      success: true, 
+      message: 'গ্রাহকের নিকট নোটিশ বার্তা সফলভাবে পাঠানো হয়েছে!', 
+      application: updated, 
+      user 
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to send notice.' });
   }
 });
 

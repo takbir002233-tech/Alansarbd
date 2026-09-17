@@ -458,6 +458,130 @@ async function sendAppealApprovedEmail(appeal) {
   });
 }
 
+/**
+ * 7. SEND QARD-E-HASANA NOTICE / CORRECTION / DECLINE EMAIL
+ */
+async function sendQardNoticeEmail(user, application = {}, note = '', isDeclined = false) {
+  const email = user?.email || application?.email;
+  if (!email) return;
+  const { fromAddress } = getMailAddresses();
+
+  const userName = user?.name || application?.name || 'সম্মানিত গ্রাহক';
+  const badge = isDeclined ? '⚠️ করযে হাসানা আবেদন আপডেট' : '📢 করযে হাসানা সংশোধনের নির্দেশনা';
+  const headerTitle = isDeclined 
+    ? 'করযে হাসানা আবেদন সংক্রান্ত গুরুত্বপূর্ণ নোটিশ' 
+    : 'করযে হাসানা আবেদন: তথ্য সংশোধনের নির্দেশনা';
+  const borderColor = isDeclined ? '#e11d48' : '#d97706';
+  const bgColor = isDeclined ? 'rgba(225, 29, 72, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+  const textColor = isDeclined ? '#fb7185' : '#fbbf24';
+
+  const innerHtml = `
+    <h2 style="color: ${textColor}; font-size: 18px; margin-top: 0;">
+      ${isDeclined ? '⚠️ করযে হাসানা আবেদনটি অনুমোদিত হয়নি' : '📢 আপনার করযে হাসানা আবেদনে তথ্য সংশোধন প্রয়োজন'}
+    </h2>
+    <p style="color: #cbd5e1; line-height: 1.6;">
+      সম্মানিত <strong>${userName}</strong>, আপনার প্রেরিত করযে হাসানা সুদমুক্ত ঋণ আবেদনটি আমাদের ভেরিফিকেশন টিম কর্তৃক পর্যালোচনা করা হয়েছে।
+    </p>
+    <div class="card" style="border-color: ${borderColor}; background: ${bgColor}; padding: 18px;">
+      <div style="font-weight: bold; color: ${textColor}; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">
+        ${isDeclined ? '❌ বাতিলের কারণ (Admin Note)' : '📝 অ্যাডমিনের বার্তা ও নির্দেশিকা'}
+      </div>
+      <p style="color: #f8fafc; font-size: 14px; line-height: 1.6; margin: 0; font-weight: 500;">
+        ${note || (isDeclined ? 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আবেদনটি অনুমোদন করা সম্ভব হয়নি।' : 'প্রদত্ত তথ্য বা ডকুমেন্টে অসঙ্গতি পাওয়া গেছে। অনুগ্রহ করে তথ্য সংশোধন করে পুনরায় জমা দিন।')}
+      </p>
+    </div>
+    <div class="card">
+      <div style="font-weight: bold; color: #94a3b8; font-size: 12px; text-transform: uppercase; margin-bottom: 8px;">আবেদনের সংক্ষিপ্ত তথ্য</div>
+      <table class="table-data">
+        <tr><td class="label">আবেদনকারীর নাম:</td><td class="value">${userName}</td></tr>
+        <tr><td class="label">মোবাইল নম্বর:</td><td class="value">${user?.phone || application?.phone || 'N/A'}</td></tr>
+        <tr><td class="label">প্রার্থিত লিমিট:</td><td class="value" style="color: #34d399;">৳${Number(application?.requested_limit || user?.qard_credit_limit || 5000).toLocaleString()}</td></tr>
+        <tr><td class="label">বর্তমান অবস্থা:</td><td class="value" style="color: ${textColor}; font-weight: bold;">${isDeclined ? 'বাতিল (Declined)' : 'সংশোধন প্রয়োজন (Needs Correction)'}</td></tr>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: #94a3b8; line-height: 1.6;">
+      আপনি ওয়েবসাইট বা অ্যাপে লগইন করে <strong>‘করযে হাসানা’</strong> মেনুতে গিয়ে অ্যাডমিনের বিস্তারিত বার্তা দেখতে পারবেন এবং <strong>‘তথ্য সংশোধন / পুনরায় আবেদন করুন’</strong> বাটনে ক্লিক করে সঠিক তথ্য ও ডকুমেন্ট জমা দিতে পারবেন।
+    </p>
+  `;
+
+  const html = wrapHtmlContent(
+    headerTitle, 
+    badge, 
+    innerHtml, 
+    'তথ্য সংশোধন ও আবেদন দেখুন', 
+    'https://alansarbd.com/qard-hasana'
+  );
+
+  return sendSafeMail({
+    from: fromAddress,
+    to: email,
+    subject: `${isDeclined ? '⚠️' : '📢'} করযে হাসানা আবেদন সংক্রান্ত নোটিশ (AL ANSAR)`,
+    html
+  });
+}
+
+/**
+ * 8. SEND VIP LOYALTY CARD NOTICE / CORRECTION / DECLINE EMAIL
+ */
+async function sendVipNoticeEmail(user, application = {}, note = '', isDeclined = false) {
+  const email = user?.email || application?.email;
+  if (!email) return;
+  const { fromAddress } = getMailAddresses();
+
+  const userName = user?.name || application?.name || 'সম্মানিত গ্রাহক';
+  const badge = isDeclined ? '⚠️ ভিআইপি মেম্বারশিপ আবেদন আপডেট' : '📢 ভিআইপি মেম্বারশিপ সংশোধনের নির্দেশনা';
+  const headerTitle = isDeclined 
+    ? 'ভিআইপি মেম্বারশিপ আবেদন সংক্রান্ত নোটিশ' 
+    : 'ভিআইপি মেম্বারশিপ আবেদন: তথ্য সংশোধনের নির্দেশনা';
+  const borderColor = isDeclined ? '#e11d48' : '#d97706';
+  const bgColor = isDeclined ? 'rgba(225, 29, 72, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+  const textColor = isDeclined ? '#fb7185' : '#fbbf24';
+
+  const innerHtml = `
+    <h2 style="color: ${textColor}; font-size: 18px; margin-top: 0;">
+      ${isDeclined ? '⚠️ আপনার ভিআইপি মেম্বারশিপ আবেদনটি অনুমোদিত হয়নি' : '📢 আপনার ভিআইপি মেম্বারশিপ আবেদনে তথ্য সংশোধন প্রয়োজন'}
+    </h2>
+    <p style="color: #cbd5e1; line-height: 1.6;">
+      সম্মানিত <strong>${userName}</strong>, আপনার প্রেরিত আল আনসার রয়্যাল ভিআইপি মেম্বারশিপ আবেদনটি আমাদের ভেরিফিকেশন টিম কর্তৃক পর্যালোচনা করা হয়েছে।
+    </p>
+    <div class="card" style="border-color: ${borderColor}; background: ${bgColor}; padding: 18px;">
+      <div style="font-weight: bold; color: ${textColor}; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">
+        ${isDeclined ? '❌ বাতিলের কারণ (Admin Note)' : '📝 অ্যাডমিনের বার্তা ও নির্দেশিকা'}
+      </div>
+      <p style="color: #f8fafc; font-size: 14px; line-height: 1.6; margin: 0; font-weight: 500;">
+        ${note || (isDeclined ? 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আবেদনটি অনুমোদন করা সম্ভব হয়নি।' : 'প্রদত্ত ফি TrxID বা তথ্যে অসঙ্গতি রয়েছে। অনুগ্রহ করে সঠিক তথ্য প্রদান করুন।')}
+      </p>
+    </div>
+    <div class="card">
+      <div style="font-weight: bold; color: #94a3b8; font-size: 12px; text-transform: uppercase; margin-bottom: 8px;">আবেদনের সংক্ষিপ্ত তথ্য</div>
+      <table class="table-data">
+        <tr><td class="label">আবেদনকারীর নাম:</td><td class="value">${userName}</td></tr>
+        <tr><td class="label">মোবাইল নম্বর:</td><td class="value">${user?.phone || application?.phone || 'N/A'}</td></tr>
+        ${application?.transaction_id ? `<tr><td class="label">প্রদত্ত TrxID:</td><td class="value" style="font-family: monospace;">${application.transaction_id}</td></tr>` : ''}
+        <tr><td class="label">বর্তমান অবস্থা:</td><td class="value" style="color: ${textColor}; font-weight: bold;">${isDeclined ? 'বাতিল (Declined)' : 'সংশোধন প্রয়োজন (Needs Correction)'}</td></tr>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: #94a3b8; line-height: 1.6;">
+      আপনি ওয়েবসাইট বা অ্যাপে লগইন করে <strong>‘ভিআইপি কার্ড’</strong> মেনুতে গিয়ে অ্যাডমিনের বিস্তারিত বার্তা দেখতে পারবেন এবং <strong>‘তথ্য সংশোধন / পুনরায় আবেদন করুন’</strong> বাটনে ক্লিক করে সঠিক তথ্য জমা দিতে পারবেন।
+    </p>
+  `;
+
+  const html = wrapHtmlContent(
+    headerTitle, 
+    badge, 
+    innerHtml, 
+    'তথ্য সংশোধন ও আবেদন দেখুন', 
+    'https://alansarbd.com/loyalty-card'
+  );
+
+  return sendSafeMail({
+    from: fromAddress,
+    to: email,
+    subject: `${isDeclined ? '⚠️' : '📢'} ভিআইপি কার্ড আবেদন সংক্রান্ত নোটিশ (AL ANSAR)`,
+    html
+  });
+}
+
 module.exports = {
   sendAdminAlert,
   sendWelcomeEmail,
@@ -465,6 +589,8 @@ module.exports = {
   sendVipApprovedEmail,
   sendRefundApprovedEmail,
   sendAppealApprovedEmail,
+  sendQardNoticeEmail,
+  sendVipNoticeEmail,
   sendSafeMail,
   testSmtpAndSend
 };

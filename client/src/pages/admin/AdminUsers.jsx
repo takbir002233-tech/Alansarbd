@@ -12,6 +12,7 @@ import {
   Mail, 
   ShoppingBag, 
   AlertCircle,
+  AlertTriangle,
   X,
   HandHeart,
   FileText,
@@ -54,13 +55,11 @@ export default function AdminUsers() {
   useEffect(() => {
     const allowed = [];
     if (canViewUsers) allowed.push('users');
-    if (canViewQard) allowed.push('qard');
-    if (canViewLoyalty) allowed.push('loyalty');
     if (canViewAppeals) allowed.push('appeals');
     if (allowed.length > 0 && !allowed.includes(activeTab)) {
       setActiveTab(allowed[0]);
     }
-  }, [canViewUsers, canViewQard, canViewLoyalty, canViewAppeals, activeTab]);
+  }, [canViewUsers, canViewAppeals, activeTab]);
 
   // User Profile & Activity View Modal
   const [viewingUser, setViewingUser] = useState(null);
@@ -69,7 +68,15 @@ export default function AdminUsers() {
 
   // User Deletion Modal State
   const [deletingUser, setDeletingUser] = useState(null);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingLoading, setDeletingLoading] = useState(false);
+
+  const handleOpenDeleteModal = (user) => {
+    setDeletingUser(user);
+    setDeleteConfirmed(false);
+    setDeleteConfirmText('');
+  };
   
   // User Edit Modal
   const [editingUser, setEditingUser] = useState(null);
@@ -210,7 +217,9 @@ export default function AdminUsers() {
       loyalty_points: user.loyalty_points || 100,
       loyalty_tier: user.loyalty_tier || 'Gold VIP',
       loyalty_card_number: user.loyalty_card_number || `ANSAR-VIP-${user.id.slice(0, 4)}-2026`,
-      qard_credit_limit: user.qard_credit_limit || 5000
+      loyalty_points_limit: user.loyalty_points_limit ?? '',
+      qard_credit_limit: user.qard_credit_limit || 5000,
+      qard_max_percentage: user.qard_max_percentage || 10
     });
   };
 
@@ -268,9 +277,13 @@ export default function AdminUsers() {
     if (!deletingUser) return;
     setDeletingLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
+      const res = await fetch(`/api/admin/users/${deletingUser.id}?force=true`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ force: true })
       });
       const data = await res.json();
       if (data.success) {
@@ -279,7 +292,25 @@ export default function AdminUsers() {
         if (viewingUser && viewingUser.id === deletingUser.id) {
           setViewingUser(null);
         }
+        if (deletingUser.appealId) {
+          try {
+            await fetch(`/api/admin/account-appeals/${deletingUser.appealId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ 
+                status: 'Resolved', 
+                admin_reply: 'অ্যাকাউন্ট বাতিলের আবেদন অনুমোদিত হয়েছে এবং অ্যাকাউন্টটি সম্পূর্ণ মুছে ফেলা হয়েছে।'
+              })
+            });
+          } catch (e) {}
+        }
         setDeletingUser(null);
+        setDeleteConfirmed(false);
+        setDeleteConfirmText('');
+        fetchData();
       } else {
         alert(data.message || 'অ্যাকাউন্ট ডিলিট করতে সমস্যা হয়েছে');
       }
@@ -355,6 +386,18 @@ export default function AdminUsers() {
   // Account Appeal Status Update (1-click Unblock or Approve Deletion)
   const handleAppealStatusUpdate = async (appealId, status, userName, isDeletionAppeal = false) => {
     if (isDeletionAppeal && status === 'Resolved') {
+      const currentAppeal = appeals.find(a => a.id === appealId);
+      if (currentAppeal) {
+        const targetUser = users.find(u => 
+          (currentAppeal.user_id && u.id === currentAppeal.user_id) || 
+          (u.email && currentAppeal.user_email && u.email.toLowerCase() === currentAppeal.user_email.toLowerCase()) || 
+          (u.phone && currentAppeal.user_phone && u.phone === currentAppeal.user_phone)
+        );
+        if (targetUser) {
+          handleOpenDeleteModal({ ...targetUser, appealId: appealId });
+          return;
+        }
+      }
       const confirmDelete = window.confirm(`আপনি কি নিশ্চিত যে গ্রাহক "${userName}" এর অ্যাকাউন্ট বাতিলের আবেদন অনুমোদন করে অ্যাকাউন্টটি চিরতরে ডিলিট করতে চান?`);
       if (!confirmDelete) return;
     }
@@ -531,80 +574,46 @@ export default function AdminUsers() {
       )}
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="pb-4 mb-4 border-b border-slate-800">
         <div>
           <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">মাস্টার কাস্টমার কন্ট্রোল</span>
-          <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">গ্রাহক তালিকা, ভিআইপি লয়ালটি ও করযে হাসানা আবেদন</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">গ্রাহক ব্যবস্থাপনা ও আপিল ডেস্ক</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            লয়ালটি পয়েন্ট/কার্ড এডিট, করযে হাসানা NID আবেদন যাচাই ও স্থগিত অ্যাকাউন্টের আপিল নিষ্পত্তি করুন
+            গ্রাহক প্রোফাইল অডিট, লিমিট এডিট, একাউন্ট সাসপেন্ড/আনব্লক এবং কাস্টমার আপিল আবেদন পর্যালোচনা করুন
           </p>
         </div>
+      </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center space-x-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto shadow-xl">
-          {canViewUsers && (
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'users' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>গ্রাহক ও লয়ালটি ({users.length})</span>
-            </button>
-          )}
+      {/* Tab Switcher (Sticky) */}
+      <div className="sticky top-[88px] md:top-[68px] z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800 p-2 rounded-2xl shadow-xl flex items-center space-x-2 overflow-x-auto no-scrollbar mb-6">
+        {canViewUsers && (
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'users' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>গ্রাহক তালিকা ({users.length})</span>
+          </button>
+        )}
 
-          {canViewQard && (
-            <button
-              onClick={() => setActiveTab('qard')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'qard' ? 'bg-emerald-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <HandHeart className="w-3.5 h-3.5" />
-              <span>করযে হাসানা আবেদন</span>
-              {pendingQardCount > 0 && (
-                <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
-                  {pendingQardCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {canViewLoyalty && (
-            <button
-              onClick={() => setActiveTab('loyalty')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'loyalty' ? 'bg-amber-600 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>লয়ালটি কার্ড আবেদন ({loyaltyApps.length})</span>
-              {pendingLoyaltyCount > 0 && (
-                <span className="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
-                  {pendingLoyaltyCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {canViewAppeals && (
-            <button
-              onClick={() => setActiveTab('appeals')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'appeals' ? 'bg-rose-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span>আপিল আবেদন</span>
-              {pendingAppealsCount > 0 && (
-                <span className="bg-rose-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black animate-pulse">
-                  {pendingAppealsCount}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
+        {canViewAppeals && (
+          <button
+            onClick={() => setActiveTab('appeals')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'appeals' ? 'bg-rose-700 text-white shadow-md font-black' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>আপিল আবেদন</span>
+            {pendingAppealsCount > 0 && (
+              <span className="bg-rose-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black animate-pulse">
+                {pendingAppealsCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* TAB 1: USERS & VIP LOYALTY CARDS */}
@@ -776,7 +785,7 @@ export default function AdminUsers() {
                             {hasPermission('customers.delete') && u.role !== 'admin' && (
                               <button
                                 type="button"
-                                onClick={() => setDeletingUser(u)}
+                                onClick={() => handleOpenDeleteModal(u)}
                                 className="p-1.5 bg-slate-800/80 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700 hover:border-rose-700/50 transition-colors cursor-pointer"
                                 title="অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন"
                               >
@@ -795,212 +804,7 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* TAB 2: QARD-E-HASANA APPLICATIONS DESK */}
-      {activeTab === 'qard' && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="bg-slate-900 rounded-3xl border border-emerald-900/40 p-6 sm:p-8 space-y-6 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white flex items-center">
-                  <HandHeart className="w-4 h-4 mr-2 text-emerald-400" /> করযে হাসানা NID আবেদন সমূহ ({qardApps.length})
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  গ্রাহকদের জমা দেওয়া জাতীয় পরিচয়পত্র (NID) নম্বর ও মাসিক আয় যাচাই করে ক্রেডিট লিমিট অনুমোদন করুন।
-                </p>
-              </div>
 
-              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 self-start sm:self-auto">
-                অপেক্ষমাণ আবেদন: {pendingQardCount} টি
-              </span>
-            </div>
-
-            {qardApps.length === 0 ? (
-              <p className="text-xs text-slate-500 py-12 text-center">এখনো কোনো করযে হাসানা আবেদন জমা পড়েনি।</p>
-            ) : (
-              <div className="space-y-4">
-                {qardApps.map(app => (
-                  <div key={app.id} className="p-5 sm:p-6 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-4 text-xs shadow-lg">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700/80 gap-3">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-bold text-white text-sm">{app.name}</h4>
-                          <span className="text-[10px] text-slate-400 font-mono">({new Date(app.created_at).toLocaleDateString('bn-BD')})</span>
-                        </div>
-                        <p className="text-slate-400 font-mono mt-0.5">
-                          মোবাইল: <strong className="text-slate-200">{app.phone}</strong> • NID: <strong className="text-amber-300 font-black">{app.nid_number}</strong>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-2.5">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          app.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                          app.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                          'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
-                        }`}>
-                          {app.status === 'Approved' ? '✓ অনুমোদিত' : app.status === 'Rejected' ? '✕ প্রত্যাখ্যাত' : '⏳ যাচাইয়ের অপেক্ষায়'}
-                        </span>
-
-                        {app.status === 'Pending' && (
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleOpenQardApprove(app)}
-                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-                            >
-                              ✓ অনুমোদন করুন
-                            </button>
-                            <button
-                              onClick={() => handleQardReject(app.id, app.name)}
-                              className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-700/50 cursor-pointer transition-colors"
-                            >
-                              ✕ বাতিল
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-300">
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-                        <span className="text-slate-400 block text-[10px]">কাঙ্ক্ষিত ঋণ লিমিট:</span>
-                        <span className="font-black text-emerald-400 text-sm">৳{(app.requested_limit || 5000).toLocaleString()}</span>
-                      </div>
-
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-                        <span className="text-slate-400 block text-[10px]">মাসিক আয় / পেশা:</span>
-                        <span className="font-bold text-slate-200">{app.monthly_income ? `৳${Number(app.monthly_income).toLocaleString()}` : 'উল্লেখ নেই'}</span>
-                      </div>
-
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-                        <span className="text-slate-400 block text-[10px]">ঠিকানা:</span>
-                        <span className="text-slate-200">{app.address || 'N/A'}</span>
-                      </div>
-
-                      {app.payment_amount > 0 && (
-                        <div className="p-3 bg-amber-950/40 rounded-xl border border-amber-700/60 sm:col-span-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-amber-400 font-bold text-[11px]">
-                              💳 আবেদন ফি: ৳{app.payment_amount} ({app.payment_method?.toUpperCase() || 'MFS'})
-                            </span>
-                            <span className="text-slate-300 font-mono text-[11px]">
-                              প্রেরক: <strong className="text-white">{app.sender_number || 'N/A'}</strong>
-                            </span>
-                            <span className="text-slate-300 font-mono text-[11px]">
-                              TrxID: <strong className="text-amber-300 bg-black/40 px-2 py-0.5 rounded font-mono font-bold">{app.transaction_id || 'N/A'}</strong>
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {app.notes && (
-                        <div className="sm:col-span-3 p-3 bg-slate-900 rounded-xl border border-slate-700 text-amber-200 leading-relaxed">
-                          <strong>অঙ্গীকার ও আবেদনকারীর বার্তা:</strong> {app.notes}
-                        </div>
-                      )}
-
-                      {app.admin_notes && (
-                        <div className="sm:col-span-3 p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-800/40 text-emerald-300">
-                          <strong>অ্যাডমিন নোট:</strong> {app.admin_notes}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: LOYALTY CARD APPLICATIONS */}
-      {activeTab === 'loyalty' && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="bg-slate-900 rounded-3xl border border-amber-900/40 p-6 sm:p-8 space-y-6 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white flex items-center">
-                  <CreditCard className="w-4 h-4 mr-2 text-amber-400" /> আল আনসার ডিজিটাল লয়ালটি কার্ড আবেদন সমূহ ({loyaltyApps.length})
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  গ্রাহকদের জমা দেওয়া আবেদন যাচাই করে অনুমোদন করুন। অনুমোদনের সাথে সাথে গ্রাহকের প্রোফাইলে বারকোডসহ লাক্সারি কার্ড সক্রিয় হয়ে যাবে।
-                </p>
-              </div>
-
-              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 self-start sm:self-auto">
-                অপেক্ষমাণ আবেদন: {pendingLoyaltyCount} টি
-              </span>
-            </div>
-
-            {loyaltyApps.length === 0 ? (
-              <p className="text-xs text-slate-500 py-12 text-center">এখনো কোনো লয়ালটি কার্ড আবেদন জমা পড়েনি।</p>
-            ) : (
-              <div className="space-y-4">
-                {loyaltyApps.map(app => (
-                  <div key={app.id} className="p-5 sm:p-6 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-4 text-xs shadow-lg">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700/80 gap-3">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-bold text-white text-sm">{app.name}</h4>
-                          <span className="text-[10px] text-slate-400 font-mono">({new Date(app.created_at).toLocaleDateString('bn-BD')})</span>
-                        </div>
-                        <p className="text-slate-400 font-mono mt-0.5">
-                          মোবাইল: <strong className="text-slate-200">{app.phone}</strong>
-                          {app.email && <span> • ইমেইল: <strong className="text-slate-200">{app.email}</strong></span>}
-                          {app.nid_number && <span> • NID: <strong className="text-amber-300 font-bold">{app.nid_number}</strong></span>}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-2.5">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          app.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                          app.status === 'Rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                          'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
-                        }`}>
-                          {app.status === 'Approved' ? '✓ কার্ড সক্রিয় ও অনুমোদিত' : app.status === 'Rejected' ? '✕ প্রত্যাখ্যাত' : '⏳ অনুমোদনের অপেক্ষায়'}
-                        </span>
-
-                        {app.status === 'Pending' && (
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleLoyaltyStatusUpdate(app.id, 'Approved', app.name)}
-                              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black rounded-xl shadow-md cursor-pointer transition-all"
-                            >
-                              ✓ অনুমোদন ও কার্ড সক্রিয় করুন
-                            </button>
-                            <button
-                              onClick={() => handleLoyaltyStatusUpdate(app.id, 'Rejected', app.name)}
-                              className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-700/50 cursor-pointer transition-colors"
-                            >
-                              ✕ বাতিল
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-                        <span className="text-slate-400 block text-[10px]">ডেলিভারি ঠিকানা:</span>
-                        <span className="font-bold text-slate-200">{app.address || 'ঠিকানা দেওয়া হয়নি'}</span>
-                      </div>
-
-                      <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-                        <span className="text-slate-400 block text-[10px]">শহর / জেলা:</span>
-                        <span className="font-bold text-slate-200">{app.city || 'ঢাকা'}</span>
-                      </div>
-
-                      {app.admin_notes && (
-                        <div className="sm:col-span-2 p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-800/40 text-emerald-300">
-                          <strong>অ্যাডমিন নোট:</strong> {app.admin_notes}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* TAB 4: SUSPENDED ACCOUNT & DELETION APPEALS DESK */}
       {activeTab === 'appeals' && (
@@ -1269,12 +1073,38 @@ export default function AdminUsers() {
                 </div>
 
                 <div>
+                  <label className="font-bold text-amber-300 block mb-1">পয়েন্ট রিডিম লিমিট (অর্ডার প্রতি)</label>
+                  <input
+                    type="number"
+                    value={editFormData.loyalty_points_limit}
+                    onChange={(e) => setEditFormData({ ...editFormData, loyalty_points_limit: e.target.value })}
+                    placeholder="খালি রাখলে আনলিমিটেড"
+                    className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-amber-200 font-bold font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label className="font-bold text-emerald-400 block mb-1">করযে হাসানা ক্রেডিট লিমিট (টাকা)</label>
                   <input
                     type="number"
                     value={editFormData.qard_credit_limit}
                     onChange={(e) => setEditFormData({ ...editFormData, qard_credit_limit: Number(e.target.value) })}
                     className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-emerald-300 font-bold font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-emerald-300 block mb-1">সর্বোচ্চ ধারের হার (%)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={editFormData.qard_max_percentage}
+                    onChange={(e) => setEditFormData({ ...editFormData, qard_max_percentage: Number(e.target.value) })}
+                    placeholder="যেমন: ১০ বা ১৫ বা ২০"
+                    className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-emerald-200 font-bold font-mono"
                   />
                 </div>
               </div>
@@ -1316,393 +1146,11 @@ export default function AdminUsers() {
           isOpen={Boolean(viewingUser)}
           user={viewingUser}
           onClose={() => setViewingUser(null)}
+          onDeleteUser={hasPermission('customers.delete') && viewingUser.role !== 'admin' ? (u) => {
+            setViewingUser(null);
+            handleOpenDeleteModal(u);
+          } : undefined}
         />
-      )}
-
-      {/* 👑 VIP LOYALTY APPLICATION REVIEW MODAL */}
-      {selectedVipApp && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
-                  <CreditCard className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white">ভিআইপি লয়ালটি মেম্বারশিপ আবেদন রিভিউ</h3>
-                  <p className="text-[11px] text-slate-400">গ্রাহকের ৩টি ছবি ও ৳{selectedVipApp.payment_amount || 500} ফি ভেরিফাই করে অনুমোদন করুন</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedVipApp(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 overflow-y-auto max-h-[75vh] space-y-4 text-xs">
-              {/* Applicant Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-300">
-                <div>
-                  <span className="text-[10px] text-slate-500 block">আবেদনকারীর নাম:</span>
-                  <span className="font-bold text-white text-sm">{selectedVipApp.name}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">মোবাইল নম্বর:</span>
-                  <span className="font-mono font-bold text-amber-300">{selectedVipApp.phone}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">জাতীয় পরিচয়পত্র (NID):</span>
-                  <span className="font-mono font-bold text-slate-200">{selectedVipApp.nid_number || 'উল্লেখ নেই'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">ঠিকানা ও শহর:</span>
-                  <span className="text-slate-200">{selectedVipApp.address || 'N/A'}, {selectedVipApp.city || 'ঢাকা'}</span>
-                </div>
-              </div>
-
-              {/* 3 Photos Grid */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1 text-amber-400" />
-                  সংযুক্ত ৩টি ছবি (NID Front, Back & Selfie)
-                </span>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedVipApp.nid_front_photo && setZoomPhoto(selectedVipApp.nid_front_photo)}
-                  >
-                    {selectedVipApp.nid_front_photo ? (
-                      <img
-                        src={selectedVipApp.nid_front_photo}
-                        alt="NID Front"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি সামনে</span>
-                  </div>
-
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedVipApp.nid_back_photo && setZoomPhoto(selectedVipApp.nid_back_photo)}
-                  >
-                    {selectedVipApp.nid_back_photo ? (
-                      <img
-                        src={selectedVipApp.nid_back_photo}
-                        alt="NID Back"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি পেছনে</span>
-                  </div>
-
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedVipApp.user_photo && setZoomPhoto(selectedVipApp.user_photo)}
-                  >
-                    {selectedVipApp.user_photo ? (
-                      <img
-                        src={selectedVipApp.user_photo}
-                        alt="Selfie"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">আবেদনকারীর ছবি</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Details */}
-              <div className="p-3.5 bg-amber-950/30 rounded-2xl border border-amber-500/30 space-y-1.5">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-xs font-bold text-amber-300">
-                    💳 আবেদন ফি: ৳{selectedVipApp.payment_amount || 500} ({selectedVipApp.payment_method?.toUpperCase() || 'MFS'})
-                  </span>
-                  <span className="text-[11px] text-slate-300 font-mono">
-                    প্রেরক: <strong className="text-white">{selectedVipApp.sender_number || 'N/A'}</strong>
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 pt-1">
-                  <span className="text-[11px] text-slate-400">ট্রানজেকশন আইডি (TrxID):</span>
-                  <span className="px-2.5 py-0.5 bg-black/60 rounded-md font-mono font-black text-amber-300 text-xs border border-amber-500/30">
-                    {selectedVipApp.transaction_id || 'N/A'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Admin Notes */}
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">অ্যাডমিন নোট / বার্তা (ঐচ্ছিক)</label>
-                <input
-                  type="text"
-                  placeholder="যাচাই নোট লিখুন..."
-                  value={vipAdminNotes}
-                  onChange={(e) => setVipAdminNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setSelectedVipApp(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                বন্ধ করুন
-              </button>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleLoyaltyStatusUpdate(selectedVipApp.id, 'Rejected', selectedVipApp.name);
-                    setSelectedVipApp(null);
-                  }}
-                  className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/50 cursor-pointer"
-                >
-                  ✕ বাতিল করুন
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleLoyaltyStatusUpdate(selectedVipApp.id, 'Approved', selectedVipApp.name);
-                    setSelectedVipApp(null);
-                  }}
-                  className="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-md cursor-pointer"
-                >
-                  ✓ অনুমোদন ও কার্ড সক্রিয় করুন
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🤝 QARD-E-HASANA APPLICATION REVIEW MODAL */}
-      {selectedQardApp && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
-                  <HandHeart className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white">করযে হাসানা আবেদন ও NID যাচাই</h3>
-                  <p className="text-[11px] text-slate-400">গ্রাহকের ৩টি ছবি ও তথ্যাদি যাচাই করে ক্রেডিট লিমিট অনুমোদন করুন</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedQardApp(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 overflow-y-auto max-h-[75vh] space-y-4 text-xs">
-              {/* Applicant Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800 text-slate-300">
-                <div>
-                  <span className="text-[10px] text-slate-500 block">আবেদনকারীর নাম:</span>
-                  <span className="font-bold text-white text-sm">{selectedQardApp.name}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">মোবাইল নম্বর:</span>
-                  <span className="font-mono font-bold text-emerald-300">{selectedQardApp.phone}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">জাতীয় পরিচয়পত্র (NID):</span>
-                  <span className="font-mono font-bold text-amber-300">{selectedQardApp.nid_number}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 block">কাঙ্ক্ষিত লিমিট:</span>
-                  <span className="font-mono font-black text-emerald-400 text-sm">৳{(selectedQardApp.requested_limit || 5000).toLocaleString()}</span>
-                </div>
-                <div className="sm:col-span-2">
-                  <span className="text-[10px] text-slate-500 block">ঠিকানা:</span>
-                  <span className="text-slate-200">{selectedQardApp.address || 'N/A'}</span>
-                </div>
-              </div>
-
-              {/* 3 Photos Grid */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider flex items-center">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                  সংযুক্ত ৩টি ছবি (NID Front, Back & Selfie)
-                </span>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedQardApp.nid_front_photo && setZoomPhoto(selectedQardApp.nid_front_photo)}
-                  >
-                    {selectedQardApp.nid_front_photo ? (
-                      <img
-                        src={selectedQardApp.nid_front_photo}
-                        alt="NID Front"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি সামনে</span>
-                  </div>
-
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedQardApp.nid_back_photo && setZoomPhoto(selectedQardApp.nid_back_photo)}
-                  >
-                    {selectedQardApp.nid_back_photo ? (
-                      <img
-                        src={selectedQardApp.nid_back_photo}
-                        alt="NID Back"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">এনআইডি পেছনে</span>
-                  </div>
-
-                  <div
-                    className="p-1 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer group"
-                    onClick={() => selectedQardApp.user_photo && setZoomPhoto(selectedQardApp.user_photo)}
-                  >
-                    {selectedQardApp.user_photo ? (
-                      <img
-                        src={selectedQardApp.user_photo}
-                        alt="Selfie"
-                        className="w-full h-24 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-slate-500">ছবি নেই</div>
-                    )}
-                    <span className="block text-center text-[10px] text-slate-400 font-bold mt-1">আবেদনকারীর ছবি</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Details if applicable */}
-              {selectedQardApp.payment_amount > 0 && (
-                <div className="p-3.5 bg-emerald-950/30 rounded-2xl border border-emerald-500/30 space-y-1.5">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs font-bold text-emerald-300">
-                      💳 আবেদন ফি: ৳{selectedQardApp.payment_amount} ({selectedQardApp.payment_method?.toUpperCase() || 'MFS'})
-                    </span>
-                    <span className="text-[11px] text-slate-300 font-mono">
-                      প্রেরক: <strong className="text-white">{selectedQardApp.sender_number || 'N/A'}</strong>
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 pt-1">
-                    <span className="text-[11px] text-slate-400">ট্রানজেকশন আইডি (TrxID):</span>
-                    <span className="px-2.5 py-0.5 bg-black/60 rounded-md font-mono font-black text-amber-300 text-xs border border-amber-500/30">
-                      {selectedQardApp.transaction_id || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Approved Limit Input */}
-              <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
-                <label className="text-xs font-bold text-emerald-400 block">
-                  মঞ্জুরিকৃত করযে হাসানা ক্রেডিট লিমিট (টাকা) *
-                </label>
-                <div className="relative max-w-xs">
-                  <input
-                    type="number"
-                    min="500"
-                    step="500"
-                    value={qardApproveLimit}
-                    onChange={(e) => setQardApproveLimit(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-800 rounded-xl border border-emerald-500/50 text-emerald-300 font-mono font-black text-sm focus:outline-none focus:border-emerald-400 pr-12"
-                  />
-                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">টাকা (৳)</span>
-                </div>
-              </div>
-
-              {/* Admin Notes */}
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">অ্যাডমিন নোট / অনুমোদন বার্তা</label>
-                <input
-                  type="text"
-                  placeholder="অনুমোদন বা ভেরিফিকেশন বার্তা লিখুন..."
-                  value={qardAdminNotes}
-                  onChange={(e) => setQardAdminNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-800 rounded-xl border border-slate-700 text-white text-xs focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setSelectedQardApp(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                বন্ধ করুন
-              </button>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleQardReject(selectedQardApp.id, selectedQardApp.name);
-                    setSelectedQardApp(null);
-                  }}
-                  className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-xl border border-rose-800/50 cursor-pointer"
-                >
-                  ✕ বাতিল
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(`/api/admin/qard-applications/${selectedQardApp.id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                          status: 'Approved',
-                          notes: qardAdminNotes || `এনআইডি (${selectedQardApp.nid_number}) সফলভাবে যাচাইকৃত। ৳${Number(qardApproveLimit).toLocaleString()} লিমিট মঞ্জুর হলো।`,
-                          requested_limit: Number(qardApproveLimit)
-                        })
-                      });
-                      const data = await res.json();
-                      if (data.success) {
-                        showToast(`আবেদনকারী "${selectedQardApp.name}" এর করযে হাসানা ৳${Number(qardApproveLimit).toLocaleString()} লিমিট অনুমোদিত হয়েছে!`);
-                        setSelectedQardApp(null);
-                        fetchData();
-                      }
-                    } catch (err) {
-                      console.error(err);
-                    }
-                  }}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
-                >
-                  ✓ ক্রেডিট অনুমোদন করুন
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* 🖨️ VIP CARD PRINT & DOWNLOAD MODAL */}
@@ -1918,52 +1366,336 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* ADMIN USER DELETE CONFIRMATION MODAL */}
-      {deletingUser && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-rose-900/50 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/10">
-              <Trash2 className="w-6 h-6" />
-            </div>
+      {/* ADMIN USER DELETE CONFIRMATION & AUDIT MODAL */}
+      {deletingUser && (() => {
+        const userLoyaltyApp = loyaltyApps.find(a => 
+          a.user_id === deletingUser.id || 
+          (a.phone && deletingUser.phone && a.phone === deletingUser.phone) ||
+          (a.email && deletingUser.email && a.email.toLowerCase() === deletingUser.email.toLowerCase())
+        );
+        const userQardApp = qardApps.find(a => 
+          a.user_id === deletingUser.id || 
+          (a.phone && deletingUser.phone && a.phone === deletingUser.phone) || 
+          (a.nid_number && deletingUser.nid_number && a.nid_number === deletingUser.nid_number) ||
+          (a.email && deletingUser.email && a.email.toLowerCase() === deletingUser.email.toLowerCase())
+        );
 
-            <div>
-              <h3 className="text-base font-black text-white">অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলতে চান?</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                আপনি কি নিশ্চিত যে গ্রাহক <strong className="text-white font-bold">{deletingUser.name}</strong> ({deletingUser.phone || deletingUser.email}) এর অ্যাকাউন্টটি চিরতরে ডিলিট করতে চান?
-              </p>
-              <div className="mt-3 p-3 bg-rose-950/40 rounded-xl border border-rose-800/40 text-[11px] text-rose-300">
-                ⚠️ <strong>সতর্কতা:</strong> এই কাজটি ফিরিয়ে নেওয়া যাবে না। গ্রাহকের অ্যাকাউন্ট তথ্য স্থায়ীভাবে মুছে যাবে।
+        // 1. করযে হাসানা (Qard-e-Hasana)
+        const isQardApproved = deletingUser.qard_status === 'Approved' || deletingUser.qard_approved || userQardApp?.status === 'Approved';
+        const isQardPending = deletingUser.qard_status === 'Pending' || userQardApp?.status === 'Pending';
+        const isQardCorrection = deletingUser.qard_status === 'Needs Correction' || userQardApp?.status === 'Needs Correction';
+        const hasQard = isQardApproved || isQardPending || isQardCorrection;
+        const qardLimit = Number(deletingUser.qard_credit_limit || userQardApp?.requested_limit || 5000);
+
+        // 2. বকেয়া ঋণ (Rin / Outstanding Debt)
+        const unpaidDebt = Number(deletingUser.qard_unpaid_amount || 0);
+        const hasDebt = Boolean((deletingUser.has_unpaid_qard && unpaidDebt > 0) || unpaidDebt > 0);
+        const dueDate = deletingUser.qard_due_date;
+
+        // 3. ভিআইপি কার্ড (VIP Loyalty Status)
+        const isVipApproved = deletingUser.loyalty_card_approved || deletingUser.loyalty_card_status === 'Approved' || userLoyaltyApp?.status === 'Approved';
+        const isVipPending = deletingUser.loyalty_card_status === 'Pending' || userLoyaltyApp?.status === 'Pending';
+        const isVipCorrection = deletingUser.loyalty_card_status === 'Needs Correction' || userLoyaltyApp?.status === 'Needs Correction';
+        const hasVip = isVipApproved || isVipPending || isVipCorrection;
+        const vipTier = deletingUser.loyalty_tier || 'Gold VIP';
+        const vipCardNumber = deletingUser.loyalty_card_number || `ANSAR-VIP-${deletingUser.id.slice(0, 4)}-2026`;
+
+        // 4. পয়েন্ট (Reward Points)
+        const points = Number(deletingUser.loyalty_points || 0);
+        const hasPoints = points > 0;
+
+        // Safety Validation
+        const isDebtClearedOrConfirmed = !hasDebt || deleteConfirmText.trim().toUpperCase() === 'DELETE' || deleteConfirmText.trim() === 'ডিলিট';
+        const canSubmitDelete = deleteConfirmed && isDebtClearedOrConfirmed && !deletingLoading;
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans animate-in fade-in">
+            <div className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${
+                    hasDebt 
+                      ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 shadow-rose-500/20 animate-pulse' 
+                      : 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
+                  }`}>
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white flex items-center space-x-2">
+                      <span>গ্রাহক আইডি ডিলিট সতর্কতা</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      কাস্টমার আইডি: <span className="font-mono text-amber-300 font-bold">#{deletingUser.id}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingUser(null);
+                    setDeleteConfirmed(false);
+                    setDeleteConfirmText('');
+                  }}
+                  className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Customer Quick Summary */}
+              <div className="p-3 bg-slate-950/70 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <p className="text-sm font-bold text-white truncate">{deletingUser.name}</p>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5 truncate">
+                    {deletingUser.phone || 'ফোন নেই'} • {deletingUser.email || 'ইমেইল নেই'}
+                  </p>
+                  {deletingUser.nid_number && (
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      NID: {deletingUser.nid_number}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[11px] text-slate-400 font-mono block">মোট কেনাকাটা</span>
+                  <span className="text-xs font-black text-amber-300 font-mono">
+                    ৳{(deletingUser.total_spent || 0).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-mono">
+                    ({deletingUser.orders_count || 0} টি অর্ডার)
+                  </span>
+                </div>
+              </div>
+
+              {/* 4 AUDIT STATUS CARDS */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
+                  <span>গ্রাহকের ৪টি গুরুত্বপূর্ণ সুবিধা ও হিসাবের অবস্থা:</span>
+                  <span className="text-amber-400/90 font-mono">স্বয়ংক্রিয় অডিট</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* ১. করযে হাসানা */}
+                  <div className={`p-3 rounded-2xl border transition-all ${
+                    isQardApproved
+                      ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                      : isQardPending || isQardCorrection
+                      ? 'bg-amber-950/25 border-amber-500/40 text-amber-200'
+                      : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold flex items-center space-x-1.5 text-white">
+                        <HandHeart className={`w-3.5 h-3.5 ${hasQard ? 'text-emerald-400' : 'text-slate-500'}`} />
+                        <span>১. করযে হাসানা</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isQardApproved
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : isQardPending
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : isQardCorrection
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          : 'bg-slate-800/80 text-slate-400'
+                      }`}>
+                        {isQardApproved ? '✓ সক্রিয়' : isQardPending ? '⏳ পেন্ডিং' : isQardCorrection ? '📝 সংশোধন' : '✖ নেই'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono font-bold text-white">
+                      {isQardApproved
+                        ? `ক্রেডিট লিমিট: ৳${qardLimit.toLocaleString()}`
+                        : isQardPending
+                        ? 'আবেদন যাচাই চলছে'
+                        : isQardCorrection
+                        ? 'সংশোধন নোটিশ পাঠানো'
+                        : 'কোনো সুবিধা নেই'}
+                    </p>
+                  </div>
+
+                  {/* ২. বকেয়া ঋণ */}
+                  <div className={`p-3 rounded-2xl border transition-all ${
+                    hasDebt
+                      ? 'bg-rose-950/60 border-rose-500 text-rose-200 ring-2 ring-rose-500/30 shadow-lg shadow-rose-950/50'
+                      : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold flex items-center space-x-1.5 text-white">
+                        <AlertCircle className={`w-3.5 h-3.5 ${hasDebt ? 'text-rose-400' : 'text-slate-500'}`} />
+                        <span>২. বকেয়া ঋণ (বাকি)</span>
+                      </span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        hasDebt
+                          ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 animate-pulse'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {hasDebt ? '🚨 ঋণ বাকি আছে' : '✓ কোনো ঋণ নেই'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono font-black text-white">
+                      {hasDebt ? (
+                        <span className="text-rose-300 font-extrabold text-sm">
+                          ৳{unpaidDebt.toLocaleString()} বাকি
+                        </span>
+                      ) : (
+                        <span className="text-emerald-400">৳০.০০ (পরিশোধিত)</span>
+                      )}
+                    </p>
+                    {hasDebt && dueDate && (
+                      <p className="text-[10px] text-rose-300/80 mt-0.5">
+                        পরিশোধের শেষ সময়: {new Date(dueDate).toLocaleDateString('bn-BD')}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ৩. ভিআইপি মেম্বারশিপ */}
+                  <div className={`p-3 rounded-2xl border transition-all ${
+                    isVipApproved
+                      ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                      : isVipPending || isVipCorrection
+                      ? 'bg-amber-950/20 border-amber-600/30 text-amber-300'
+                      : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold flex items-center space-x-1.5 text-white">
+                        <Sparkles className={`w-3.5 h-3.5 ${hasVip ? 'text-amber-400' : 'text-slate-500'}`} />
+                        <span>৩. ভিআইপি কার্ড</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isVipApproved
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : isVipPending
+                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                          : isVipCorrection
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          : 'bg-slate-800/80 text-slate-400'
+                      }`}>
+                        {isVipApproved ? '👑 ভিআইপি' : isVipPending ? '⏳ পেন্ডিং' : isVipCorrection ? '📝 সংশোধন' : '✖ সাধারণ'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono font-bold text-white truncate" title={hasVip ? `${vipTier} • ${vipCardNumber}` : ''}>
+                      {hasVip ? `${vipTier} (${vipCardNumber.slice(0, 16)})` : 'ভিআইপি মেম্বার নয়'}
+                    </p>
+                  </div>
+
+                  {/* ৪. পয়েন্ট ব্যালেন্স */}
+                  <div className={`p-3 rounded-2xl border transition-all ${
+                    hasPoints
+                      ? 'bg-amber-950/25 border-amber-500/40 text-amber-200'
+                      : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold flex items-center space-x-1.5 text-white">
+                        <CreditCard className={`w-3.5 h-3.5 ${hasPoints ? 'text-amber-400' : 'text-slate-500'}`} />
+                        <span>৪. রিওয়ার্ড পয়েন্ট</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        hasPoints
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-slate-800/80 text-slate-400'
+                      }`}>
+                        {hasPoints ? '⭐ পয়েন্ট আছে' : '০ পয়েন্ট'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono font-bold text-white">
+                      {hasPoints ? (
+                        <span className="text-amber-300 font-bold">{points.toLocaleString()} পয়েন্ট (মূল্য: ৳{points})</span>
+                      ) : (
+                        'কোনো পয়েন্ট জমা নেই'
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CRITICAL WARNING BANNER */}
+              {hasDebt ? (
+                <div className="p-3.5 bg-rose-950/70 border border-rose-600 rounded-2xl text-xs text-rose-200 space-y-2 shadow-lg">
+                  <div className="flex items-center space-x-2 text-rose-300 font-black">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 animate-bounce" />
+                    <span>মারাত্মক ঝুঁকি: গ্রাহকের বকেয়া ঋণ পাওনা রয়েছে!</span>
+                  </div>
+                  <p className="text-[11px] text-rose-200/90 leading-relaxed">
+                    এই গ্রাহকের কাছে প্রতিষ্ঠানের <strong>৳{unpaidDebt.toLocaleString()} টাকা</strong> ঋণ বকেয়া রয়েছে। এখনই অ্যাকাউন্ট মুছে ফেললে ঋণের লেজার ও সকল হিসাব স্থায়ীভাবে মুছে যাবে এবং টাকা আদায়ে জটিলতা সৃষ্টি হবে।
+                  </p>
+                  <div className="pt-2 border-t border-rose-800/60">
+                    <label className="block text-[11px] font-bold text-rose-200 mb-1">
+                      বকেয়া ঋণ সত্ত্বেও নিশ্চিত করতে নিচে <span className="bg-rose-900 px-1.5 py-0.5 rounded text-white font-mono font-black">DELETE</span> অথবা <span className="bg-rose-900 px-1.5 py-0.5 rounded text-white font-black">ডিলিট</span> লিখুন:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE লিখুন..."
+                      className="w-full px-3 py-2 bg-slate-950 border border-rose-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-rose-400 placeholder-slate-600"
+                    />
+                  </div>
+                </div>
+              ) : (hasPoints || isVipApproved || isQardApproved) ? (
+                <div className="p-3 bg-amber-950/40 border border-amber-600/40 rounded-2xl text-xs text-amber-200 space-y-1">
+                  <div className="flex items-center space-x-2 text-amber-300 font-bold">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>বিদ্যমান সুবিধা স্থায়ীভাবে বাতিল হবে:</span>
+                  </div>
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    গ্রাহকের {hasPoints ? `${points} টি অর্জিত পয়েন্ট, ` : ''}{isVipApproved ? 'ভিআইপি মেম্বারশিপ, ' : ''}{isQardApproved ? 'করযে হাসানা সুবিধা, ' : ''}এবং সর্বমোট {deletingUser.orders_count || 0} টি অর্ডারের হিসাব মুছে যাবে। এটি পুনরুদ্ধারযোগ্য নয়।
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-rose-950/30 border border-rose-900/40 rounded-2xl text-xs text-rose-300">
+                  ⚠️ <strong>স্থায়ী ডিলিট সতর্কতা:</strong> অ্যাকাউন্ট ডিলিট করলে গ্রাহকের প্রোফাইল, অর্ডার হিস্ট্রি ও সংশ্লিষ্ট সকল তথ্য ডাটাবেজ থেকে মুছে যাবে।
+                </div>
+              )}
+
+              {/* CONFIRMATION CHECKBOX */}
+              <label className="flex items-start space-x-2.5 p-3 rounded-2xl bg-slate-950/80 border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={deleteConfirmed}
+                  onChange={(e) => setDeleteConfirmed(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-slate-700 text-rose-600 focus:ring-rose-500 shrink-0 cursor-pointer"
+                />
+                <span className="text-[11px] text-slate-300 select-none leading-relaxed">
+                  আমি গ্রাহকের <strong className="text-white">করযে হাসানা, ঋণ, ভিআইপি কার্ড ও পয়েন্ট</strong> ব্যালেন্স পুঙ্খানুপুঙ্খ যাচাই করেছি এবং এই কাস্টমার আইডি স্থায়ীভাবে মুছে ফেলতে সম্মত।
+                </span>
+              </label>
+
+              {/* MODAL ACTIONS */}
+              <div className="flex space-x-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingUser(null);
+                    setDeleteConfirmed(false);
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={deletingLoading}
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer transition-colors"
+                >
+                  বাতিল / ফিরে যান
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteUser}
+                  disabled={!canSubmitDelete}
+                  className={`flex-1 py-2.5 text-xs font-black rounded-xl shadow-lg flex items-center justify-center space-x-1.5 transition-all ${
+                    canSubmitDelete
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30 cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  {deletingLoading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>স্থায়ীভাবে ডিলিট</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-
-            <div className="flex space-x-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingUser(null)}
-                disabled={deletingLoading}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
-              >
-                বাতিল
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteUser}
-                disabled={deletingLoading}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-lg shadow-rose-600/20 cursor-pointer flex items-center justify-center space-x-1.5"
-              >
-                {deletingLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>স্থায়ীভাবে ডিলিট</span>
-                  </>
-                )}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

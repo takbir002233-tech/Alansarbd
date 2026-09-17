@@ -20,7 +20,7 @@ import { useCart } from '../context/CartContext';
 import useScrollLock from '../hooks/useScrollLock';
 import PaymentGatewayModal from './PaymentGatewayModal';
 
-export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNavigate }) {
+export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNavigate, initialReapply = false }) {
   const { user, refreshUser } = useAuth();
   const { siteSettings } = useCart();
   useScrollLock(isOpen);
@@ -65,23 +65,29 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
         user_photo: prev.user_photo || user.user_photo || ''
       }));
     }
+    if (isOpen) {
+      if (initialReapply || user?.qard_status === 'Needs Correction') {
+        setReapplyMode(true);
+      }
+    }
     // Cleanup any lingering global flag
     try {
       localStorage.removeItem('alansar_qard_applied_global');
     } catch (e) {}
-  }, [user, isOpen]);
+  }, [user, isOpen, initialReapply]);
 
   const isDeclined = user?.qard_status === 'Declined' || user?.qard_status === 'Rejected';
+  const isNeedsCorrection = user?.qard_status === 'Needs Correction';
   const isPending = user?.qard_status === 'Pending';
   const isApproved = user?.qard_status === 'Approved';
 
   // Check if already applied (scoped to logged-in user only, NOT global across accounts)
   const hasAlreadyApplied = React.useMemo(() => {
-    if (reapplyMode) return false;
+    if (reapplyMode || isNeedsCorrection) return false;
     if (isPending || isApproved) return true;
     if (user?.id && localStorage.getItem(`alansar_qard_applied_user_${user.id}`) === 'true') return true;
     return false;
-  }, [isOpen, user, isPending, isApproved, reapplyMode]);
+  }, [isOpen, user, isPending, isApproved, reapplyMode, isNeedsCorrection]);
 
   if (!isOpen) return null;
 
@@ -373,6 +379,23 @@ export default function QardApplicationModal({ isOpen, onClose, onSuccess, onNav
 
               {/* Application Form */}
               <form onSubmit={handleSubmit} className="space-y-3">
+                
+                {/* Admin Feedback / Correction Guidance Alert */}
+                {(user?.qard_admin_message || user?.qard_decline_reason) && (
+                  <div className="p-3 bg-amber-50 border-2 border-amber-400 rounded-2xl flex items-start space-x-2.5 text-amber-950 animate-in fade-in shadow-xs">
+                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-black text-xs block text-amber-900">📢 অ্যাডমিনের বার্তা / সংশোধনের নির্দেশনা:</span>
+                      <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-amber-800">
+                        {user.qard_admin_message || user.qard_decline_reason}
+                      </p>
+                      <span className="text-[10px] text-amber-700 font-bold block mt-1">
+                        * অনুগ্রহ করে নিচের ফর্মে প্রয়োজনীয় সংশোধন (যেমন: সঠিক এনআইডি নম্বর, অস্পষ্ট ছবি পরিবর্তন ইত্যাদি) সম্পন্ন করুন।
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   
                   {/* Name */}

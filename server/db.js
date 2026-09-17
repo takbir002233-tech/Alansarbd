@@ -957,7 +957,20 @@ class Database {
   deleteUser(id) {
     const idx = this.data.users.findIndex(u => u.id === id);
     if (idx === -1) return false;
+    const user = this.data.users[idx];
     this.data.users.splice(idx, 1);
+
+    // Resolve or mark any pending appeals for this user
+    if (Array.isArray(this.data.account_appeals)) {
+      this.data.account_appeals.forEach(a => {
+        if ((a.user_id === id || (a.user_email && user.email && a.user_email.toLowerCase() === user.email.toLowerCase()) || (a.user_phone && user.phone && a.user_phone === user.phone)) && a.status === 'Under Review') {
+          a.status = 'Resolved';
+          a.admin_reply = 'অ্যাডমিন কর্তৃক অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করা হয়েছে।';
+          a.reviewed_at = new Date().toISOString();
+        }
+      });
+    }
+
     this.save();
     return true;
   }
@@ -1325,7 +1338,69 @@ class Database {
 
   // Qard-e-Hasana Applications
   getQardApplications() {
-    return (this.data.qard_applications || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const apps = (this.data.qard_applications || []).map(app => {
+      let user = app.user_id ? this.getUserById(app.user_id) : null;
+      if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+      if (!user && app.phone) {
+        const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+        user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+      }
+
+      const unpaidAmount = user ? (Number(user.qard_unpaid_amount) || 0) : (Number(app.qard_unpaid_amount) || 0);
+      const dueDate = user?.qard_due_date || app.qard_due_date || null;
+      const isOverdue = unpaidAmount > 0 && dueDate && new Date(dueDate).getTime() < Date.now();
+
+      return {
+        ...app,
+        user_id: user?.id || app.user_id || null,
+        user_name: user?.name || app.name,
+        user_phone: user?.phone || app.phone,
+        qard_unpaid_amount: unpaidAmount,
+        qard_due_date: dueDate,
+        has_unpaid_qard: user ? Boolean(user.has_unpaid_qard || unpaidAmount > 0) : Boolean(unpaidAmount > 0),
+        qard_credit_limit: user?.qard_credit_limit || app.requested_limit || 5000,
+        is_overdue: Boolean(isOverdue)
+      };
+    });
+
+    // Also include any users who have an approved Qard status or active debt who don't already have an application
+    const appUserIds = new Set(apps.map(a => a.user_id).filter(Boolean));
+    const unlistedQardUsers = (this.data.users || []).filter(u => 
+      (u.qard_status === 'Approved' || (Number(u.qard_unpaid_amount) > 0) || u.has_unpaid_qard) && 
+      !appUserIds.has(u.id)
+    );
+
+    for (const u of unlistedQardUsers) {
+      const unpaidAmount = Number(u.qard_unpaid_amount) || 0;
+      const dueDate = u.qard_due_date || null;
+      const isOverdue = unpaidAmount > 0 && dueDate && new Date(dueDate).getTime() < Date.now();
+      apps.push({
+        id: 'qrd_usr_' + u.id,
+        user_id: u.id,
+        name: u.name,
+        phone: u.phone,
+        email: u.email || '',
+        nid_number: u.nid_number || 'N/A',
+        address: u.address || '',
+        requested_limit: u.qard_credit_limit || 5000,
+        status: u.qard_status || 'Approved',
+        created_at: u.created_at || new Date().toISOString(),
+        payment_amount: 300,
+        transaction_id: 'SYSTEM',
+        sender_number: u.phone,
+        user_photo: u.user_photo || u.avatar || null,
+        nid_front_photo: u.nid_front_photo || null,
+        nid_back_photo: u.nid_back_photo || null,
+        admin_notes: 'সিস্টেম অ্যাকাউন্ট থেকে অন্তর্ভুক্ত',
+        qard_unpaid_amount: unpaidAmount,
+        qard_due_date: dueDate,
+        has_unpaid_qard: unpaidAmount > 0 || Boolean(u.has_unpaid_qard),
+        qard_credit_limit: u.qard_credit_limit || 5000,
+        is_overdue: Boolean(isOverdue)
+      });
+    }
+
+    return apps;
   }
 
   createQardApplication(appData) {
@@ -1348,6 +1423,7 @@ class Database {
     if (user) {
       user.qard_status = 'Pending';
       user.qard_decline_reason = null;
+      user.qard_admin_message = null;
       if (appData.nid_number) user.nid_number = appData.nid_number;
       if (appData.nid_front_photo) user.nid_front_photo = appData.nid_front_photo;
       if (appData.nid_back_photo) user.nid_back_photo = appData.nid_back_photo;
@@ -1383,15 +1459,52 @@ class Database {
         user.qard_status = 'Approved';
         user.qard_credit_limit = Number(app.requested_limit) || 5000;
         user.qard_available_credit = Number(app.requested_limit) || 5000;
+        if (app.max_percentage !== undefined && app.max_percentage !== null) {
+          user.qard_max_percentage = Math.max(1, Number(app.max_percentage) || 10);
+        }
         user.qard_decline_reason = null;
+        user.qard_admin_message = null;
       } else if (status === 'Rejected' || status === 'Declined') {
         user.qard_status = 'Declined';
         user.qard_credit_limit = 0;
         user.qard_available_credit = 0;
         user.qard_decline_reason = notes || 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।';
+        user.qard_admin_message = notes || 'জাতীয় পরিচয়পত্র বা তথ্যে অসঙ্গতি থাকায় আপনার আবেদনটি বাতিল করা হয়েছে।';
+      } else if (status === 'Needs Correction') {
+        user.qard_status = 'Needs Correction';
+        user.qard_admin_message = notes;
       } else if (status === 'Pending') {
         user.qard_status = 'Pending';
         user.qard_decline_reason = null;
+        user.qard_admin_message = null;
+      }
+    }
+    this.save();
+    return { app, user };
+  }
+
+  sendQardNotice(id, note, status = 'Needs Correction') {
+    if (!this.data.qard_applications) return null;
+    const app = this.data.qard_applications.find(a => a.id === id);
+    if (!app) return null;
+    app.status = status;
+    app.admin_notes = note;
+    app.reviewed_at = new Date().toISOString();
+    if (!app.admin_message_history) app.admin_message_history = [];
+    app.admin_message_history.push({ message: note, sent_at: new Date().toISOString(), status });
+
+    let user = app.user_id ? this.getUserById(app.user_id) : null;
+    if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+    if (!user && app.phone) {
+      const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
+
+    if (user) {
+      user.qard_status = status;
+      user.qard_admin_message = note;
+      if (status === 'Declined' || status === 'Rejected') {
+        user.qard_decline_reason = note;
       }
     }
     this.save();
@@ -1448,17 +1561,79 @@ class Database {
     return user;
   }
 
-  updateUserQardLimit(userId, newLimit) {
+  updateUserQardLimit(userId, newLimit, maxPercentage = null) {
     const user = this.getUserById(userId);
     if (!user) return null;
-    user.qard_credit_limit = Math.max(0, Number(newLimit) || 0);
+    if (newLimit !== undefined && newLimit !== null && newLimit !== '') {
+      user.qard_credit_limit = Math.max(0, Number(newLimit) || 0);
+    }
+    if (maxPercentage !== undefined && maxPercentage !== null && maxPercentage !== '') {
+      user.qard_max_percentage = Math.max(1, Number(maxPercentage) || 10);
+    }
+    this.save();
+    return user;
+  }
+
+  updateUserLoyaltyLimit(userId, pointsLimit) {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    user.loyalty_points_limit = (pointsLimit !== undefined && pointsLimit !== null && pointsLimit !== '')
+      ? Math.max(0, Number(pointsLimit))
+      : null;
     this.save();
     return user;
   }
 
   // Loyalty Card Applications
   getLoyaltyApplications() {
-    return (this.data.loyalty_applications || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const apps = (this.data.loyalty_applications || []).map(app => {
+      let user = app.user_id ? this.getUserById(app.user_id) : null;
+      if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+      if (!user && app.phone) {
+        const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+        user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+      }
+      return {
+        ...app,
+        user_id: user?.id || app.user_id || null,
+        loyalty_tier: user?.loyalty_tier || app.loyalty_tier || 'Gold VIP Patron',
+        loyalty_card_number: user?.loyalty_card_number || app.loyalty_card_number || `ANSAR-VIP-${(user?.id || app.id).slice(0, 4)}-2026`,
+        loyalty_points: user ? Number(user.loyalty_points || 0) : Number(app.loyalty_points || 0)
+      };
+    });
+
+    const appUserIds = new Set(apps.map(a => a.user_id).filter(Boolean));
+    const unlistedVipUsers = (this.data.users || []).filter(u => 
+      (u.loyalty_card_status === 'Approved' || u.loyalty_card_approved) && 
+      !appUserIds.has(u.id)
+    );
+
+    for (const u of unlistedVipUsers) {
+      apps.push({
+        id: 'lyt_usr_' + u.id,
+        user_id: u.id,
+        name: u.name,
+        phone: u.phone,
+        email: u.email || '',
+        nid_number: u.nid_number || 'N/A',
+        city: u.city || 'ঢাকা',
+        address: u.address || '',
+        status: 'Approved',
+        created_at: u.created_at || new Date().toISOString(),
+        payment_amount: 500,
+        transaction_id: 'SYSTEM',
+        sender_number: u.phone,
+        user_photo: u.user_photo || u.avatar || null,
+        nid_front_photo: u.nid_front_photo || null,
+        nid_back_photo: u.nid_back_photo || null,
+        admin_notes: 'সিস্টেম ভিআইপি মেম্বার',
+        loyalty_tier: u.loyalty_tier || 'Gold VIP Patron',
+        loyalty_card_number: u.loyalty_card_number || `ANSAR-VIP-${u.id.slice(0, 4)}-2026`,
+        loyalty_points: Number(u.loyalty_points || 0)
+      });
+    }
+
+    return apps;
   }
 
   createLoyaltyApplication(appData) {
@@ -1481,6 +1656,7 @@ class Database {
     if (user) {
       user.loyalty_card_status = 'Pending';
       user.loyalty_decline_reason = null;
+      user.loyalty_admin_message = null;
       if (appData.nid_number) user.nid_number = appData.nid_number;
       if (appData.nid_front_photo) user.nid_front_photo = appData.nid_front_photo;
       if (appData.nid_back_photo) user.nid_back_photo = appData.nid_back_photo;
@@ -1516,8 +1692,12 @@ class Database {
         user.loyalty_card_approved = true;
         user.loyalty_tier = 'Royal Gold VIP';
         user.loyalty_decline_reason = null;
+        user.loyalty_admin_message = null;
         if (!user.loyalty_card_number) {
           user.loyalty_card_number = `ANSAR-VIP-${Math.floor(1000 + Math.random() * 9000)}-2026`;
+        }
+        if (app.points_limit !== undefined && app.points_limit !== null && app.points_limit !== '') {
+          user.loyalty_points_limit = Number(app.points_limit);
         }
         const initialCardPoints = Math.max(0, Number(this.data.site_settings?.loyalty_card_initial_points ?? 100));
         if (!user.loyalty_bonus_awarded) {
@@ -1530,9 +1710,42 @@ class Database {
         user.loyalty_card_status = 'Declined';
         user.loyalty_card_approved = false;
         user.loyalty_decline_reason = notes || 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।';
+        user.loyalty_admin_message = notes || 'তথ্য অসম্পূর্ণ বা যাচাইকরণে অসঙ্গতি থাকায় আবেদনটি বাতিল করা হয়েছে।';
+      } else if (status === 'Needs Correction') {
+        user.loyalty_card_status = 'Needs Correction';
+        user.loyalty_admin_message = notes;
       } else if (status === 'Pending') {
         user.loyalty_card_status = 'Pending';
         user.loyalty_decline_reason = null;
+        user.loyalty_admin_message = null;
+      }
+    }
+    this.save();
+    return { app, user };
+  }
+
+  sendLoyaltyNotice(id, note, status = 'Needs Correction') {
+    if (!this.data.loyalty_applications) return null;
+    const app = this.data.loyalty_applications.find(a => a.id === id);
+    if (!app) return null;
+    app.status = status;
+    app.admin_notes = note;
+    app.reviewed_at = new Date().toISOString();
+    if (!app.admin_message_history) app.admin_message_history = [];
+    app.admin_message_history.push({ message: note, sent_at: new Date().toISOString(), status });
+
+    let user = app.user_id ? this.getUserById(app.user_id) : null;
+    if (!user && app.email) user = this.getUserByEmail(app.email.toLowerCase());
+    if (!user && app.phone) {
+      const cleanPhone = app.phone.trim().replace(/^(\+88|88)/, '');
+      user = this.getUserByPhone(cleanPhone) || this.data.users?.find(u => u.phone && u.phone.includes(cleanPhone));
+    }
+
+    if (user) {
+      user.loyalty_card_status = status;
+      user.loyalty_admin_message = note;
+      if (status === 'Declined' || status === 'Rejected') {
+        user.loyalty_decline_reason = note;
       }
     }
     this.save();

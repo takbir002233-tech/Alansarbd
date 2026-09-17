@@ -30,7 +30,8 @@ import {
   Smartphone,
   Laptop,
   Megaphone,
-  Radio
+  Radio,
+  Menu
 } from 'lucide-react';
 
 function playNotificationChime() {
@@ -83,6 +84,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   });
   const [sendingCustomNotif, setSendingCustomNotif] = useState(false);
   const [customNotifFeedback, setCustomNotifFeedback] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Trigger Native Mobile Status Bar & PC Action Center Notification
   const triggerSystemNotification = (notif) => {
@@ -433,8 +435,8 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between p-6 shrink-0">
+      {/* Sidebar (Desktop Sticky) */}
+      <aside className="hidden md:flex md:w-72 md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 bg-slate-900 border-r border-slate-800/80 flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           
           {/* Brand Logo & Mobile Bell */}
@@ -544,39 +546,177 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl bg-slate-950 flex flex-col relative" style={{ backgroundColor: '#020617' }}>
+      <main className="flex-1 p-4 md:p-8 min-w-0 max-w-7xl bg-slate-950 flex flex-col relative" style={{ backgroundColor: '#020617' }}>
         
-        {/* Browser / OS Push Notification Permission Prompt (Mobile & PC) */}
-        {notifPermission !== 'granted' && (
-          <div className="mb-5 bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/10 border-2 border-amber-500/50 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl animate-in fade-in">
-            <div className="flex items-center space-x-3">
-              <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 shrink-0 border border-amber-500/40">
-                <Bell className="w-5 h-5 animate-bounce" />
+        {/* MOBILE STICKY TOP HEADER BAR */}
+        <header className="md:hidden sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 px-4 py-2.5 flex items-center justify-between -mx-4 -mt-4 mb-2 shadow-lg">
+          <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => setActiveTab(navigation[0]?.id || 'dashboard')}>
+            <img 
+              src="/logo.jpg" 
+              alt="AL ANSAR" 
+              className="h-8 w-8 object-contain rounded-xl border border-amber-500/40 shadow-sm" 
+            />
+            <div>
+              <div className="flex items-center space-x-1">
+                <span className="font-black text-white text-sm tracking-tight">AL ANSAR</span>
+                <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20">
+                  PORTAL
+                </span>
               </div>
-              <div>
-                <h4 className="text-xs font-black text-white flex items-center space-x-2">
-                  <span>📱 মোবাইল ও পিসির স্ক্রিনে সরাসরি নোটিফিকেশন অন করুন</span>
-                  <span className="px-2 py-0.5 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full">সুপার ফাস্ট</span>
-                </h4>
-                <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                  ওয়েবসাইট বা ব্রাউজার বন্ধ থাকলেও নতুন অর্ডার, করযে হাসানা, ভিআইপি আবেদন ও রিফান্ডের নোটিফিকেশন আপনার মোবাইল স্ট্যাটাস বার / লকস্ক্রিন ও পিসি উইন্ডোজ অ্যাকশন সেন্টারে রিংটোন ও ভাইব্রেশন সহ সরাসরি প্রদর্শিত হবে।
-                </p>
-              </div>
+              <p className="text-[9px] font-semibold text-emerald-400 uppercase tracking-wider truncate max-w-[120px]">
+                {user?.is_staff ? (user.custom_role || 'Staff Control') : 'Admin Master Control'}
+              </p>
             </div>
-            <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
+          </div>
+
+          {/* Mobile Quick Action Buttons */}
+          <div className="flex items-center space-x-1.5">
+            {/* Custom Notification Trigger */}
+            <button
+              onClick={() => setShowCustomNotifModal(true)}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-700 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+              title="কাস্টম বার্তা"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Audio Toggle */}
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                soundEnabled ? 'bg-slate-900 border-slate-700 text-amber-400' : 'bg-slate-900 border-slate-800 text-slate-500'
+              }`}
+              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু' : 'সাউন্ড বন্ধ'}
+            >
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Mobile Notification Bell Trigger */}
+            <button
+              onClick={() => setShowDrawer(!showDrawer)}
+              className="notif-bell-btn relative p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
+              title="নোটিফিকেশন"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 bg-amber-500 text-slate-950 text-[9px] font-black rounded-full flex items-center justify-center border-2 border-slate-900 shadow-md">
+                  {toBn(unreadCount)}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile Menu Hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="মেনু"
+            >
+              {mobileMenuOpen ? <X className="w-3.5 h-3.5" /> : <Menu className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </header>
+
+        {/* MOBILE STICKY HORIZONTAL NAVIGATION SCROLL BAR */}
+        <div className="md:hidden sticky top-[48px] z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 -mx-4 px-3 py-2 flex items-center space-x-1.5 overflow-x-auto no-scrollbar shadow-md mb-3">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
               <button
-                onClick={requestNotificationPermission}
-                className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center space-x-2"
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 font-black shadow-md'
+                    : 'text-slate-400 hover:text-white bg-slate-850/90 border border-slate-700/60'
+                }`}
               >
-                <Bell className="w-4 h-4" />
-                <span>নোটিফিকেশন চালু করুন (Allow)</span>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+                {item.badgeKey && counts[item.badgeKey] > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                    isActive ? 'bg-slate-950 text-amber-400' : 'bg-amber-500 text-slate-950'
+                  }`}>
+                    {toBn(counts[item.badgeKey])}
+                  </span>
+                )}
               </button>
+            );
+          })}
+        </div>
+
+        {/* MOBILE FULL DRAWER MODAL OVERLAY */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col p-4 animate-in fade-in">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center space-x-2.5">
+                  <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-xl object-contain border border-amber-500/40" />
+                  <div>
+                    <span className="font-black text-white text-sm">আল আনসার পোর্টাল মেনু</span>
+                    <p className="text-[10px] text-emerald-400 font-bold uppercase">{user?.is_staff ? user.custom_role : 'Admin Master'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                        isActive ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
+                      <span>{item.label}</span>
+                      {item.badgeKey && counts[item.badgeKey] > 0 && (
+                        <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">
+                          {toBn(counts[item.badgeKey])}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-4 border-t border-slate-800 space-y-2.5">
+                <button
+                  onClick={() => {
+                    onNavigate('home');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <Store className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Open Public Storefront</span>
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full py-2.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log Out</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Desktop Top Header Bar with Live Notification Center */}
-        <div className="hidden md:flex items-center justify-between pb-5 mb-6 border-b border-slate-800/80">
+        {/* Desktop Top Header Bar with Live Notification Center (Sticky) */}
+        <div className="hidden md:flex sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md items-center justify-between py-3.5 px-6 -mx-4 md:-mx-8 -mt-4 md:-mt-8 mb-6 border-b border-slate-800/80 shadow-md">
           <div>
             <h1 className="text-lg font-black text-white tracking-tight flex items-center space-x-2">
               <span>{navigation.find(n => n.id === activeTab)?.label || 'অ্যাডমিন ড্যাশবোর্ড'}</span>
@@ -645,11 +785,40 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
           </div>
         </div>
 
-        {/* NOTIFICATION CENTER DROPDOWN / DRAWER (PC + Mobile) */}
+        {/* Browser / OS Push Notification Permission Prompt (Mobile & PC) */}
+        {notifPermission !== 'granted' && (
+          <div className="mb-5 bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/10 border-2 border-amber-500/50 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl animate-in fade-in">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 shrink-0 border border-amber-500/40">
+                <Bell className="w-5 h-5 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-white flex items-center space-x-2">
+                  <span>📱 মোবাইল ও পিসির স্ক্রিনে সরাসরি নোটিফিকেশন অন করুন</span>
+                  <span className="px-2 py-0.5 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full">সুপার ফাস্ট</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                  ওয়েবসাইট বা ব্রাউজার বন্ধ থাকলেও নতুন অর্ডার, করযে হাসানা, ভিআইপি আবেদন ও রিফান্ডের নোটিফিকেশন আপনার মোবাইল স্ট্যাটাস বার / লকস্ক্রিন ও পিসি উইন্ডোজ অ্যাকশন সেন্টারে রিংটোন ও ভাইব্রেশন সহ সরাসরি প্রদর্শিত হবে।
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
+              <button
+                onClick={requestNotificationPermission}
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <Bell className="w-4 h-4" />
+                <span>নোটিফিকেশন চালু করুন (Allow)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* NOTIFICATION CENTER DROPDOWN / DRAWER (PC + Mobile Fixed) */}
         {showDrawer && (
           <div 
             ref={drawerRef}
-            className="absolute top-16 right-4 md:right-8 z-50 w-80 sm:w-96 bg-slate-900 border-2 border-slate-700 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="fixed top-14 right-3 sm:right-6 md:right-8 z-50 w-80 sm:w-96 bg-slate-900 border-2 border-slate-700 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           >
             {/* Drawer Header */}
             <div className="p-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between">

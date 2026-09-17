@@ -11,6 +11,7 @@ import {
   Sparkles, 
   ArrowLeft, 
   ArrowRight,
+  ChevronLeft,
   ChevronRight,
   Flame,
   AlertTriangle,
@@ -33,6 +34,8 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchEndX, setTouchEndX] = useState(null);
 
   // Bengali digits converter helper
   const toBengaliDigits = (str) => {
@@ -101,7 +104,48 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
   const isOutOfStock = stockNum <= 0;
   const isLowStock = stockNum > 0 && stockNum <= 5;
 
-  const images = product.images && product.images.length > 0 ? product.images : [product.thumbnail];
+  // Combine main photo (thumbnail) and extra slide images, removing duplicates & empty values
+  const allImages = [
+    product.thumbnail,
+    ...(Array.isArray(product.images) ? product.images : [])
+  ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+
+  if (allImages.length === 0) {
+    allImages.push('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80');
+  }
+
+  // Safe active image index
+  const currentImageIdx = Math.min(Math.max(0, activeImage), allImages.length - 1);
+
+  const handlePrevSlide = (e) => {
+    e?.stopPropagation?.();
+    setActiveImage((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleNextSlide = (e) => {
+    e?.stopPropagation?.();
+    setActiveImage((prev) => (prev + 1) % allImages.length);
+  };
+
+  // Touch Swipe Support for smooth mobile sliding
+  const handleTouchStart = (e) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null) return;
+    const distance = touchStartX - touchEndX;
+    if (distance > 45) {
+      setActiveImage((prev) => (prev + 1) % allImages.length);
+    } else if (distance < -45) {
+      setActiveImage((prev) => (prev - 1 + allImages.length) % allImages.length);
+    }
+  };
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -145,9 +189,14 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
         
         {/* 1. LEFT COLUMN (4 cols): Product Photo & Gallery (Photo shifted left to fill space) */}
         <div className="lg:col-span-4 xl:col-span-4 space-y-2">
-          <div className="relative h-56 sm:h-64 lg:h-[285px] xl:h-[305px] w-full rounded-2xl overflow-hidden bg-slate-50 border border-amber-200 shadow-xs flex items-center justify-center p-2 group">
+          <div 
+            className="relative h-56 sm:h-64 lg:h-[285px] xl:h-[305px] w-full rounded-2xl overflow-hidden bg-slate-50 border border-amber-200 shadow-xs flex items-center justify-center p-2 group select-none"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
-              src={images[activeImage] || product.thumbnail || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80'}
+              src={allImages[currentImageIdx] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80'}
               alt={product.title}
               onError={(e) => {
                 e.target.onerror = null;
@@ -155,6 +204,45 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
               }}
               className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 ${isOutOfStock ? 'grayscale-20' : ''}`}
             />
+
+            {/* Slide Navigation Buttons (shown if more than 1 image) */}
+            {allImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  aria-label="Previous Slide"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 hover:text-amber-800 shadow-md border border-amber-200/80 flex items-center justify-center transition-all opacity-85 hover:opacity-100 hover:scale-110 cursor-pointer active:scale-95"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  aria-label="Next Slide"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 hover:text-amber-800 shadow-md border border-amber-200/80 flex items-center justify-center transition-all opacity-85 hover:opacity-100 hover:scale-110 cursor-pointer active:scale-95"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Slide indicator dots + count badge */}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center space-x-1.5 bg-slate-950/75 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20 shadow-md pointer-events-none">
+                  <div className="flex items-center space-x-1">
+                    {allImages.map((_, dotIdx) => (
+                      <span
+                        key={dotIdx}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          currentImageIdx === dotIdx ? 'w-3.5 bg-amber-400' : 'w-1.5 bg-white/40'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-white ml-1 font-mono tracking-tight">
+                    {toBengaliDigits(currentImageIdx + 1)}/{toBengaliDigits(allImages.length)}
+                  </span>
+                </div>
+              </>
+            )}
 
             {/* TOP-LEFT: Emerald Sawtooth Ribbon Discount Tag (Matching ProductCard) */}
             {hasDiscount && (
@@ -219,14 +307,14 @@ export default function ProductDetails({ productId, onNavigate, onBack }) {
           </div>
 
           {/* Compact Thumbnails */}
-          {images.length > 1 && (
+          {allImages.length > 1 && (
             <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5">
-              {images.map((img, idx) => (
+              {allImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImage(idx)}
                   className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-white p-0.5 cursor-pointer ${
-                    activeImage === idx ? 'border-amber-500 ring-2 ring-amber-400/40 scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'
+                    currentImageIdx === idx ? 'border-amber-500 ring-2 ring-amber-400/40 scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'
                   }`}
                 >
                   <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-contain" />
