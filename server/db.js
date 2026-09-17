@@ -911,9 +911,9 @@ class Database {
       loyalty_card_approved: false,
       loyalty_card_number: null,
       loyalty_tier: null,
-      qard_credit_limit: 5000,
-      qard_available_credit: 5000,
-      qard_status: 'Eligible',
+      qard_credit_limit: 0,
+      qard_available_credit: 0,
+      qard_status: null,
       created_at: new Date().toISOString(),
       ...userData
     };

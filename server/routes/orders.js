@@ -121,11 +121,19 @@ router.post('/', (req, res) => {
     const total_amount = Math.max(0, subtotal - discount) + finalDeliveryFee + qardRepayAmount;
 
     const qardAmount = Number(req.body.qard_amount || req.body.qard_deferred_amount || 0);
-    if ((pMethod === 'qard' || qardAmount > 0) && hasUnpaidQard) {
-      return res.status(400).json({
-        success: false,
-        message: `আপনার পূর্বের করযে হাসানা ঋণ বকেয়া রয়েছে (৳${existingUser.qard_unpaid_amount})। পূর্বের ঋণ সম্পূর্ণ পরিশোধ না করা পর্যন্ত নতুন করযে হাসানা নির্বাচন করা যাবে না। অনুগ্রহ করে সাধারণ পেমেন্টে অর্ডার সম্পন্ন করুন।`
-      });
+    if (pMethod === 'qard' || qardAmount > 0) {
+      if (!existingUser || existingUser.qard_status !== 'Approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'করযে হাসানা সুবিধা গ্রহণের জন্য আপনার অ্যাকাউন্ট অ্যাডমিন দ্বারা অনুমোদিত হতে হবে।'
+        });
+      }
+      if (hasUnpaidQard) {
+        return res.status(400).json({
+          success: false,
+          message: `আপনার পূর্বের করযে হাসানা ঋণ বকেয়া রয়েছে (৳${existingUser.qard_unpaid_amount})। পূর্বের ঋণ সম্পূর্ণ পরিশোধ না করা পর্যন্ত নতুন করযে হাসানা নির্বাচন করা যাবে না। অনুগ্রহ করে সাধারণ পেমেন্টে অর্ডার সম্পন্ন করুন।`
+        });
+      }
     }
 
     const orderCode = 'ANSAR-' + Math.floor(100000 + Math.random() * 900000);
@@ -305,7 +313,7 @@ router.get('/my-qard-ledger', authenticateToken, (req, res) => {
     const availableCredit = Math.max(0, creditLimit - unpaidDebt);
 
     const qardLedger = {
-      status: user.qard_status || (user.is_qard_eligible ? 'Approved' : 'None'),
+      status: user.qard_status || 'None',
       credit_limit: creditLimit,
       available_credit: availableCredit,
       total_borrowed: totalQardBorrowed || unpaidDebt,

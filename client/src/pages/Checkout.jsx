@@ -187,10 +187,10 @@ export default function Checkout({ onNavigate, onOrderSuccess, onBack }) {
   const hasUnpaidQard = Boolean(user?.has_unpaid_qard && Number(user?.qard_unpaid_amount) > 0);
   const unpaidDebt = Number(user?.qard_unpaid_amount) || 0;
   const isQardApproved = Boolean(
-    (user?.qard_status && user.qard_status.toLowerCase() === 'approved') || 
-    user?.is_qard_eligible || 
-    (Number(user?.qard_limit) > 0) ||
-    (Number(user?.qard_credit_limit) > 0)
+    user && 
+    user.qard_status && 
+    user.qard_status.toLowerCase() === 'approved' &&
+    Number(user.qard_credit_limit || user.qard_limit || 0) > 0
   );
   const qardEligible = isQardApproved && !hasUnpaidQard;
 

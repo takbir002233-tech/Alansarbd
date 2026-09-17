@@ -40,12 +40,10 @@ export default function QardHasana({ onNavigate, onBack }) {
 
   // Qard Approval & Status Logic
   const isQardApproved = Boolean(
-    user && (
-      (user.qard_status && user.qard_status.toLowerCase() === 'approved') ||
-      user.is_qard_eligible ||
-      (Number(user.qard_credit_limit) > 0) ||
-      (Number(user.qard_limit) > 0)
-    )
+    user && 
+    user.qard_status && 
+    user.qard_status.toLowerCase() === 'approved' &&
+    Number(user.qard_credit_limit || user.qard_limit || 0) > 0
   );
 
   const isQardPending = Boolean(
@@ -86,7 +84,7 @@ export default function QardHasana({ onNavigate, onBack }) {
   }, [isQardApproved, token]);
 
   // Derived Financial Metrics
-  const creditLimit = Number(ledgerData?.credit_limit ?? user?.qard_credit_limit ?? user?.qard_limit ?? 5000);
+  const creditLimit = Number(ledgerData?.credit_limit ?? user?.qard_credit_limit ?? user?.qard_limit ?? 0);
   const unpaidDebt = Number(ledgerData?.unpaid_debt ?? user?.qard_unpaid_amount ?? 0);
   const availableCredit = Number(ledgerData?.available_credit ?? Math.max(0, creditLimit - unpaidDebt));
   const totalBorrowed = Number(ledgerData?.total_borrowed ?? (unpaidDebt + Number(user?.qard_total_repaid || 0)));
@@ -200,6 +198,7 @@ export default function QardHasana({ onNavigate, onBack }) {
 
   const handleApplySuccess = (app) => {
     setAppliedApp(app);
+    if (refreshUser) refreshUser();
   };
 
   return (

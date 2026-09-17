@@ -86,14 +86,12 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
   };
 
   const isQardApproved = Boolean(
-    user && (
-      (user.qard_status && user.qard_status.toLowerCase() === 'approved') ||
-      user.is_qard_eligible ||
-      (Number(user.qard_credit_limit) > 0) ||
-      (Number(user.qard_limit) > 0)
-    )
+    user && 
+    user.qard_status && 
+    user.qard_status.toLowerCase() === 'approved' &&
+    Number(user.qard_credit_limit || user.qard_limit || 0) > 0
   );
-  const qardLimit = isQardApproved ? (Number(user?.qard_credit_limit) || Number(user?.qard_limit) || 5000) : 0;
+  const qardLimit = isQardApproved ? (Number(user?.qard_credit_limit) || Number(user?.qard_limit) || 0) : 0;
 
   // Live real-time clock in Bengali
   useEffect(() => {
