@@ -108,21 +108,55 @@ router.get('/users', requireAdmin, (req, res) => {
     const users = db.getUsers();
     const orders = db.getOrders();
 
+    // Fast indexed maps for user orders - O(1) lookup per user
+    const ordersByUserId = new Map();
+    const ordersByPhone = new Map();
+
+    for (const o of orders) {
+      if (o.user_id) {
+        if (!ordersByUserId.has(o.user_id)) ordersByUserId.set(o.user_id, []);
+        ordersByUserId.get(o.user_id).push(o);
+      }
+      if (o.customer_phone) {
+        if (!ordersByPhone.has(o.customer_phone)) ordersByPhone.set(o.customer_phone, []);
+        ordersByPhone.get(o.customer_phone).push(o);
+      }
+    }
+
     const usersWithStats = users.map(user => {
-      const userOrders = orders.filter(o => o.user_id === user.id || (o.customer_phone && user.phone && o.customer_phone === user.phone));
-      const totalSpent = userOrders
-        .filter(o => o.status !== 'Cancelled')
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0);
-      const cancelledOrders = userOrders.filter(o => (o.status || '').toLowerCase() === 'cancelled');
-      const deliveredOrders = userOrders.filter(o => (o.status || '').toLowerCase() === 'delivered');
+      // Fast O(1) order lookup without nested full scans
+      const userOrderMap = new Map();
+      if (user.id && ordersByUserId.has(user.id)) {
+        for (const o of ordersByUserId.get(user.id)) userOrderMap.set(o.id, o);
+      }
+      if (user.phone && ordersByPhone.has(user.phone)) {
+        for (const o of ordersByPhone.get(user.phone)) userOrderMap.set(o.id, o);
+      }
+      const userOrders = Array.from(userOrderMap.values());
+
+      let totalSpent = 0;
+      let cancelledOrdersCount = 0;
+      let deliveredOrdersCount = 0;
+
+      for (const o of userOrders) {
+        const st = (o.status || '').toLowerCase();
+        if (st !== 'cancelled') {
+          totalSpent += (o.total_amount || 0);
+        }
+        if (st === 'cancelled') cancelledOrdersCount++;
+        else if (st === 'delivered') deliveredOrdersCount++;
+      }
 
       const safe = { ...user };
       delete safe.password_hash;
+      delete safe.nid_front_photo;
+      delete safe.nid_back_photo;
+
       return {
         ...safe,
         orders_count: userOrders.length,
-        cancelled_orders_count: cancelledOrders.length,
-        delivered_orders_count: deliveredOrders.length,
+        cancelled_orders_count: cancelledOrdersCount,
+        delivered_orders_count: deliveredOrdersCount,
         total_spent: totalSpent
       };
     });

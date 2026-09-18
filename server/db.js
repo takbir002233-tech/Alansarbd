@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { sanitizePhotoFields } = require('./services/storageHelper');
 
 const DB_FILE = path.join(__dirname, 'data.json');
 
@@ -926,6 +927,7 @@ class Database {
   getUserByPhone(phone) { return this.data.users.find(u => u.phone === phone); }
   
   createUser(userData) {
+    const cleanUserData = sanitizePhotoFields(userData, 'user');
     const newUser = {
       id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       is_blocked: false,
@@ -939,7 +941,7 @@ class Database {
       qard_available_credit: 0,
       qard_status: null,
       created_at: new Date().toISOString(),
-      ...userData
+      ...cleanUserData
     };
     this.data.users.push(newUser);
     this.save();
@@ -949,7 +951,8 @@ class Database {
   updateUser(id, updates) {
     const idx = this.data.users.findIndex(u => u.id === id);
     if (idx === -1) return null;
-    this.data.users[idx] = { ...this.data.users[idx], ...updates };
+    const cleanUpdates = sanitizePhotoFields(updates, 'user_' + id);
+    this.data.users[idx] = { ...this.data.users[idx], ...cleanUpdates };
     this.save();
     return this.data.users[idx];
   }
@@ -1405,11 +1408,12 @@ class Database {
 
   createQardApplication(appData) {
     if (!this.data.qard_applications) this.data.qard_applications = [];
+    const cleanAppData = sanitizePhotoFields(appData, 'qard');
     const newApp = {
       id: 'qrd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       status: 'Pending',
       created_at: new Date().toISOString(),
-      ...appData
+      ...cleanAppData
     };
     this.data.qard_applications.unshift(newApp);
 
@@ -1638,11 +1642,12 @@ class Database {
 
   createLoyaltyApplication(appData) {
     if (!this.data.loyalty_applications) this.data.loyalty_applications = [];
+    const cleanAppData = sanitizePhotoFields(appData, 'loyalty');
     const newApp = {
       id: 'lyt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       status: 'Pending',
       created_at: new Date().toISOString(),
-      ...appData
+      ...cleanAppData
     };
     this.data.loyalty_applications.unshift(newApp);
 
