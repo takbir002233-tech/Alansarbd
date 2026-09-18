@@ -60,7 +60,7 @@ export default function AdminTeamChat() {
   // Fetch initial group messages and team members
   const fetchData = async () => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (!authToken) return;
 
       const [resMsgs, resMembers] = await Promise.all([
@@ -145,7 +145,7 @@ export default function AdminTeamChat() {
 
     setSending(true);
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       const res = await fetch('/api/chat/admin-group/messages', {
         method: 'POST',
         headers: {
@@ -176,7 +176,7 @@ export default function AdminTeamChat() {
   const handleDelete = async (msgId) => {
     if (!window.confirm('আপনি কি এই মেসেজটি মুছে ফেলতে চান?')) return;
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       const res = await fetch(`/api/chat/admin-group/messages/${msgId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authToken}` }
@@ -193,7 +193,7 @@ export default function AdminTeamChat() {
   // Toggle Pin
   const handleTogglePin = async (msgId) => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       const res = await fetch(`/api/chat/admin-group/messages/${msgId}/pin`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken}` }

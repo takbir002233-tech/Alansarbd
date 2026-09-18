@@ -62,7 +62,7 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
       setLoading(true);
       try {
         const res = await fetch(`/api/admin/users/${user.id}/details`, {
-          headers: { Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}` }
+          headers: { Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}` }
         });
         const data = await res.json();
         if (data.success) {
@@ -117,7 +117,7 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
+          Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}`
         },
         body: JSON.stringify({ 
           credit_limit: Number(editLimitVal),
@@ -154,7 +154,7 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
+          Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}`
         },
         body: JSON.stringify({ 
           points_limit: editPointsLimitVal === '' ? null : Number(editPointsLimitVal) 

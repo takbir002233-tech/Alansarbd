@@ -50,7 +50,7 @@ export default function AdminLoyaltyDesk({ onOpenInvoice }) {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/loyalty-applications', {
-        headers: { Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}` }
+        headers: { Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}` }
       });
       const data = await res.json();
       if (data.success) {
@@ -79,7 +79,7 @@ export default function AdminLoyaltyDesk({ onOpenInvoice }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
+          Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}`
         },
         body: JSON.stringify({ 
           status, 
@@ -117,7 +117,7 @@ export default function AdminLoyaltyDesk({ onOpenInvoice }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token || localStorage.getItem('alansar_token')}`
+          Authorization: `Bearer ${token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('alansar_token')}`
         },
         body: JSON.stringify({
           note: adminNotes.trim(),

@@ -76,10 +76,20 @@ function parseInitialRoute() {
       }
     }
 
+    // Check tab-isolated session storage first
+    const savedSession = sessionStorage.getItem('alansar_active_page');
+    if (savedSession) {
+      const parsed = JSON.parse(savedSession);
+      if (parsed && parsed.page) {
+        return parsed;
+      }
+    }
+
     const saved = localStorage.getItem('alansar_active_page');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && parsed.page) {
+      // NEVER restore al-ansar-admin from global localStorage onto a new tab!
+      if (parsed && parsed.page && parsed.page !== 'al-ansar-admin' && parsed.page !== 'admin') {
         return parsed;
       }
     }
@@ -101,16 +111,16 @@ function MainApp() {
   // Navigation History Stack for true "Back to previous page" behavior
   const [historyStack, setHistoryStack] = useState([{ page: initialRoute.page, params: initialRoute.params || {} }]);
 
-  // Admin Tab Navigation
+  // Admin Tab Navigation - Tab Isolated
   const [adminTab, setAdminTab] = useState(() => {
     const route = parseInitialRoute();
-    return route.params?.tab || localStorage.getItem('alansar_admin_tab') || 'dashboard';
+    return route.params?.tab || sessionStorage.getItem('alansar_admin_tab') || 'dashboard';
   });
   const [adminOrderFilter, setAdminOrderFilter] = useState('all');
 
   useEffect(() => {
     try {
-      localStorage.setItem('alansar_admin_tab', adminTab);
+      sessionStorage.setItem('alansar_admin_tab', adminTab);
     } catch (e) {}
   }, [adminTab]);
 
@@ -147,7 +157,10 @@ function MainApp() {
           setSearchKeyword(state.params.search);
         }
         try {
-          localStorage.setItem('alansar_active_page', JSON.stringify(state));
+          sessionStorage.setItem('alansar_active_page', JSON.stringify(state));
+          if (state.page !== 'al-ansar-admin' && state.page !== 'admin') {
+            localStorage.setItem('alansar_active_page', JSON.stringify(state));
+          }
         } catch (e) {}
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -186,7 +199,10 @@ function MainApp() {
     }
 
     try {
-      localStorage.setItem('alansar_active_page', JSON.stringify(stateObj));
+      sessionStorage.setItem('alansar_active_page', JSON.stringify(stateObj));
+      if (page !== 'al-ansar-admin' && page !== 'admin') {
+        localStorage.setItem('alansar_active_page', JSON.stringify(stateObj));
+      }
     } catch (e) {}
 
     if (options.replace) {

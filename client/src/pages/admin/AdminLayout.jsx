@@ -169,7 +169,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
     setSendingCustomNotif(true);
     setCustomNotifFeedback(null);
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       const res = await fetch('/api/admin/send-custom-notification', {
         method: 'POST',
         headers: {
@@ -213,7 +213,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
   const fetchCounts = async () => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (!authToken) return;
       const res = await fetch('/api/admin/stats', {
         headers: { Authorization: `Bearer ${authToken}` }
@@ -232,7 +232,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
   const fetchNotifications = async () => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (!authToken) return;
       const res = await fetch('/api/admin/notifications', {
         headers: { Authorization: `Bearer ${authToken}` }
@@ -296,7 +296,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
   const handleMarkAsRead = async (notif) => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (authToken) {
         fetch(`/api/admin/notifications/${notif.id}/read`, {
           method: 'PUT',
@@ -314,7 +314,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
   const handleMarkAllRead = async () => {
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (authToken) {
         await fetch('/api/admin/notifications/mark-all-read', {
           method: 'PUT',
@@ -329,7 +329,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   const handleClearAll = async () => {
     if (!window.confirm('আপনি কি সব নোটিফিকেশন মুছে ফেলতে চান?')) return;
     try {
-      const authToken = token || localStorage.getItem('nexus_token');
+      const authToken = token || sessionStorage.getItem('alansar_admin_token') || sessionStorage.getItem('nexus_token') || localStorage.getItem('nexus_token');
       if (authToken) {
         await fetch('/api/admin/notifications', {
           method: 'DELETE',
