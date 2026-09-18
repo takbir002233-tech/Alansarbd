@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { playNotificationChime } from '../utils/audioHelper';
 
 const SocketContext = createContext();
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, setUser, refreshUser } = useAuth();
   const [liveNotifications, setLiveNotifications] = useState([]);
 
   useEffect(() => {
@@ -33,12 +34,14 @@ export function SocketProvider({ children }) {
     // Real-time new order notification handler (Frontend floating toast disabled per user request)
     newSocket.on('new_order', (order) => {
       console.log('🔔 New order received via socket:', order?.order_code);
-      // Floating notification toast turned off so user does not see popup on screen
     });
 
     // Real-time status update for customer
     newSocket.on('order_status_updated', (data) => {
       console.log('📦 Order status updated:', data);
+      try {
+        playNotificationChime();
+      } catch (e) {}
       setLiveNotifications(prev => [
         {
           id: Date.now(),
@@ -57,18 +60,23 @@ export function SocketProvider({ children }) {
       const isDeclined = data.status === 'Declined' || data.status === 'Rejected';
       const isApproved = data.status === 'Approved';
       
-      setUser(prev => {
-        if (!prev) return prev;
-        const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
-        if (!matches) return prev;
-        return {
-          ...prev,
-          qard_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
-          qard_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
-        };
-      });
+      if (setUser) {
+        setUser(prev => {
+          if (!prev) return prev;
+          const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
+          if (!matches) return prev;
+          return {
+            ...prev,
+            qard_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
+            qard_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
+          };
+        });
+      }
 
       if (user && (user.id === data.user_id || (user.phone && data.phone && user.phone.includes(data.phone.replace(/^(\+88|88)/, ''))))) {
+        try {
+          playNotificationChime();
+        } catch (e) {}
         setLiveNotifications(prev => [
           {
             id: Date.now(),
@@ -91,19 +99,24 @@ export function SocketProvider({ children }) {
       const isDeclined = data.status === 'Declined' || data.status === 'Rejected';
       const isApproved = data.status === 'Approved';
 
-      setUser(prev => {
-        if (!prev) return prev;
-        const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
-        if (!matches) return prev;
-        return {
-          ...prev,
-          loyalty_card_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
-          loyalty_card_approved: isApproved,
-          loyalty_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
-        };
-      });
+      if (setUser) {
+        setUser(prev => {
+          if (!prev) return prev;
+          const matches = prev.id === data.user_id || (prev.phone && data.phone && prev.phone.includes(data.phone.replace(/^(\+88|88)/, '')));
+          if (!matches) return prev;
+          return {
+            ...prev,
+            loyalty_card_status: isDeclined ? 'Declined' : isApproved ? 'Approved' : data.status,
+            loyalty_card_approved: isApproved,
+            loyalty_decline_reason: isDeclined ? (data.notes || 'আবেদনটি বাতিল করা হয়েছে') : null
+          };
+        });
+      }
 
       if (user && (user.id === data.user_id || (user.phone && data.phone && user.phone.includes(data.phone.replace(/^(\+88|88)/, ''))))) {
+        try {
+          playNotificationChime();
+        } catch (e) {}
         setLiveNotifications(prev => [
           {
             id: Date.now(),
@@ -122,7 +135,7 @@ export function SocketProvider({ children }) {
 
     // Real-time user object sync
     newSocket.on('user_updated', (data) => {
-      if (user && data.userId === user.id && data.user) {
+      if (user && data.userId === user.id && data.user && setUser) {
         setUser(data.user);
       }
     });
@@ -133,6 +146,12 @@ export function SocketProvider({ children }) {
       newSocket.disconnect();
     };
   }, [isAdmin, user]);
+
+  useEffect(() => {
+    if (socket && isConnected && isAdmin) {
+      socket.emit('join_admin_channel');
+    }
+  }, [socket, isConnected, isAdmin]);
 
   const clearNotification = (id) => {
     setLiveNotifications(prev => prev.filter(n => n.id !== id));

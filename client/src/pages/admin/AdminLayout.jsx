@@ -33,27 +33,7 @@ import {
   Radio,
   Menu
 } from 'lucide-react';
-
-function playNotificationChime() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    const now = ctx.currentTime;
-    osc.frequency.setValueAtTime(587.33, now); // D5
-    osc.frequency.setValueAtTime(880, now + 0.12); // A5
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-    osc.start(now);
-    osc.stop(now + 0.5);
-  } catch (e) {}
-}
+import { playNotificationChime } from '../../utils/audioHelper';
 
 export default function AdminLayout({ children, activeTab, setActiveTab, onNavigate }) {
   const { user, logout, isSuperAdmin, hasPermission, token } = useAuth();
@@ -64,9 +44,26 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDrawer, setShowDrawer] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('alansar_admin_sound') !== 'false';
+    } catch (e) {
+      return true;
+    }
+  });
   const [incomingToast, setIncomingToast] = useState(null);
   const drawerRef = useRef(null);
+
+  const handleToggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem('alansar_admin_sound', String(next));
+    } catch (e) {}
+    if (next) {
+      playNotificationChime();
+    }
+  };
 
   // OS-level Push Notification & Custom Message States
   const [notifPermission, setNotifPermission] = useState(() => {
@@ -259,6 +256,8 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
   // Real-time WebSocket event listener for incoming admin alerts
   useEffect(() => {
     if (!socket) return;
+
+    socket.emit('join_admin_channel');
 
     const handleAdminNotif = (notif) => {
       setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
@@ -582,11 +581,11 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
             {/* Audio Toggle */}
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={handleToggleSound}
               className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                 soundEnabled ? 'bg-slate-900 border-slate-700 text-amber-400' : 'bg-slate-900 border-slate-800 text-slate-500'
               }`}
-              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু' : 'সাউন্ড বন্ধ'}
+              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু (ক্লিক করে শুনুন বা বন্ধ করুন)' : 'সাউন্ড বন্ধ (চালু করতে ক্লিক করুন)'}
             >
               {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </button>
@@ -743,6 +742,9 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
             {/* Test Push Trigger */}
             <button
               onClick={() => {
+                if (soundEnabled) {
+                  playNotificationChime();
+                }
                 triggerSystemNotification({
                   title: '🧪 টেস্ট পুশ নোটিফিকেশন',
                   message: 'মোবাইল ও পিসির নোটিফিকেশন সফলভাবে সক্রিয় হয়েছে!'
@@ -757,13 +759,13 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onNavig
 
             {/* Audio Toggle */}
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={handleToggleSound}
               className={`p-2 rounded-xl border transition-all cursor-pointer ${
                 soundEnabled 
                   ? 'bg-slate-900 border-slate-700 text-amber-400 hover:border-amber-500' 
                   : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
               }`}
-              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু আছে' : 'সাউন্ড অ্যালার্ট বন্ধ'}
+              title={soundEnabled ? 'সাউন্ড অ্যালার্ট চালু আছে (ক্লিক করে শুনুন বা বন্ধ করুন)' : 'সাউন্ড বন্ধ (চালু করতে ক্লিক করুন)'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
