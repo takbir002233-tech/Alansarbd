@@ -504,6 +504,9 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
     : 0;
   const pointCashValue = loyaltyPoints * (Number(siteSettings?.reward_point_value_bdt) || 1);
   const qardLimit = isQardApproved ? (user?.qard_credit_limit || 5000) : 0;
+  const qardPercentage = Number(user?.qard_max_percentage) > 0 
+    ? Number(user.qard_max_percentage) 
+    : (Number(siteSettings?.qard_max_percentage) || 10);
   const unpaidQard = Number(user?.qard_unpaid_amount || 0);
   const totalRepaidQard = Number(user?.qard_total_repaid || 0);
   const totalBorrowedQard = unpaidQard + totalRepaidQard;
@@ -545,8 +548,8 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-black text-white">{user?.name || 'সম্মানিত গ্রাহক'}</h1>
+            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+              <h2 className="text-lg sm:text-xl font-black">{user?.name || 'সম্মানিত গ্রাহক'}</h2>
               <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
                 {isLoyaltyApproved ? (user?.loyalty_tier || 'Gold VIP Patron') : 'সাধারণ গ্রাহক (Regular Member)'}
               </span>
@@ -557,9 +560,12 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
 
         <div className="flex flex-wrap items-center gap-3">
           {isQardApproved ? (
-            <div className="px-4 py-2 bg-emerald-900/80 text-amber-300 text-xs font-black rounded-xl border border-emerald-500/40 flex items-center space-x-1.5 shadow-md">
-              <HandHeart className="w-4 h-4 text-amber-300" />
+            <div className="px-4 py-2 bg-emerald-900/80 text-amber-300 text-xs font-black rounded-xl border border-emerald-500/40 flex items-center space-x-2 shadow-md">
+              <HandHeart className="w-4 h-4 text-amber-300 shrink-0" />
               <span>করযে হাসানা লিমিট: ৳{toBengaliDigits(qardLimit.toLocaleString())}</span>
+              <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md leading-none shadow-2xs">
+                {toBengaliDigits(qardPercentage)}% ধার
+              </span>
             </div>
           ) : (
             <button
@@ -567,7 +573,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
               className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600/40 flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
             >
               <HandHeart className="w-4 h-4 text-amber-300" />
-              <span>{isQardPending ? 'করযে হাসানা আবেদন পর্যালোচনায়' : 'করযে হাসানা আবেদন'}</span>
+              <span>{isQardPending ? 'করযে হাসানা আবেদন পর্যালোচনায়' : `করযে হাসানা আবেদন (${toBengaliDigits(qardPercentage)}% ধার)`}</span>
             </button>
           )}
 
@@ -663,7 +669,12 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
           className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group flex flex-col justify-between min-h-[112px] sm:min-h-[122px]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">করযে হাসানা লিমিট</span>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">করযে হাসানা লিমিট</span>
+              <span className="px-1.5 py-0.5 bg-teal-100 text-teal-900 border border-teal-300 text-[10px] font-black rounded-md leading-none">
+                {toBengaliDigits(qardPercentage)}%
+              </span>
+            </div>
             <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <HandHeart className="w-4 h-4 text-teal-700" />
             </div>
@@ -674,8 +685,9 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
               {toBengaliDigits(qardLimit.toLocaleString())}
             </span>
           </div>
-          <p className="text-[10px] text-teal-700 font-bold mt-1">
-            {isQardApproved ? '✓ সক্রিয় ক্রেডিট লিমিট' : isQardPending ? '⏳ আবেদন পর্যালোচনায়' : 'বিনা সুদে কেনাকাটা'}
+          <p className="text-[10px] text-teal-700 font-bold mt-1 flex items-center justify-between">
+            <span>{isQardApproved ? '✓ সক্রিয় ক্রেডিট লিমিট' : isQardPending ? '⏳ আবেদন পর্যালোচনায়' : 'বিনা সুদে কেনাকাটা'}</span>
+            <span className="text-teal-800 font-black">সর্বোচ্চ {toBengaliDigits(qardPercentage)}% ধার</span>
           </p>
         </div>
       </div>
@@ -1071,11 +1083,16 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                   {/* 4-Stat Subgrid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                     <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30 space-y-0.5">
-                      <span className="text-emerald-300 text-[10px] font-bold block uppercase">অনুমোদিত ঋণ সীমা</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-300 text-[10px] font-bold block uppercase">অনুমোদিত ঋণ সীমা</span>
+                        <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-md leading-none">
+                          {toBengaliDigits(qardPercentage)}% ধার
+                        </span>
+                      </div>
                       <span className="text-lg font-black text-emerald-300 font-mono block">
                         ৳{toBengaliDigits(qardLimit.toLocaleString())}
                       </span>
-                      <span className="text-[10px] text-emerald-400/80">০% সুদমুক্ত ধার</span>
+                      <span className="text-[10px] text-emerald-400/80">অর্ডারের সর্বোচ্চ {toBengaliDigits(qardPercentage)}% সুদমুক্ত ধার</span>
                     </div>
 
                     <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-600/30 space-y-0.5">
@@ -1211,11 +1228,11 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-xs sm:text-sm font-black text-slate-900">বিনা সুদে করযে হাসানা (১০% ধার সুবিধা)</h4>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900">বিনা সুদে করযে হাসানা ({toBengaliDigits(qardPercentage)}% ধার সুবিধা)</h4>
                         <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">সুদমুক্ত</span>
                       </div>
                       <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
-                        জরুরি প্রয়োজনে বা কেনাকাটায় অর্ডারের ১০% তাৎক্ষণিক সুদমুক্ত ধারের সুবিধা পেতে আবেদন করুন। অনুমোদিত হলে ড্যাশবোর্ডে আপনার ক্রেডিট লিমিট সক্রিয় হবে।
+                        জরুরি প্রয়োজনে বা কেনাকাটায় অর্ডারের {toBengaliDigits(qardPercentage)}% তাৎক্ষণিক সুদমুক্ত ধারের সুবিধা পেতে আবেদন করুন। অনুমোদিত হলে ড্যাশবোর্ডে আপনার ক্রেডিট লিমিট সক্রিয় হবে।
                       </p>
                     </div>
                   </div>
@@ -1224,7 +1241,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
                     className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600 shadow-xs transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto flex items-center space-x-1.5"
                   >
                     <HandHeart className="w-3.5 h-3.5 text-amber-300" />
-                    <span>করযে হাসানা আবেদন করুন</span>
+                    <span>করযে হাসানা আবেদন করুন ({toBengaliDigits(qardPercentage)}% ধার)</span>
                   </button>
                 </div>
               )}

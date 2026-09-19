@@ -92,6 +92,9 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
     Number(user.qard_credit_limit || user.qard_limit || 0) > 0
   );
   const qardLimit = isQardApproved ? (Number(user?.qard_credit_limit) || Number(user?.qard_limit) || 0) : 0;
+  const qardPercentage = Number(user?.qard_max_percentage) > 0 
+    ? Number(user.qard_max_percentage) 
+    : (Number(siteSettings?.qard_max_percentage) || 10);
 
   // Live real-time clock in Bengali
   useEffect(() => {
@@ -377,10 +380,13 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
                   ? 'bg-emerald-700 text-white border-emerald-400 shadow-md ring-2 ring-emerald-500/30'
                   : 'bg-emerald-950/80 text-emerald-100 hover:bg-emerald-900 border-emerald-500/40 hover:text-white'
               }`}
-              title="বিনা সুদে ঋণ সুবিধা (করযে হাসানা)"
+              title={`বিনা সুদে ঋণ সুবিধা (সর্বোচ্চ ${toBengaliDigits(qardPercentage)}% করযে হাসানা)`}
             >
-              <HandHeart className="w-3.5 h-3.5 mr-1 text-amber-300 flex-shrink-0" />
+              <HandHeart className="w-3.5 h-3.5 mr-1.5 text-amber-300 flex-shrink-0" />
               <span>করযে হাসানা</span>
+              <span className="ml-1.5 px-1.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md leading-none shadow-2xs">
+                {toBengaliDigits(qardPercentage)}%
+              </span>
             </button>
 
             {/* Dedicated VIP Loyalty Credit Card Button - Desktop Only */}
@@ -734,7 +740,9 @@ export default function Navbar({ onNavigate, openAuthModal, currentPage, searchK
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs font-black block truncate leading-tight">করযে হাসানা</span>
-                  <span className="text-[9.5px] font-bold text-emerald-700 block -mt-0.5">১০% ধার সুবিধা</span>
+                  <span className="text-[9.5px] font-bold text-emerald-700 block -mt-0.5">
+                    {toBengaliDigits(qardPercentage)}% ধার সুবিধা {isQardApproved && qardLimit > 0 ? `• ৳${toBengaliDigits(qardLimit.toLocaleString())}` : ''}
+                  </span>
                 </div>
               </button>
 

@@ -95,6 +95,9 @@ export default function QardHasana({ onNavigate, onBack }) {
 
   // Derived Financial Metrics
   const creditLimit = Number(ledgerData?.credit_limit ?? user?.qard_credit_limit ?? user?.qard_limit ?? 0);
+  const qardPercentage = Number(user?.qard_max_percentage) > 0 
+    ? Number(user.qard_max_percentage) 
+    : (Number(siteSettings?.qard_max_percentage) || 10);
   const unpaidDebt = Number(ledgerData?.unpaid_debt ?? user?.qard_unpaid_amount ?? 0);
   const availableCredit = Number(ledgerData?.available_credit ?? Math.max(0, creditLimit - unpaidDebt));
   const totalBorrowed = Number(ledgerData?.total_borrowed ?? (unpaidDebt + Number(user?.qard_total_repaid || 0)));
@@ -345,7 +348,7 @@ export default function QardHasana({ onNavigate, onBack }) {
             </div>
 
             <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-snug">
-              {siteSettings?.qard_hero_title || 'সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ১০% তাৎক্ষণিক বাকি সেবা'}
+              {siteSettings?.qard_hero_title || `সুদমুক্ত ‘করযে হাসানা’ ঋণ সুবিধা ও ${toBengaliDigits(qardPercentage)}% তাৎক্ষণিক বাকি সেবা`}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
@@ -402,17 +405,19 @@ export default function QardHasana({ onNavigate, onBack }) {
             <div className="bg-slate-950/80 p-4 rounded-2xl border border-amber-500/40 shadow-xs flex flex-col justify-between space-y-2 hover:border-amber-400 transition-all">
               <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
                 <span>অনুমোদিত লিমিট</span>
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md leading-none shadow-2xs">
+                  {toBengaliDigits(qardPercentage)}% ধার
+                </span>
               </div>
               <div>
                 <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
                   ৳{toBengaliDigits(creditLimit.toLocaleString())}
                 </div>
-                <span className="text-[10px] text-slate-400 font-bold block mt-0.5">সর্বোচ্চ অনুমোদিত সীমা</span>
+                <span className="text-[10px] text-slate-400 font-bold block mt-0.5">অর্ডারের সর্বোচ্চ {toBengaliDigits(qardPercentage)}% ধার</span>
               </div>
               <div className="text-[10px] font-bold text-amber-400/90 pt-1.5 border-t border-slate-800 flex items-center space-x-1">
                 <Check className="w-3 h-3 text-amber-400" />
-                <span>১০০% সুদমুক্ত</span>
+                <span>১০০% সুদমুক্ত • {toBengaliDigits(qardPercentage)}% সুবিধা</span>
               </div>
             </div>
 
@@ -554,7 +559,7 @@ export default function QardHasana({ onNavigate, onBack }) {
                       হিসাব সম্পূর্ণ নিয়মিত • কোনো বকেয়া ঋণ নেই
                     </h4>
                     <p className="text-xs text-emerald-300/80 mt-0.5">
-                      আলহামদুলিল্লাহ! আপনার করযে হাসানা হিসাব সম্পূর্ণ পরিষ্কার। আপনার পূর্ণ লিমিট ৳{toBengaliDigits(creditLimit.toLocaleString())} সক্রিয় রয়েছে। পরবর্তী কেনাকাটায় সর্বোচ্চ ১০% পর্যন্ত বাকি সুবিধা উপভোগ করুন।
+                      আলহামদুলিল্লাহ! আপনার করযে হাসানা হিসাব সম্পূর্ণ পরিষ্কার। আপনার পূর্ণ লিমিট ৳{toBengaliDigits(creditLimit.toLocaleString())} সক্রিয় রয়েছে। পরবর্তী কেনাকাটায় সর্বোচ্চ {toBengaliDigits(qardPercentage)}% পর্যন্ত বাকি সুবিধা উপভোগ করুন।
                     </p>
                   </div>
                 </div>
@@ -564,7 +569,7 @@ export default function QardHasana({ onNavigate, onBack }) {
                   className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-center space-x-1.5 flex-shrink-0"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>কেনাকাটা শুরু করুন (১০% ধারে)</span>
+                  <span>কেনাকাটা শুরু করুন ({toBengaliDigits(qardPercentage)}% ধারে)</span>
                 </button>
               </div>
             )}

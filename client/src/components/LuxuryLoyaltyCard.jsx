@@ -21,6 +21,7 @@ export default function LuxuryLoyaltyCard({ user, onFlip }) {
   const cardNumber = user?.loyalty_card_number || 'ANSAR-VIP-7861-2026';
   const points = user?.loyalty_points !== undefined ? user.loyalty_points : 150;
   const qardLimit = user?.qard_credit_limit || 5000;
+  const qardPercentage = Number(user?.qard_max_percentage) > 0 ? Number(user.qard_max_percentage) : 10;
 
   return (
     <div className="flex flex-col items-center space-y-3 font-sans">
@@ -194,7 +195,7 @@ export default function LuxuryLoyaltyCard({ user, onFlip }) {
                   <span className="font-bold text-amber-300">{toBengaliDigits(points)} Pts</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[7px] uppercase">করযে হাসানা লিমিট</span>
+                  <span className="text-slate-400 block text-[7px] uppercase">করযে হাসানা ({toBengaliDigits(qardPercentage)}%)</span>
                   <span className="font-bold text-emerald-400">৳{toBengaliDigits(qardLimit.toLocaleString())}</span>
                 </div>
               </div>
