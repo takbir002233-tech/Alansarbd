@@ -47,12 +47,16 @@ export default function InvoiceModal({ order, onClose }) {
     }, 1000);
   };
 
-  const hadithSlogan = siteSettings?.invoice_hadith_slogans?.[0] || '“সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে।” — (তিরমিযী)';
+  const hadithSlogans = siteSettings?.invoice_hadith_slogans || [
+    '“সৎ ও আমানতদার ব্যবসায়ী কিয়ামতের দিন নবী, সিদ্দিক ও শহীদগণের সাথে থাকবে।” — (তিরমিযী)',
+    '“হে মুমিনগণ! তোমরা পারস্পরিক সন্তুষ্টির ভিত্তিতে ব্যবসা-বাণিজ্য করো।” — (সূরা আন-নিসা: ২৯)',
+    'আল আনসার — বিশুদ্ধ সুবাস ও বিশ্বস্ততার মেলবন্ধন।'
+  ];
 
   const getPaymentMethodLabel = (method) => {
     switch (method) {
       case 'cod': return 'ক্যাশ অন ডেলিভারি (COD)';
-      case 'qard': return 'করযে হাসানা (সুদমুক্ত ধার)';
+      case 'qard': return 'করযে হাসানা (১০% তাৎক্ষণিক ধার/বাকি)';
       case 'bkash_personal': return 'বিকাশ (bKash)';
       case 'nagad_personal': return 'নগদ (Nagad)';
       case 'rocket': return 'রকেট (Rocket)';
@@ -97,9 +101,9 @@ export default function InvoiceModal({ order, onClose }) {
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            overflow: hidden !important;
           }
 
           #alansar-invoice-portal {
@@ -138,29 +142,79 @@ export default function InvoiceModal({ order, onClose }) {
             background: #ffffff !important;
           }
 
-          .alansar-invoice-sheet {
-            padding: 2mm 0 !important;
+          .print-hide, .print\\:hidden {
+            display: none !important;
+          }
+
+          #printable-invoice {
+            padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            background: #ffffff !important;
             overflow: visible !important;
-            font-size: 10.5px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            font-size: 11px !important;
             line-height: 1.35 !important;
           }
 
-          .invoice-no-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
+          /* Exact Original Style Print Optimization: fits cleanly in 1 single A4 page */
+          .print-header {
+            padding-bottom: 3mm !important;
+            margin-bottom: 3mm !important;
           }
 
-          .invoice-item-row {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
+          .print-logo {
+            height: 15mm !important;
+            width: 15mm !important;
           }
 
-          .print-hide {
-            display: none !important;
+          .print-customer-box {
+            padding: 2.5mm 3.5mm !important;
+            margin-bottom: 2.5mm !important;
+            gap: 3mm !important;
+            border-radius: 2.5mm !important;
+          }
+
+          .print-bar {
+            padding: 2mm 3mm !important;
+            margin-bottom: 2.5mm !important;
+            border-radius: 2.5mm !important;
+          }
+
+          .print-table-wrap {
+            margin-bottom: 2.5mm !important;
+            border-radius: 2.5mm !important;
+          }
+
+          .print-table-th, .print-table-td {
+            padding: 1.8mm 2.8mm !important;
+            font-size: 10.5px !important;
+          }
+
+          .print-summary-wrap {
+            padding-top: 1mm !important;
+          }
+
+          .print-summary-box {
+            width: 82mm !important;
+            font-size: 10.5px !important;
+          }
+
+          .print-summary-box > div {
+            padding-top: 0.6mm !important;
+            padding-bottom: 0.6mm !important;
+          }
+
+          .print-hadith-box {
+            padding-top: 2.5mm !important;
+            margin-top: 2.5mm !important;
+          }
+
+          .print-hadith-box p {
+            margin-bottom: 1mm !important;
+            font-size: 9.5px !important;
           }
         }
       `}</style>
@@ -171,17 +225,17 @@ export default function InvoiceModal({ order, onClose }) {
         onClick={onClose}
       >
         <div 
-          className="alansar-invoice-card bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-amber-200/80 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-200 text-slate-800"
+          className="alansar-invoice-card bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-amber-100 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200 text-slate-800"
           onClick={(e) => e.stopPropagation()}
         >
           
           {/* Top Control Bar (Hidden on Print) */}
-          <div className="px-5 py-3 bg-slate-950 text-white flex items-center justify-between print-hide flex-shrink-0 border-b border-slate-800">
+          <div className="p-4 bg-slate-950 text-white flex items-center justify-between print-hide flex-shrink-0">
             <div className="flex items-center space-x-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>← ফিরে যান</span>
@@ -212,113 +266,135 @@ export default function InvoiceModal({ order, onClose }) {
             </div>
           </div>
 
-          {/* Invoice Printable Sheet (A4 Compact Layout) */}
+          {/* Invoice Printable Sheet (Exact Original Style) */}
           <div 
-            className="alansar-invoice-sheet p-6 sm:p-7 text-slate-800 bg-white overflow-y-auto modal-scrollable overscroll-contain flex-1"
+            className="p-6 sm:p-8 space-y-4 sm:space-y-5 text-slate-800 bg-white overflow-y-auto modal-scrollable overscroll-contain flex-1" 
             id="printable-invoice"
           >
             
-            {/* 1. Header with Logo & Meta */}
-            <div className="flex items-start justify-between border-b border-amber-200/80 pb-3 mb-3 invoice-no-break">
-              <div className="flex items-center space-x-3">
+            {/* 1. Header with Official Logo at Top Corner */}
+            <div className="print-header flex items-start justify-between border-b border-amber-200/80 pb-4 sm:pb-5">
+              <div className="flex items-center space-x-3.5 sm:space-x-4">
                 <img 
                   src={siteSettings?.logo_url || "/logo.jpg"} 
                   alt="AL ANSAR Logo" 
                   onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpg'; }}
-                  className="h-12 w-12 sm:h-14 sm:w-14 object-contain rounded-xl border border-amber-300 ring-1 ring-amber-300/40 p-0.5 bg-white shadow-2xs shrink-0" 
+                  className="print-logo h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-2xl border-2 border-amber-400 ring-2 ring-amber-300/40 shadow-xs bg-white p-1 shrink-0" 
                 />
                 <div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
-                    {siteSettings?.store_name || 'AL ANSAR SUPER SHOP'}
-                  </h2>
-                  <p className="text-[11px] text-amber-800 font-bold leading-tight mt-0.5">
-                    {siteSettings?.store_name_bn || 'আল আনসার সুপার শপ'} • বিশুদ্ধ সুবাস ও বিশ্বস্ত সেবা
+                  <div className="flex items-baseline space-x-1.5">
+                    <span className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                      {siteSettings?.store_name || 'AL ANSAR SUPER SHOP'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800 font-bold tracking-wider mt-0.5">
+                    {siteSettings?.store_name_bn || 'আল আনসার সুপার শপ'} • প্রিমিয়াম কোয়ালিটি ও বিশ্বস্ত সেবা
                   </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs leading-tight">
                     {siteSettings?.showroom_address || siteSettings?.store_address || 'উত্তরা, ঢাকা-১২৩০, বাংলাদেশ'}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-medium leading-tight font-mono">
+                  <p className="text-xs text-slate-500 font-medium leading-tight">
                     হটলাইন: {siteSettings?.store_phone || '+880 1711-223344'}
                   </p>
                 </div>
               </div>
 
               <div className="text-right shrink-0">
-                <span className="text-[10px] font-black text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-amber-300">
-                  ক্যাশ মেমো / ইনভয়েস
+                <span className="text-[11px] font-black text-amber-800 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-wider border border-amber-200">
+                  অফিসিয়াল ইনভয়েস
                 </span>
-                <h3 className="text-xs sm:text-sm font-black text-slate-900 mt-1 font-mono">
+                <h3 className="text-xs sm:text-sm font-black text-slate-900 mt-1.5 font-mono">
                   #{order.order_code}
                 </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">
-                  তারিখ: {new Date(order.created_at).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })}
+                <p className="text-xs text-slate-500 mt-0.5">
+                  তারিখ: {new Date(order.created_at).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
-                <div className="mt-1">
-                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
+                <div className="mt-1.5">
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                     order.status === 'Delivered'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      ? 'bg-emerald-100 text-emerald-800'
                       : order.status === 'Cancelled'
-                      ? 'bg-rose-50 text-rose-800 border-rose-300'
-                      : 'bg-amber-50 text-amber-900 border-amber-300'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-amber-100 text-amber-900'
                   }`}>
-                    {order.status === 'Delivered' ? '✓ ডেলিভার্ড' : order.status === 'Cancelled' ? '✕ বাতিল' : order.status === 'Shipped' ? '📦 কুরিয়ারে হস্তান্তর' : '⏳ প্রক্রিয়াধীন'}
+                    স্ট্যাটাস: {order.status === 'Delivered' ? 'ডেলিভার্ড' : order.status === 'Cancelled' ? 'বাতিল' : order.status === 'Shipped' ? 'কুরিয়ারে হস্তান্তর' : 'প্রক্রিয়াধীন'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* 2. Customer, Shipping & Payment Summary (Compact 3-Column Box) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-amber-50/40 p-2.5 rounded-xl border border-amber-200/70 mb-3 text-xs invoice-no-break">
+            {/* 2. Customer & Shipping Details (Exact 2-Column Box) */}
+            <div className="print-customer-box grid grid-cols-2 gap-4 sm:gap-6 bg-amber-50/40 p-3.5 sm:p-4 rounded-2xl border border-amber-100 text-xs">
               <div>
-                <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-0.5">গ্রাহকের বিবরণ</p>
-                <h4 className="font-bold text-slate-900 text-xs">{order.customer_name}</h4>
-                <p className="text-[11px] text-slate-700 font-mono">📞 {order.customer_phone}</p>
-                {order.customer_email && <p className="text-[10px] text-slate-500 truncate">{order.customer_email}</p>}
+                <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-1">গ্রাহকের বিবরণ</p>
+                <h4 className="text-sm font-bold text-slate-900">{order.customer_name}</h4>
+                <p className="text-xs text-slate-600 mt-0.5 font-mono">{order.customer_phone}</p>
+                {order.customer_email && <p className="text-xs text-slate-500 truncate">{order.customer_email}</p>}
               </div>
 
               <div>
-                <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-0.5">ডেলিভারি ঠিকানা</p>
-                <p className="text-[11px] font-medium text-slate-800 leading-snug">{order.shipping_address}</p>
-                <p className="text-[10px] text-slate-600 mt-0.5">
-                  {order.shipping_city} ({order.delivery_zone === 'inside_dhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})
+                <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-1">ডেলিভারি গন্তব্য</p>
+                <p className="text-xs font-medium text-slate-800">{order.shipping_address}</p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  {order.shipping_city} ({order.delivery_zone === 'inside_dhaka' ? 'ঢাকা সিটি' : 'ঢাকার বাইরে'})
                 </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-0.5">পেমেন্ট ও কুরিয়ার</p>
-                <p className="text-[11px] text-slate-800 font-medium">
-                  মাধ্যম: <strong className="text-slate-900">{getPaymentMethodLabel(order.payment_method)}</strong>
-                </p>
-                {order.transaction_id && (
-                  <p className="text-[10px] text-slate-600 font-mono">TrxID: <strong className="text-amber-900">{order.transaction_id}</strong></p>
-                )}
-                {order.courier_name && (
-                  <p className="text-[10px] text-slate-600 font-medium">
-                    কুরিয়ার: {order.courier_name} {order.consignment_id ? `(#${order.consignment_id})` : ''}
-                  </p>
-                )}
               </div>
             </div>
 
-            {/* 3. Items Table */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden mb-3">
+            {/* 3. Courier Details if assigned */}
+            {(order.courier_tracking_url || order.courier_name) && (
+              <div className="print-bar p-2.5 sm:p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+                <div className="flex items-center space-x-2">
+                  <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>কুরিয়ার: <strong>{order.courier_name || 'স্টিভফাস্ট কুরিয়ার'}</strong> {order.consignment_id ? `(আইডি: ${order.consignment_id})` : ''}</span>
+                </div>
+                {order.courier_tracking_url && (
+                  <a href={order.courier_tracking_url} target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline flex items-center print-hide">
+                    অনলাইনে ট্র্যাক করুন <ExternalLink className="w-3 h-3 ml-1" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* 4. Payment Method & Details */}
+            <div className="print-bar p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              <div>
+                <span className="text-slate-500">পেমেন্ট মাধ্যম: </span>
+                <span className="font-bold text-slate-900 uppercase">
+                  {order.payment_method === 'qard' ? 'করযে হাসানা (১০% তাৎক্ষণিক ধার/বাকি)' : getPaymentMethodLabel(order.payment_method)}
+                </span>
+              </div>
+              {order.transaction_id && (
+                <div>
+                  <span className="text-slate-500">TrxID: </span>
+                  <span className="font-mono font-bold text-amber-800 bg-white px-2 py-0.5 rounded border border-amber-200">
+                    {order.transaction_id}
+                  </span>
+                </div>
+              )}
+              {order.sender_number && (
+                <div>
+                  <span className="text-slate-500">প্রেরক নম্বর: </span>
+                  <span className="font-semibold text-slate-800 font-mono">{order.sender_number}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Items Table */}
+            <div className="print-table-wrap border border-slate-200 rounded-2xl overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-amber-100/70 text-slate-800 text-[11px] font-bold border-b border-amber-200">
+                <thead className="bg-amber-50/70 text-slate-700 uppercase font-semibold border-b border-amber-100">
                   <tr>
-                    <th className="py-1.5 px-2.5 w-10 text-center">ক্র.</th>
-                    <th className="py-1.5 px-2.5">পণ্যের বিবরণ</th>
-                    <th className="py-1.5 px-2.5 w-14 text-center">পরিমাণ</th>
-                    <th className="py-1.5 px-2.5 w-20 text-right">একক মূল্য</th>
-                    <th className="py-1.5 px-2.5 w-24 text-right">মোট টাকা</th>
+                    <th className="print-table-th p-2.5 sm:p-3">পণ্যের বিবরণ</th>
+                    <th className="print-table-th p-2.5 sm:p-3 text-center">পরিমাণ</th>
+                    <th className="print-table-th p-2.5 sm:p-3 text-right">একক মূল্য</th>
+                    <th className="print-table-th p-2.5 sm:p-3 text-right">মোট (টাকা)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-slate-100">
                   {order.items?.map((item, idx) => (
-                    <tr key={idx} className="invoice-item-row hover:bg-amber-50/20">
-                      <td className="py-1.5 px-2.5 text-center font-mono text-slate-500 text-[11px]">
-                        {toBengaliDigits(idx + 1)}
-                      </td>
-                      <td className="py-1.5 px-2.5 font-bold text-slate-900 leading-snug">
+                    <tr key={idx}>
+                      <td className="print-table-td p-2.5 sm:p-3 font-medium text-slate-800">
                         {item.title}
                         {item.selected_variant && (
                           <span className="block text-[10px] text-slate-500 font-normal">
@@ -326,13 +402,13 @@ export default function InvoiceModal({ order, onClose }) {
                           </span>
                         )}
                       </td>
-                      <td className="py-1.5 px-2.5 text-center font-bold font-mono text-slate-700">
+                      <td className="print-table-td p-2.5 sm:p-3 text-center font-bold text-slate-700">
                         {toBengaliDigits(item.quantity)}
                       </td>
-                      <td className="py-1.5 px-2.5 text-right font-mono text-slate-600">
+                      <td className="print-table-td p-2.5 sm:p-3 text-right text-slate-600">
                         ৳{toBengaliDigits(Number(item.price).toLocaleString())}
                       </td>
-                      <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-900">
+                      <td className="print-table-td p-2.5 sm:p-3 text-right font-bold text-slate-900">
                         ৳{toBengaliDigits((item.price * item.quantity).toLocaleString())}
                       </td>
                     </tr>
@@ -341,106 +417,77 @@ export default function InvoiceModal({ order, onClose }) {
               </table>
             </div>
 
-            {/* 4. Summary & Footer Section (Side by Side to fit cleanly in A4) */}
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 pt-2 border-t border-amber-200/80 invoice-no-break">
-              
-              {/* Left Side: Hadith Slogan & Authorized Signature */}
-              <div className="w-full sm:flex-1 space-y-2">
-                <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200/70 text-slate-700">
-                  <p className="text-[11px] font-medium italic text-slate-800 leading-relaxed">
-                    {hadithSlogan}
-                  </p>
-                  <p className="text-[10px] text-amber-900 font-bold mt-0.5">
-                    আল আনসার — বিশুদ্ধ সুবাস ও বিশ্বস্ততার মেলবন্ধন।
-                  </p>
-                </div>
-                <p className="text-[10px] text-slate-500">
-                  আল আনসারকে বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ! যেকোনো সহায়তায় আমাদের হটলাইনে যোগাযোগ করুন।
-                </p>
-
-                {/* Formal Signatures */}
-                <div className="pt-6 flex items-center justify-between text-[10px] text-slate-500">
-                  <div className="border-t border-slate-300 pt-1 w-28 sm:w-32 text-center">
-                    গ্রাহকের স্বাক্ষর
-                  </div>
-                  <div className="border-t border-slate-300 pt-1 w-36 sm:w-40 text-center font-bold text-slate-700">
-                    অনুমোদিত স্বাক্ষর ও সিল
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side: Financial Breakdown */}
-              <div className="w-full sm:w-72 space-y-1 text-xs bg-slate-50/70 p-2.5 rounded-xl border border-slate-200 shrink-0">
-                <div className="flex justify-between text-slate-600 py-0.5">
+            {/* 6. Summary Breakdown (Exact Right-Aligned Box) */}
+            <div className="print-summary-wrap flex justify-end pt-1 sm:pt-2">
+              <div className="print-summary-box w-72 sm:w-80 space-y-1.5 sm:space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
                   <span>সাবটোটাল</span>
-                  <span className="font-bold text-slate-800 font-mono">
-                    ৳{toBengaliDigits(order.subtotal?.toLocaleString())}
-                  </span>
+                  <span className="font-bold text-slate-800 font-mono">৳{toBengaliDigits(order.subtotal?.toLocaleString())}</span>
                 </div>
-
                 {Number(order.discount_amount) > 0 && (
-                  <div className="flex justify-between text-emerald-700 font-bold py-0.5">
+                  <div className="flex justify-between text-emerald-600 font-bold">
                     <span>ভাউচার ছাড় ({order.applied_voucher_code || 'PROMO'})</span>
                     <span className="font-mono">-৳{toBengaliDigits(order.discount_amount?.toLocaleString())}</span>
                   </div>
                 )}
-
                 {Number(order.points_discount) > 0 && (
-                  <div className="flex justify-between text-amber-800 font-bold py-0.5">
+                  <div className="flex justify-between text-amber-700 font-bold">
                     <span>ভিআইপি পয়েন্ট ছাড় ({toBengaliDigits(order.points_used)} পয়েন্ট)</span>
                     <span className="font-mono">-৳{toBengaliDigits(order.points_discount?.toLocaleString())}</span>
                   </div>
                 )}
-
-                <div className="flex justify-between text-slate-600 py-0.5">
+                <div className="flex justify-between text-slate-600">
                   <span>ডেলিভারি চার্জ</span>
                   <span className="font-semibold text-slate-800 font-mono">
-                    {Number(order.delivery_fee) === 0 ? 'ফ্রি (FREE)' : `৳${toBengaliDigits(order.delivery_fee?.toLocaleString())}`}
+                    {Number(order.delivery_fee) === 0 ? 'ফ্রি' : `৳${toBengaliDigits(order.delivery_fee?.toLocaleString())}`}
                   </span>
                 </div>
-
-                <div className="flex justify-between text-xs font-black text-slate-900 border-t border-slate-300 pt-1 mt-0.5">
+                <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-1.5 sm:pt-2">
                   <span>সর্বমোট অর্ডার মূল্য</span>
-                  <span className="text-sm font-black font-mono text-slate-900">
-                    ৳{toBengaliDigits(order.total_amount?.toLocaleString())}
-                  </span>
+                  <span className="text-base text-slate-900 font-mono">৳{toBengaliDigits(order.total_amount?.toLocaleString())}</span>
                 </div>
-
                 {Number(order.qard_amount) > 0 && (
-                  <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-900 text-[10px] font-bold border border-emerald-200 space-y-0.5 mt-1">
+                  <div className="p-2 sm:p-2.5 bg-emerald-50 rounded-xl text-emerald-900 text-[11px] font-bold border border-emerald-200 space-y-0.5">
                     <div className="flex justify-between">
                       <span>করযে হাসানা ঋণ ({toBengaliDigits(order.qard_percentage || 10)}%):</span>
                       <span className="font-mono">-৳{toBengaliDigits(order.qard_amount?.toLocaleString())}</span>
                     </div>
-                    <p className="text-[9px] text-emerald-700 font-normal">
-                      মেয়াদ: ৬ মাস ({order.qard_due_date ? new Date(order.qard_due_date).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : 'সুদমুক্ত'})
+                    <p className="text-[10px] text-emerald-700 font-normal">
+                      পরিশোধের নির্দিষ্ট সময়: ৬ মাস ({order.qard_due_date ? new Date(order.qard_due_date).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }) : 'সুদমুক্ত'})
                     </p>
                   </div>
                 )}
-
                 {Number(order.qard_repayment_amount) > 0 && (
-                  <div className="flex justify-between text-blue-700 font-bold py-0.5">
-                    <span>বকেয়া ঋণ শোধ কিস্তি:</span>
+                  <div className="flex justify-between text-blue-700 font-bold">
+                    <span>বকেয়া ঋণ পরিশোধ সমন্বয়:</span>
                     <span className="font-mono">+৳{toBengaliDigits(order.qard_repayment_amount?.toLocaleString())}</span>
                   </div>
                 )}
-
                 {order.payable_now !== undefined && (
-                  <div className="flex justify-between text-xs font-black text-slate-900 bg-amber-200/60 px-2 py-1.5 rounded-lg border border-amber-300 mt-1">
-                    <span>নগদ / গেটওয়েতে প্রদেয়:</span>
-                    <span className="text-sm text-amber-950 font-mono font-black">
-                      ৳{toBengaliDigits(order.payable_now?.toLocaleString())}
-                    </span>
+                  <div className="flex justify-between text-sm font-black text-slate-900 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
+                    <span>নগদ / গেটওয়েতে প্রদেয়</span>
+                    <span className="text-base text-amber-900 font-mono">৳{toBengaliDigits(order.payable_now?.toLocaleString())}</span>
                   </div>
                 )}
               </div>
+            </div>
 
+            {/* 7. Configurable Hadith Slogans at Bottom of Invoice (All Slogans Preserved) */}
+            <div className="print-hadith-box border-t border-amber-200/80 pt-3 sm:pt-4 space-y-1 sm:space-y-1.5 text-center">
+              {hadithSlogans.map((slogan, idx) => (
+                <p key={idx} className="text-[10.5px] sm:text-[11px] text-slate-600 italic font-medium">
+                  {slogan}
+                </p>
+              ))}
+              <p className="text-[9.5px] sm:text-[10px] text-slate-400 pt-0.5">
+                আল আনসারকে বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ! যেকোনো প্রয়োজনে এই মেমোটি সংরক্ষণ করুন।
+              </p>
             </div>
 
           </div>
 
-          {/* Bottom Actions for Screen View (Hidden on Print) */}
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between print-hide shrink-0">
+          {/* 8. Bottom Actions for Screen View (Hidden on Print) */}
+          <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between print-hide shrink-0">
             <button
               type="button"
               onClick={onClose}
@@ -454,7 +501,7 @@ export default function InvoiceModal({ order, onClose }) {
               className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black rounded-xl flex items-center space-x-2 shadow-md cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span>ডাউনলোড / প্রিন্ট ইনভয়েস (PDF)</span>
+              <span>ডাউনলোড ইনভয়েস (PDF)</span>
             </button>
           </div>
 
