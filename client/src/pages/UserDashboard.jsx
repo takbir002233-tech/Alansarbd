@@ -573,7 +573,7 @@ export default function UserDashboard({ initialTab = 'overview', onNavigate, onB
               className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-600/40 flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
             >
               <HandHeart className="w-4 h-4 text-amber-300" />
-              <span>{isQardPending ? 'করযে হাসানা আবেদন পর্যালোচনায়' : `করযে হাসানা আবেদন (${toBengaliDigits(qardPercentage)}% ধার)`}</span>
+              <span>{isQardPending ? 'করযে হাসানা আবেদন পর্যালোচনায়' : 'করযে হাসানা আবেদন'}</span>
             </button>
           )}
 
