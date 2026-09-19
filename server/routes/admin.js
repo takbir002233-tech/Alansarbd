@@ -161,6 +161,20 @@ router.get('/users', requireAdmin, (req, res) => {
       };
     });
 
+    // Sort newest accounts first so newly created accounts appear at the very top
+    usersWithStats.sort((a, b) => {
+      const getTime = (u) => {
+        if (u.created_at) {
+          const t = new Date(u.created_at).getTime();
+          if (!isNaN(t)) return t;
+        }
+        const m = (u.id || '').match(/usr_(\d+)/);
+        if (m) return Number(m[1]);
+        return 0;
+      };
+      return getTime(b) - getTime(a);
+    });
+
     return res.json({
       success: true,
       users: usersWithStats

@@ -550,13 +550,23 @@ export default function AdminUsers() {
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
 
+  const getUserTime = (u) => {
+    if (u.created_at) {
+      const t = new Date(u.created_at).getTime();
+      if (!isNaN(t)) return t;
+    }
+    const match = (u.id || '').match(/usr_(\d+)/);
+    if (match) return parseInt(match[1], 10);
+    return 0;
+  };
+
   const filteredUsers = users.filter(
     u =>
       (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (u.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (u.phone || '').includes(searchTerm) ||
       (u.loyalty_card_number || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => getUserTime(b) - getUserTime(a));
 
   const pendingQardCount = qardApps.filter(a => a.status === 'Pending').length;
   const pendingLoyaltyCount = loyaltyApps.filter(a => a.status === 'Pending').length;
@@ -658,7 +668,7 @@ export default function AdminUsers() {
                   {filteredUsers.map((u) => {
                     const userLoyaltyApp = loyaltyApps.find(a => a.user_id === u.id || (a.phone && u.phone && a.phone === u.phone));
                     const userQardApp = qardApps.find(a => a.user_id === u.id || (a.phone && u.phone && a.phone === u.phone) || (a.nid_number && u.nid_number && a.nid_number === u.nid_number));
-                    const isVipApproved = u.loyalty_card_approved || u.loyalty_card_status === 'Approved';
+                    const isVipApproved = u.loyalty_card_approved || u.loyalty_card_status === 'Approved' || userLoyaltyApp?.status === 'Approved';
                     const isVipPending = u.loyalty_card_status === 'Pending' || userLoyaltyApp?.status === 'Pending';
                     const isVipDeclined = u.loyalty_card_status === 'Declined' || u.loyalty_card_status === 'Rejected' || userLoyaltyApp?.status === 'Rejected';
 
@@ -685,17 +695,36 @@ export default function AdminUsers() {
                               )}
                             </div>
                             <div>
-                              <p className="font-bold text-white flex items-center">
-                                {u.name}
+                              <p className="font-bold text-white flex items-center flex-wrap gap-1.5">
+                                <span>{u.name}</span>
                                 {u.role === 'admin' && (
-                                  <span className="ml-2 px-2 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/30">
+                                  <span className="px-2 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/30">
                                     ADMIN
                                   </span>
                                 )}
+                                {isVipApproved ? (
+                                  <span className="px-2 py-0.2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/40">
+                                    👑 VIP
+                                  </span>
+                                ) : isVipPending ? (
+                                  <span className="px-2 py-0.2 bg-blue-500/20 text-blue-300 text-[10px] font-bold rounded-md border border-blue-500/30">
+                                    ⏳ VIP অপেক্ষমাণ
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.2 bg-slate-800 text-slate-400 text-[10px] font-bold rounded-md border border-slate-700">
+                                    সাধারণ
+                                  </span>
+                                )}
                               </p>
-                              <p className="text-[10px] text-amber-300 font-mono font-bold">
-                                💳 {u.loyalty_card_number || `ANSAR-VIP-${u.id.slice(0, 4)}-2026`}
-                              </p>
+                              {isVipApproved ? (
+                                <p className="text-[10px] text-amber-300 font-mono font-bold">
+                                  💳 {u.loyalty_card_number || `ANSAR-VIP-${u.id.slice(0, 4)}-2026`}
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                  রেগুলার কাস্টমার
+                                </p>
+                              )}
                               {u.nid_number && (
                                 <p className="text-[10px] text-slate-400 font-mono">
                                   NID: {u.nid_number}

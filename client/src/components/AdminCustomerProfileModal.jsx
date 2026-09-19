@@ -106,8 +106,10 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
     due_date: currentUser.qard_due_date,
     days_remaining: null,
     is_overdue: false,
-    transactions: []
   };
+
+  const isVipApproved = currentUser.loyalty_card_approved || currentUser.loyalty_card_status === 'Approved';
+  const isVipPending = currentUser.loyalty_card_status === 'Pending';
 
   const handleSaveQardLimit = async (e) => {
     e?.preventDefault();
@@ -228,9 +230,19 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
               <div>
                 <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                   <h4 className="text-base font-black text-white">{currentUser.name}</h4>
-                  <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                    {currentUser.loyalty_tier || 'Gold VIP Patron'}
-                  </span>
+                  {isVipApproved ? (
+                    <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                      👑 {currentUser.loyalty_tier || 'Gold VIP Patron'}
+                    </span>
+                  ) : isVipPending ? (
+                    <span className="text-[10px] font-semibold text-blue-300 bg-blue-500/20 px-2.5 py-0.5 rounded-full border border-blue-500/30">
+                      ⏳ VIP অপেক্ষমাণ
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">
+                      সাধারণ গ্রাহক
+                    </span>
+                  )}
                   {currentUser.is_blocked ? (
                     <span className="text-[10px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
                       🚫 স্থগিত / সাসপেন্ড
@@ -254,12 +266,34 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
 
             <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
               <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">ডিজিটাল লয়ালটি কার্ড</span>
-              <p className="font-mono font-bold text-amber-400 text-xs mt-0.5">
-                💳 {currentUser.loyalty_card_number || `ANSAR-VIP-${currentUser.id?.slice(0, 4)}-2026`}
-              </p>
-              <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
-                ⭐ {currentUser.loyalty_points || 0} পয়েন্ট উপলব্ধ (৳{toBn(currentUser.loyalty_points || 0)})
-              </p>
+              {isVipApproved ? (
+                <>
+                  <p className="font-mono font-bold text-amber-400 text-xs mt-0.5">
+                    💳 {currentUser.loyalty_card_number || `ANSAR-VIP-${currentUser.id?.slice(0, 4)}-2026`}
+                  </p>
+                  <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                    ⭐ {currentUser.loyalty_points || 0} পয়েন্ট উপলব্ধ (৳{toBn(currentUser.loyalty_points || 0)})
+                  </p>
+                </>
+              ) : isVipPending ? (
+                <>
+                  <p className="font-mono font-semibold text-blue-300 text-xs mt-0.5">
+                    ⏳ কার্ড আবেদন প্রক্রিয়াধীন
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    অনুমোদনের পর ভিআইপি কার্ড ইস্যু হবে
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-mono font-medium text-slate-400 text-xs mt-0.5">
+                    কার্ড নেওয়া হয়নি (Non-VIP)
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    রেগুলার কাস্টমার একাউন্ট
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
@@ -552,10 +586,10 @@ export default function AdminCustomerProfileModal({ isOpen, user, onClose, onOpe
                 <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-0.5">
                   <span className="text-[10px] font-bold text-slate-400 block uppercase">মেম্বারশিপ টায়ার</span>
                   <span className="text-sm font-black text-amber-400 block mt-1">
-                    {currentUser.loyalty_tier || 'Gold VIP'}
+                    {isVipApproved ? (currentUser.loyalty_tier || 'Gold VIP') : isVipPending ? 'VIP অপেক্ষমাণ' : 'সাধারণ গ্রাহক'}
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono">
-                    {currentUser.loyalty_card_number || 'সক্রিয় কার্ড'}
+                    {isVipApproved ? (currentUser.loyalty_card_number || 'সক্রিয় কার্ড') : isVipPending ? 'কার্ড প্রক্রিয়াধীন' : 'ভিআইপি কার্ড নেই'}
                   </span>
                 </div>
               </div>
